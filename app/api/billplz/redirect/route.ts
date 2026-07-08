@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const paidAt = url.searchParams.get("billplz[paid_at]");
   const signature = url.searchParams.get("billplz[x_signature]");
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? url.origin;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || url.origin;
   const statusUrl = new URL("/status", siteUrl);
 
   if (!id) {

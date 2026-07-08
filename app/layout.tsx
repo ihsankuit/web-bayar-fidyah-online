@@ -9,7 +9,7 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyah.online";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bayarfidyah.online";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
