@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 const links = [
   { href: "/#kira", label: "Kalkulator" },
   { href: "/#kategori", label: "Kategori" },
+  { href: "/#qada-fidyah", label: "Qada' & Fidyah" },
   { href: "/#faq", label: "Soalan Lazim" },
   { href: "/blog", label: "Blog" },
 ];
