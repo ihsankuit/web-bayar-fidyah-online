@@ -1,0 +1,246 @@
+import Link from "next/link";
+import {
+  ArrowRight,
+  CheckCircle2,
+  HeartHandshake,
+  Receipt,
+  ShieldCheck,
+  Sparkles,
+  Wallet,
+} from "lucide-react";
+
+import { Navbar } from "@/components/site/navbar";
+import { Footer } from "@/components/site/footer";
+import { FidyahForm } from "@/components/site/fidyah-form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { FIDYAH_CATEGORIES } from "@/lib/fidyah";
+import { getLandingContent } from "@/lib/settings";
+
+export default async function HomePage() {
+  const content = await getLandingContent();
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]" />
+          <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
+            <div className="space-y-6">
+              <Badge variant="success" className="gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                {content.hero_badge}
+              </Badge>
+              <h1 className="text-balance text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+                {content.hero_title}
+              </h1>
+              <p className="max-w-lg text-pretty text-lg text-muted-foreground">
+                {content.hero_subtitle}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button asChild size="lg">
+                  <Link href="#kira">
+                    {content.hero_cta}
+                    <ArrowRight />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link href="#tentang">Ketahui Lebih Lanjut</Link>
+                </Button>
+              </div>
+
+              <dl className="grid grid-cols-3 gap-4 pt-4">
+                {content.stats.map((s) => (
+                  <div key={s.label}>
+                    <dt className="text-sm text-muted-foreground">{s.label}</dt>
+                    <dd className="text-2xl font-bold text-primary">
+                      {s.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div id="kira" className="scroll-mt-20">
+              <FidyahForm rateSen={content.fidyah_rate_sen} />
+            </div>
+          </div>
+        </section>
+
+        {/* Trust badges */}
+        <section className="border-y border-border/60 bg-muted/30">
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:grid-cols-3">
+            <Feature
+              icon={<ShieldCheck className="h-5 w-5" />}
+              title="Selamat & Dipercayai"
+              desc="Pembayaran melalui gerbang Billplz yang menyokong FPX & kad."
+            />
+            <Feature
+              icon={<Receipt className="h-5 w-5" />}
+              title="Resit Automatik"
+              desc="Resit rasmi dihantar terus ke emel anda selepas pembayaran."
+            />
+            <Feature
+              icon={<Wallet className="h-5 w-5" />}
+              title="Kiraan Tepat"
+              desc="Kalkulator automatik mengikut hari & gandaan qada'."
+            />
+          </div>
+        </section>
+
+        {/* About */}
+        <section id="tentang" className="scroll-mt-20">
+          <div className="mx-auto max-w-3xl px-4 py-16 text-center lg:py-24">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              {content.about_title}
+            </h2>
+            <p className="mt-4 text-pretty text-lg text-muted-foreground">
+              {content.about_body}
+            </p>
+          </div>
+        </section>
+
+        {/* Categories */}
+        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Siapa Yang Wajib Membayar Fidyah?
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Fidyah dikenakan ke atas golongan berikut yang meninggalkan
+                puasa Ramadan.
+              </p>
+            </div>
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {FIDYAH_CATEGORIES.filter((c) => c.id !== "lain").map((c) => (
+                <Card key={c.id} className="h-full">
+                  <CardContent className="space-y-3 p-6">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <HeartHandshake className="h-5 w-5" />
+                    </div>
+                    <h3 className="font-semibold">{c.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {c.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="py-16 lg:py-24">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Bayar dalam 3 Langkah Mudah
+              </h2>
+            </div>
+            <div className="mt-12 grid gap-8 md:grid-cols-3">
+              {[
+                {
+                  n: "1",
+                  t: "Kira jumlah",
+                  d: "Masukkan bilangan hari dan gandaan qada' untuk mengira jumlah fidyah.",
+                },
+                {
+                  n: "2",
+                  t: "Isi butiran & bayar",
+                  d: "Lengkapkan maklumat anda dan buat pembayaran selamat melalui FPX atau kad.",
+                },
+                {
+                  n: "3",
+                  t: "Terima resit",
+                  d: "Resit rasmi dihantar terus ke emel anda sebagai pengesahan.",
+                },
+              ].map((step) => (
+                <div key={step.n} className="relative space-y-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+                    {step.n}
+                  </div>
+                  <h3 className="text-lg font-semibold">{step.t}</h3>
+                  <p className="text-muted-foreground">{step.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <div className="mx-auto max-w-3xl px-4">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Soalan Lazim
+              </h2>
+            </div>
+            <div className="mt-10 space-y-4">
+              {content.faqs.map((faq, i) => (
+                <details
+                  key={i}
+                  className="group rounded-xl border bg-card p-5 [&_summary]:cursor-pointer"
+                >
+                  <summary className="flex items-center justify-between font-semibold marker:content-['']">
+                    {faq.question}
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-primary opacity-0 transition-opacity group-open:opacity-100" />
+                  </summary>
+                  <p className="mt-3 text-muted-foreground">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="py-16 lg:py-24">
+          <div className="mx-auto max-w-5xl px-4">
+            <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-16">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,rgba(255,255,255,.15),transparent)]" />
+              <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+                Tunaikan Tanggungan Fidyah Anda Hari Ini
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-primary-foreground/80">
+                Jangan tangguhkan lagi. Selesaikan fidyah anda dengan mudah dan
+                selamat dalam beberapa minit sahaja.
+              </p>
+              <Button asChild size="lg" variant="secondary" className="mt-8">
+                <Link href="#kira">
+                  {content.hero_cta}
+                  <ArrowRight />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer note={content.footer_note} />
+    </div>
+  );
+}
+
+function Feature({
+  icon,
+  title,
+  desc,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <div>
+        <h3 className="font-semibold">{title}</h3>
+        <p className="text-sm text-muted-foreground">{desc}</p>
+      </div>
+    </div>
+  );
+}
