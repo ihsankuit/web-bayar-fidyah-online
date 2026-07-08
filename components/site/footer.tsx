@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Moon } from "lucide-react";
+import { Logo } from "@/components/site/logo";
 
 export function Footer({ note }: { note?: string }) {
   return (
@@ -7,13 +7,8 @@ export function Footer({ note }: { note?: string }) {
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col gap-8 md:flex-row md:justify-between">
           <div className="max-w-sm space-y-3">
-            <Link href="/" className="flex items-center gap-2 font-bold">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Moon className="h-4 w-4" />
-              </span>
-              <span className="tracking-tight">
-                Bayar<span className="text-primary">Fidyah</span>
-              </span>
+            <Link href="/" aria-label="ihsanku">
+              <Logo size="sm" />
             </Link>
             <p className="text-sm text-muted-foreground">
               {note ??

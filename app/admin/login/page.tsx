@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Moon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LogoMark } from "@/components/site/logo";
 
 function LoginForm() {
   const router = useRouter();
@@ -42,9 +43,7 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="items-center text-center">
-        <span className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Moon className="h-6 w-6" />
-        </span>
+        <LogoMark className="mb-2 h-12 w-12" />
         <CardTitle>Log Masuk Pentadbir</CardTitle>
       </CardHeader>
       <CardContent>

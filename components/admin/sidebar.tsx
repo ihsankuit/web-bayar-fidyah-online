@@ -7,7 +7,6 @@ import {
   Image as ImageIcon,
   LayoutDashboard,
   LogOut,
-  Moon,
   PanelsTopLeft,
   Wallet,
 } from "lucide-react";
@@ -15,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/site/logo";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -37,13 +37,8 @@ export function Sidebar({ email }: { email: string }) {
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-border/60 bg-card">
-      <div className="flex h-16 items-center gap-2 border-b border-border/60 px-5 font-bold">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Moon className="h-4 w-4" />
-        </span>
-        <span className="tracking-tight">
-          Bayar<span className="text-primary">Fidyah</span>
-        </span>
+      <div className="flex h-16 items-center border-b border-border/60 px-5">
+        <Logo size="sm" />
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
