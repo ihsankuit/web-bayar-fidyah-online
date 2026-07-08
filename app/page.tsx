@@ -13,6 +13,7 @@ import {
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FidyahForm } from "@/components/site/fidyah-form";
+import { FidyahIllustration } from "@/components/site/fidyah-illustration";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/table";
 import { FIDYAH_CATEGORIES, QADA_FIDYAH_SITUATIONS } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
+import { formatMYR } from "@/lib/utils";
 
 export default async function HomePage() {
   const content = await getLandingContent();
@@ -205,8 +207,70 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Cara Kira Fidyah */}
+        <section id="cara-kira" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <div className="mx-auto max-w-4xl px-4">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Cara Kira Fidyah
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                {renderBold(
+                  "Kadar bayaran fidyah ialah sebanyak **secupak atau 700 gram makanan asasi** seperti beras, iaitu bayaran untuk 1 hari puasa yang ditinggalkan."
+                )}
+              </p>
+            </div>
+
+            <div className="mt-12 grid gap-6 md:grid-cols-2">
+              {/* Situasi 1 */}
+              <div className="rounded-2xl bg-[#1b2a5b] p-8 text-white">
+                <h3 className="text-xl font-bold">Situasi 1</h3>
+                <p className="mt-4 text-white/80">
+                  Aisha belum menggantikan puasa sehingga memasuki Ramadan
+                  berikutnya pada tahun 1446H (2026).
+                </p>
+                <p className="mt-6">
+                  <span className="text-white/80">Formula Kiraan: </span>
+                  <span className="font-bold text-yellow-300">
+                    [Bilangan Hari Tidak Berpuasa × Kadar Fidyah]
+                  </span>
+                </p>
+                <p className="mt-3 font-bold underline underline-offset-4">
+                  7 hari × {formatMYR(content.fidyah_rate_sen)} ={" "}
+                  {formatMYR(7 * content.fidyah_rate_sen)}
+                </p>
+              </div>
+
+              {/* Situasi 2 */}
+              <div className="relative overflow-hidden rounded-2xl bg-[#1b2a5b] p-8 text-white">
+                <h3 className="text-xl font-bold">Situasi 2</h3>
+                <div className="max-w-[72%]">
+                  <p className="mt-4 text-white/80">
+                    Aisha belum menggantikan puasa sehingga memasuki beberapa
+                    Ramadan tahun-tahun berikutnya — beliau tidak berpuasa pada
+                    Ramadan 1444H (2023) dan masih belum berganti sehingga 1447H
+                    (2026), serta berkemampuan untuk menggandakan bayaran fidyah.
+                  </p>
+                  <p className="mt-6">
+                    <span className="text-white/80">Formula Kiraan: </span>
+                    <span className="font-bold text-yellow-300">
+                      [(Bilangan Hari Tidak Berpuasa × Kadar Fidyah) × Bilangan
+                      Tahun Yang Ditinggalkan]
+                    </span>
+                  </p>
+                  <p className="mt-3 font-bold underline underline-offset-4">
+                    (7 hari × {formatMYR(content.fidyah_rate_sen)}) × 3 Tahun ={" "}
+                    {formatMYR(7 * content.fidyah_rate_sen * 3)}
+                  </p>
+                </div>
+                <FidyahIllustration className="pointer-events-none absolute bottom-0 right-0 hidden w-40 select-none lg:block" />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* How it works */}
-        <section className="bg-muted/30 py-16 lg:py-24">
+        <section className="py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -244,7 +308,7 @@ export default async function HomePage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="faq" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">

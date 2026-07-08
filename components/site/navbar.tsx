@@ -7,7 +7,7 @@ const links = [
   { href: "/#hukum", label: "Hukum" },
   { href: "/#kategori", label: "Kategori" },
   { href: "/#qada-fidyah", label: "Qada' & Fidyah" },
-  { href: "/#faq", label: "Soalan Lazim" },
+  { href: "/#cara-kira", label: "Cara Kira" },
   { href: "/blog", label: "Blog" },
 ];
 
