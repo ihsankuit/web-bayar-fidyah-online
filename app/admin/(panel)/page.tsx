@@ -20,6 +20,8 @@ import type { Donation } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { PaymentsChart } from "@/components/admin/payments-chart";
+import { buildMonthlySeries } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,7 @@ export default async function DashboardPage() {
   const pending = rows.filter((d) => d.status === "pending");
   const totalPaidSen = paid.reduce((sum, d) => sum + d.amount_sen, 0);
   const uniquePayers = new Set(paid.map((d) => d.payer_email)).size;
+  const monthlySeries = buildMonthlySeries(rows, 6);
 
   const stats = [
     {
@@ -82,6 +85,18 @@ export default async function DashboardPage() {
           );
         })}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Jumlah Pembayaran</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Jumlah fidyah berjaya dikumpul mengikut bulan (6 bulan terakhir).
+          </p>
+        </CardHeader>
+        <CardContent>
+          <PaymentsChart data={monthlySeries} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">

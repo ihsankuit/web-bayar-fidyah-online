@@ -39,7 +39,10 @@ export default async function HomePage() {
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]" />
           <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
             <div className="space-y-6">
-              <Badge variant="success" className="gap-1.5">
+              <Badge
+                variant="secondary"
+                className="gap-1.5 text-primary"
+              >
                 <Sparkles className="h-3.5 w-3.5" />
                 {content.hero_badge}
               </Badge>

@@ -27,12 +27,12 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
     getCategory(donation.category)?.title ?? donation.category;
 
   const html = `
-  <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1a2b22;">
-    <div style="background: #157a5a; color: #fff; padding: 24px; border-radius: 12px 12px 0 0;">
+  <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1a2333;">
+    <div style="background: #2563eb; color: #fff; padding: 24px; border-radius: 12px 12px 0 0;">
       <h1 style="margin: 0; font-size: 20px;">Resit Pembayaran Fidyah</h1>
       <p style="margin: 4px 0 0; opacity: .9;">Terima kasih atas pembayaran anda.</p>
     </div>
-    <div style="border: 1px solid #e2e8e4; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
+    <div style="border: 1px solid #e2e6ef; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
       <p>Assalamualaikum <strong>${escapeHtml(donation.payer_name)}</strong>,</p>
       <p>Pembayaran fidyah anda telah berjaya diterima. Berikut adalah butiran resit:</p>
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
@@ -44,7 +44,7 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
         ${row("Jumlah dibayar", `<strong>${formatMYR(donation.amount_sen)}</strong>`)}
         ${row("Tarikh", donation.paid_at ? formatDate(donation.paid_at) : formatDate(donation.created_at))}
       </table>
-      <p style="color: #52746a; font-size: 13px;">
+      <p style="color: #5a6478; font-size: 13px;">
         Semoga Allah SWT menerima amalan anda dan memberi ganjaran yang berlipat ganda. Aamiin.
       </p>
     </div>
@@ -64,8 +64,8 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
 
 function row(label: string, value: string): string {
   return `<tr>
-    <td style="padding: 8px 0; color: #52746a; border-bottom: 1px solid #eef2f0;">${label}</td>
-    <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #eef2f0;">${value}</td>
+    <td style="padding: 8px 0; color: #5a6478; border-bottom: 1px solid #eef1f6;">${label}</td>
+    <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #eef1f6;">${value}</td>
   </tr>`;
 }
 
