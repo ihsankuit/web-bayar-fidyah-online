@@ -112,8 +112,41 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Hukum Fidyah */}
+        <section id="hukum" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <div className="mx-auto max-w-3xl px-4 text-center">
+            <h2 className="inline-block rounded-lg bg-primary px-6 py-3 text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl">
+              {content.hukum_title}
+            </h2>
+            <div className="mt-8 space-y-5 text-lg text-muted-foreground">
+              {content.hukum_body
+                .split(/\n\n+/)
+                .filter(Boolean)
+                .map((para, i) => (
+                  <p key={i} className="text-pretty">
+                    {renderBold(para)}
+                  </p>
+                ))}
+            </div>
+
+            <figure className="mt-10 rounded-2xl border bg-card p-8 shadow-sm">
+              <p
+                dir="rtl"
+                lang="ar"
+                className="text-2xl leading-[2.4] text-foreground sm:text-3xl"
+              >
+                {content.hadith_arabic}
+              </p>
+              <figcaption className="mt-6 text-sm italic text-muted-foreground">
+                Yang bermaksud: &ldquo;{content.hadith_meaning}&rdquo; (
+                {content.hadith_source})
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
         {/* Categories */}
-        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="kategori" className="scroll-mt-20 py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -276,6 +309,19 @@ function YesNoIcon({ value }: { value: boolean }) {
     <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
   ) : (
     <XCircle className="mx-auto h-5 w-5 text-destructive" />
+  );
+}
+
+/** Renders plain text with `**bold**` segments emphasised. */
+function renderBold(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={i} className="font-bold text-foreground">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      <span key={i}>{part}</span>
+    )
   );
 }
 

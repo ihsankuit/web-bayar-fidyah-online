@@ -94,6 +94,55 @@ export function LandingEditor({ content }: { content: LandingContent }) {
 
       <Card>
         <CardHeader>
+          <CardTitle>Fidyah & Hukumnya</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Field
+            label="Tajuk seksyen"
+            name="hukum_title"
+            defaultValue={content.hukum_title}
+          />
+          <div className="space-y-2">
+            <Label htmlFor="hukum_body">
+              Penerangan hukum (guna **teks** untuk tebal, baris kosong untuk
+              perenggan baharu)
+            </Label>
+            <Textarea
+              id="hukum_body"
+              name="hukum_body"
+              defaultValue={content.hukum_body}
+              className="min-h-[160px]"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="hadith_arabic">Teks hadith (Arab)</Label>
+            <Textarea
+              id="hadith_arabic"
+              name="hadith_arabic"
+              defaultValue={content.hadith_arabic}
+              dir="rtl"
+              lang="ar"
+              className="min-h-[90px] text-xl leading-loose"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="hadith_meaning">Maksud hadith</Label>
+            <Textarea
+              id="hadith_meaning"
+              name="hadith_meaning"
+              defaultValue={content.hadith_meaning}
+            />
+          </div>
+          <Field
+            label="Sumber hadith"
+            name="hadith_source"
+            defaultValue={content.hadith_source}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Tetapan & Statistik</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

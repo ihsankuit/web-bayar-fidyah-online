@@ -53,6 +53,19 @@ export async function saveLanding(
       (formData.get("about_title") as string) || DEFAULT_LANDING.about_title,
     about_body:
       (formData.get("about_body") as string) || DEFAULT_LANDING.about_body,
+    hukum_title:
+      (formData.get("hukum_title") as string) || DEFAULT_LANDING.hukum_title,
+    hukum_body:
+      (formData.get("hukum_body") as string) || DEFAULT_LANDING.hukum_body,
+    hadith_arabic:
+      (formData.get("hadith_arabic") as string) ||
+      DEFAULT_LANDING.hadith_arabic,
+    hadith_meaning:
+      (formData.get("hadith_meaning") as string) ||
+      DEFAULT_LANDING.hadith_meaning,
+    hadith_source:
+      (formData.get("hadith_source") as string) ||
+      DEFAULT_LANDING.hadith_source,
     fidyah_rate_sen: Math.round(rateRinggit * 100),
     stats,
     faqs,

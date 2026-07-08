@@ -65,6 +65,11 @@ export interface LandingContent {
   hero_cta: string;
   about_title: string;
   about_body: string;
+  hukum_title: string;
+  hukum_body: string;
+  hadith_arabic: string;
+  hadith_meaning: string;
+  hadith_source: string;
   fidyah_rate_sen: number;
   stats: { label: string; value: string }[];
   faqs: { question: string; answer: string }[];
