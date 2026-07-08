@@ -72,28 +72,6 @@ export function LandingEditor({ content }: { content: LandingContent }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Tentang Fidyah</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Field
-            label="Tajuk"
-            name="about_title"
-            defaultValue={content.about_title}
-          />
-          <div className="space-y-2">
-            <Label htmlFor="about_body">Penerangan</Label>
-            <Textarea
-              id="about_body"
-              name="about_body"
-              defaultValue={content.about_body}
-              className="min-h-[120px]"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Fidyah & Hukumnya</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

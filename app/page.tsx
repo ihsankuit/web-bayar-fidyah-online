@@ -60,7 +60,7 @@ export default async function HomePage() {
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <Link href="#tentang">Ketahui Lebih Lanjut</Link>
+                  <Link href="#hukum">Ketahui Lebih Lanjut</Link>
                 </Button>
               </div>
 
@@ -103,22 +103,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* About */}
-        <section id="tentang" className="scroll-mt-20">
-          <div className="mx-auto max-w-3xl px-4 py-16 text-center lg:py-24">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {content.about_title}
-            </h2>
-            <p className="mt-4 text-pretty text-lg text-muted-foreground">
-              {content.about_body}
-            </p>
-          </div>
-        </section>
-
         {/* Hukum Fidyah */}
-        <section id="hukum" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="hukum" className="scroll-mt-20 py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4 text-center">
-            <h2 className="inline-block rounded-lg bg-primary px-6 py-3 text-2xl font-bold tracking-tight text-primary-foreground sm:text-3xl">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               {content.hukum_title}
             </h2>
             <div className="mt-8 space-y-5 text-lg text-muted-foreground">
@@ -149,7 +137,7 @@ export default async function HomePage() {
         </section>
 
         {/* Categories */}
-        <section id="kategori" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -218,7 +206,7 @@ export default async function HomePage() {
         </section>
 
         {/* How it works */}
-        <section className="py-16 lg:py-24">
+        <section className="bg-muted/30 py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -256,7 +244,7 @@ export default async function HomePage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="faq" className="scroll-mt-20 py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
