@@ -19,12 +19,14 @@ export function Footer({ note }: { note?: string }) {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             <FooterCol title="Laman">
               <FooterLink href="/#kira">Kalkulator</FooterLink>
-              <FooterLink href="/#kategori">Kategori</FooterLink>
+              <FooterLink href="/#hukum">Hukum Fidyah</FooterLink>
+              <FooterLink href="/#cara-kira">Cara Kira</FooterLink>
               <FooterLink href="/#faq">Soalan Lazim</FooterLink>
             </FooterCol>
             <FooterCol title="Sumber">
               <FooterLink href="/blog">Blog</FooterLink>
-              <FooterLink href="/#tentang">Tentang Fidyah</FooterLink>
+              <FooterLink href="/#galeri">Galeri</FooterLink>
+              <FooterLink href="/#kategori">Kategori</FooterLink>
             </FooterCol>
             <FooterCol title="Pentadbir">
               <FooterLink href="/admin">Log Masuk Admin</FooterLink>

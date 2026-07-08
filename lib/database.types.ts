@@ -51,6 +51,19 @@ export interface MediaAsset {
   created_at: string;
 }
 
+export type GalleryType = "image" | "video";
+
+export interface GalleryItem {
+  id: string;
+  type: GalleryType;
+  title: string | null;
+  image_url: string | null;
+  youtube_id: string | null;
+  storage_path: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface SiteSetting {
   key: string;
   value: Record<string, unknown>;

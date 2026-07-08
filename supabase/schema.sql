@@ -169,3 +169,31 @@ values
     now()
   )
 on conflict (slug) do nothing;
+
+-- =====================================================================
+--  Gallery (galeri gambar & video)
+--  Run this block if upgrading an existing database.
+-- =====================================================================
+create table if not exists public.gallery_items (
+  id           uuid primary key default gen_random_uuid(),
+  type         text not null check (type in ('image', 'video')),
+  title        text,
+  image_url    text,          -- image source, or a custom video thumbnail
+  youtube_id   text,          -- video type: the YouTube video id
+  storage_path text,          -- storage object path (uploaded images) for cleanup
+  sort_order   integer not null default 0,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists gallery_sort_idx
+  on public.gallery_items (sort_order, created_at desc);
+
+alter table public.gallery_items enable row level security;
+
+drop policy if exists gallery_public_read on public.gallery_items;
+create policy gallery_public_read on public.gallery_items
+  for select to anon, authenticated using (true);
+
+drop policy if exists gallery_admin_all on public.gallery_items;
+create policy gallery_admin_all on public.gallery_items
+  for all to authenticated using (true) with check (true);

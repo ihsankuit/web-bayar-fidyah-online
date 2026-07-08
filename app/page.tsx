@@ -14,6 +14,7 @@ import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FidyahForm } from "@/components/site/fidyah-form";
 import { FidyahIllustration } from "@/components/site/fidyah-illustration";
+import { Gallery } from "@/components/site/gallery";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +28,14 @@ import {
 } from "@/components/ui/table";
 import { FIDYAH_CATEGORIES, QADA_FIDYAH_SITUATIONS } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
+import { getGalleryItems } from "@/lib/gallery";
 import { formatMYR } from "@/lib/utils";
 
 export default async function HomePage() {
-  const content = await getLandingContent();
+  const [content, gallery] = await Promise.all([
+    getLandingContent(),
+    getGalleryItems(),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -307,8 +312,27 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Galeri */}
+        {gallery.length > 0 && (
+          <section id="galeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+            <div className="mx-auto max-w-6xl px-4">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  Galeri
+                </h2>
+                <p className="mt-3 text-muted-foreground">
+                  Koleksi gambar dan video aktiviti serta program kami.
+                </p>
+              </div>
+              <div className="mt-12">
+                <Gallery items={gallery} />
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="faq" className="scroll-mt-20 py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
