@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogoMark } from "@/components/site/logo";
+import { Logo } from "@/components/site/logo";
 
 function LoginForm() {
   const router = useRouter();
@@ -43,7 +43,7 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="items-center text-center">
-        <LogoMark className="mb-2 h-12 w-12" />
+        <Logo className="mb-3 h-10" />
         <CardTitle>Log Masuk Pentadbir</CardTitle>
       </CardHeader>
       <CardContent>

@@ -34,7 +34,7 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-/** Full logo: mark + "ihsanku" wordmark. */
+/** Full ihsanku logo (mark + wordmark) from the uploaded brand asset. */
 export function Logo({
   size = "md",
   className,
@@ -43,16 +43,11 @@ export function Logo({
   className?: string;
 }) {
   return (
-    <span className={cn("flex items-center gap-2", className)}>
-      <LogoMark className={size === "sm" ? "h-7 w-7" : "h-8 w-8"} />
-      <span
-        className={cn(
-          "font-extrabold lowercase tracking-tight text-foreground",
-          size === "sm" ? "text-base" : "text-lg"
-        )}
-      >
-        ihsan<span className="italic">ku</span>
-      </span>
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo-ihsanku.svg"
+      alt="ihsanku"
+      className={cn("w-auto", size === "sm" ? "h-7" : "h-9", className)}
+    />
   );
 }
