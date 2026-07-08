@@ -73,6 +73,89 @@ export function getCategory(id: string): FidyahCategory | undefined {
   return FIDYAH_CATEGORIES.find((c) => c.id === id);
 }
 
+export interface QadaFidyahSituation {
+  situation: string;
+  kenaQada: boolean;
+  kenaFidyah: boolean;
+}
+
+/** Reference table of common situations and whether qada' and/or fidyah is owed. */
+export const QADA_FIDYAH_SITUATIONS: QadaFidyahSituation[] = [
+  {
+    situation:
+      "Orang tua yang sudah tidak mampu berpuasa kerana lemah & uzur",
+    kenaQada: false,
+    kenaFidyah: true,
+  },
+  {
+    situation: "Orang sakit namun tiada harapan sembuh",
+    kenaQada: false,
+    kenaFidyah: true,
+  },
+  {
+    situation: "Orang sakit tidak berpanjangan lalu berbuka kerana sakitnya",
+    kenaQada: true,
+    kenaFidyah: false,
+  },
+  {
+    situation:
+      "Orang sakit tidak berpanjangan lalu berbuka dan tidak sempat menggantikan puasa sebelum Ramadan tahun berikutnya",
+    kenaQada: true,
+    kenaFidyah: true,
+  },
+  {
+    situation: "Orang yang musafir berbuka kerana musafirnya",
+    kenaQada: true,
+    kenaFidyah: false,
+  },
+  {
+    situation:
+      "Orang yang musafir berbuka kerana musafirnya namun tidak sempat menggantikan puasa sebelum Ramadan tahun berikutnya",
+    kenaQada: true,
+    kenaFidyah: true,
+  },
+  {
+    situation: "Perempuan yang haid",
+    kenaQada: true,
+    kenaFidyah: false,
+  },
+  {
+    situation:
+      "Perempuan yang haid namun tidak sempat menggantikan puasa sebelum Ramadan tahun berikutnya",
+    kenaQada: true,
+    kenaFidyah: true,
+  },
+  {
+    situation:
+      "Perempuan yang hamil atau sedang menyusukan anak namun bimbang akan keselamatan anak yang dikandung atau yang sedang disusukan",
+    kenaQada: true,
+    kenaFidyah: true,
+  },
+  {
+    situation:
+      "Perempuan yang hamil atau sedang menyusukan anak namun bimbang akan keselamatan dirinya ketika berpuasa",
+    kenaQada: true,
+    kenaFidyah: false,
+  },
+  {
+    situation:
+      "Perempuan yang meninggalkan puasa kerana hamil atau sedang menyusukan anak namun tidak sempat menggantikan puasa sebelum Ramadan tahun berikutnya",
+    kenaQada: true,
+    kenaFidyah: true,
+  },
+  {
+    situation: "Orang yang sengaja meninggalkan puasa",
+    kenaQada: true,
+    kenaFidyah: false,
+  },
+  {
+    situation:
+      "Orang yang sengaja meninggalkan puasa namun tidak sempat menggantikan puasa sebelum Ramadan tahun berikutnya",
+    kenaQada: true,
+    kenaFidyah: true,
+  },
+];
+
 export interface FidyahCalculationInput {
   /** Number of missed fasting days. */
   days: number;

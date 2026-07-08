@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Sparkles,
   Wallet,
+  XCircle,
 } from "lucide-react";
 
 import { Navbar } from "@/components/site/navbar";
@@ -15,7 +16,15 @@ import { FidyahForm } from "@/components/site/fidyah-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FIDYAH_CATEGORIES } from "@/lib/fidyah";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { FIDYAH_CATEGORIES, QADA_FIDYAH_SITUATIONS } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
 
 export default async function HomePage() {
@@ -133,6 +142,45 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Qada' vs Fidyah reference table */}
+        <section id="qada-fidyah" className="scroll-mt-20 py-16 lg:py-24">
+          <div className="mx-auto max-w-5xl px-4">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Situasi Dikenakan Qada&apos; &amp; Fidyah
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Rujuk jadual berikut untuk kenal pasti sama ada anda perlu
+                mengqada&apos; puasa, membayar fidyah, atau kedua-duanya.
+              </p>
+            </div>
+            <div className="mt-12 overflow-hidden rounded-xl border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Situasi</TableHead>
+                    <TableHead className="text-center">Kena Qada&apos;?</TableHead>
+                    <TableHead className="text-center">Kena Fidyah?</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {QADA_FIDYAH_SITUATIONS.map((row) => (
+                    <TableRow key={row.situation}>
+                      <TableCell className="max-w-md">{row.situation}</TableCell>
+                      <TableCell className="text-center">
+                        <YesNoIcon value={row.kenaQada} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <YesNoIcon value={row.kenaFidyah} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </section>
+
         {/* How it works */}
         <section className="py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
@@ -220,6 +268,14 @@ export default async function HomePage() {
       </main>
       <Footer note={content.footer_note} />
     </div>
+  );
+}
+
+function YesNoIcon({ value }: { value: boolean }) {
+  return value ? (
+    <CheckCircle2 className="mx-auto h-5 w-5 text-emerald-500" />
+  ) : (
+    <XCircle className="mx-auto h-5 w-5 text-destructive" />
   );
 }
 
