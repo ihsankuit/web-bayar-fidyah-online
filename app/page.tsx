@@ -13,7 +13,6 @@ import {
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FidyahForm } from "@/components/site/fidyah-form";
-import { FidyahIllustration } from "@/components/site/fidyah-illustration";
 import { Gallery } from "@/components/site/gallery";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -226,49 +225,58 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="mt-12 grid gap-6 md:grid-cols-2">
-              {/* Situasi 1 */}
-              <div className="rounded-2xl bg-[#1b2a5b] p-8 text-white">
-                <h3 className="text-xl font-bold">Situasi 1</h3>
-                <p className="mt-4 text-white/80">
-                  Aisha belum menggantikan puasa sehingga memasuki Ramadan
-                  berikutnya pada tahun 1446H (2026).
-                </p>
-                <p className="mt-6">
-                  <span className="text-white/80">Formula Kiraan: </span>
-                  <span className="font-bold text-yellow-300">
+            <div className="mt-12 overflow-hidden rounded-2xl border bg-card shadow-sm">
+              <div className="grid md:grid-cols-2">
+                {/* Situasi 1 */}
+                <div className="p-8">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      1
+                    </span>
+                    <h3 className="text-lg font-bold">Situasi 1</h3>
+                  </div>
+                  <p className="mt-4 text-muted-foreground">
+                    Aisha belum menggantikan puasa sehingga memasuki Ramadan
+                    berikutnya pada tahun 1446H (2026).
+                  </p>
+                  <p className="mt-6 text-sm text-muted-foreground">
+                    Formula Kiraan:
+                  </p>
+                  <p className="mt-1 font-semibold text-primary">
                     [Bilangan Hari Tidak Berpuasa × Kadar Fidyah]
-                  </span>
-                </p>
-                <p className="mt-3 font-bold underline underline-offset-4">
-                  7 hari × {formatMYR(content.fidyah_rate_sen)} ={" "}
-                  {formatMYR(7 * content.fidyah_rate_sen)}
-                </p>
-              </div>
+                  </p>
+                  <div className="mt-4 inline-flex rounded-lg bg-primary/10 px-4 py-2 font-bold text-primary">
+                    7 hari × {formatMYR(content.fidyah_rate_sen)} ={" "}
+                    {formatMYR(7 * content.fidyah_rate_sen)}
+                  </div>
+                </div>
 
-              {/* Situasi 2 */}
-              <div className="relative overflow-hidden rounded-2xl bg-[#1b2a5b] p-8 text-white">
-                <h3 className="text-xl font-bold">Situasi 2</h3>
-                <div className="max-w-[72%]">
-                  <p className="mt-4 text-white/80">
+                {/* Situasi 2 */}
+                <div className="border-t p-8 md:border-l md:border-t-0">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      2
+                    </span>
+                    <h3 className="text-lg font-bold">Situasi 2</h3>
+                  </div>
+                  <p className="mt-4 text-muted-foreground">
                     Aisha belum menggantikan puasa sehingga memasuki beberapa
                     Ramadan tahun-tahun berikutnya — beliau tidak berpuasa pada
                     Ramadan 1444H (2023) dan masih belum berganti sehingga 1447H
                     (2026), serta berkemampuan untuk menggandakan bayaran fidyah.
                   </p>
-                  <p className="mt-6">
-                    <span className="text-white/80">Formula Kiraan: </span>
-                    <span className="font-bold text-yellow-300">
-                      [(Bilangan Hari Tidak Berpuasa × Kadar Fidyah) × Bilangan
-                      Tahun Yang Ditinggalkan]
-                    </span>
+                  <p className="mt-6 text-sm text-muted-foreground">
+                    Formula Kiraan:
                   </p>
-                  <p className="mt-3 font-bold underline underline-offset-4">
+                  <p className="mt-1 font-semibold text-primary">
+                    [(Bilangan Hari Tidak Berpuasa × Kadar Fidyah) × Bilangan
+                    Tahun Yang Ditinggalkan]
+                  </p>
+                  <div className="mt-4 inline-flex rounded-lg bg-primary/10 px-4 py-2 font-bold text-primary">
                     (7 hari × {formatMYR(content.fidyah_rate_sen)}) × 3 Tahun ={" "}
                     {formatMYR(7 * content.fidyah_rate_sen * 3)}
-                  </p>
+                  </div>
                 </div>
-                <FidyahIllustration className="pointer-events-none absolute bottom-0 right-0 hidden w-40 select-none lg:block" />
               </div>
             </div>
           </div>
