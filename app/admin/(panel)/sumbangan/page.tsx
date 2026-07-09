@@ -23,11 +23,7 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
-import {
-  confirmDonationPaid,
-  recheckChipStatus,
-  resendReceipt,
-} from "./actions";
+import { recheckChipStatus, resendReceipt } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -156,12 +152,12 @@ export default async function SumbanganPage({
           </form>
           <Button asChild variant="outline" size="sm">
             <a
-              href={`/api/admin/sumbangan/export?${new URLSearchParams({
+              href={`/admin/sumbangan/export?${new URLSearchParams({
                 ...(status !== "all" ? { status } : {}),
                 ...(q ? { q } : {}),
               }).toString()}`}
             >
-              <Download /> Eksport CSV
+              <Download className="h-4 w-4" /> Eksport CSV
             </a>
           </Button>
         </div>
@@ -185,7 +181,7 @@ export default async function SumbanganPage({
                   <TableHead>Kategori</TableHead>
                   <TableHead>Hari</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
-                  <TableHead>Kaedah</TableHead>
+                  <TableHead>Sumber</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Tarikh</TableHead>
                   <TableHead />
@@ -213,8 +209,24 @@ export default async function SumbanganPage({
                     <TableCell className="text-right font-medium">
                       {formatMYR(d.amount_sen)}
                     </TableCell>
-                    <TableCell className="text-sm uppercase text-muted-foreground">
-                      {d.payment_method}
+                    <TableCell className="text-sm">
+                      {d.utm_source ? (
+                        <div>
+                          <div className="font-medium">
+                            {d.utm_source}
+                            {d.utm_medium ? ` / ${d.utm_medium}` : ""}
+                          </div>
+                          {(d.utm_campaign || d.utm_content || d.utm_term) && (
+                            <div className="text-xs text-muted-foreground">
+                              {[d.utm_campaign, d.utm_content, d.utm_term]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Direct</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={d.status} />
@@ -224,29 +236,19 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
-                        {d.status !== "paid" && (
-                          <form action={confirmDonationPaid}>
+                        {d.status !== "paid" && d.chip_purchase_id && (
+                          <form action={recheckChipStatus}>
                             <input type="hidden" name="id" value={d.id} />
-                            <Button type="submit" size="sm" variant="outline">
-                              Tandakan Dibayar
+                            <Button
+                              type="submit"
+                              size="sm"
+                              variant="ghost"
+                              title="Semak status terkini di CHIP"
+                            >
+                              <RefreshCw /> Semak CHIP
                             </Button>
                           </form>
                         )}
-                        {d.status !== "paid" &&
-                          d.payment_method === "fpx" &&
-                          d.chip_purchase_id && (
-                            <form action={recheckChipStatus}>
-                              <input type="hidden" name="id" value={d.id} />
-                              <Button
-                                type="submit"
-                                size="sm"
-                                variant="ghost"
-                                title="Semak status terkini di CHIP"
-                              >
-                                <RefreshCw /> Semak CHIP
-                              </Button>
-                            </form>
-                          )}
                         {d.status === "paid" && (
                           <form action={resendReceipt}>
                             <input type="hidden" name="id" value={d.id} />

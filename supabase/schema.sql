@@ -12,8 +12,6 @@ create table if not exists public.donations (
   id             uuid primary key default gen_random_uuid(),
   reference      text not null unique,
   chip_purchase_id text,
-  payment_method text not null default 'fpx'
-                   check (payment_method in ('fpx', 'qr')),
   payer_name     text not null,
   payer_email    text not null,
   payer_phone    text,
@@ -27,7 +25,12 @@ create table if not exists public.donations (
   status         text not null default 'pending'
                    check (status in ('pending', 'paid', 'failed')),
   paid_at        timestamptz,
-  created_at     timestamptz not null default now()
+  created_at     timestamptz not null default now(),
+  utm_source     text,
+  utm_medium     text,
+  utm_campaign   text,
+  utm_term       text,
+  utm_content    text
 );
 
 create index if not exists donations_status_idx on public.donations (status);
@@ -59,20 +62,24 @@ alter table public.donations add column if not exists chip_purchase_id text;
 create index if not exists donations_chip_purchase_idx on public.donations (chip_purchase_id);
 
 -- ---------------------------------------------------------------------
---  Manual QR (DuitNow / bank transfer) donations.
+--  Removes the manual QR / DuitNow payment method (superseded by CHIP,
+--  which already supports QR natively). Safe to run even if the
+--  payment_method column/constraint were never added.
+-- ---------------------------------------------------------------------
+alter table public.donations drop constraint if exists donations_payment_method_check;
+alter table public.donations drop column if exists payment_method;
+
+-- ---------------------------------------------------------------------
+--  UTM attribution (campaign tracking).
 --  Run this block if upgrading an existing database.
 -- ---------------------------------------------------------------------
-alter table public.donations
-  add column if not exists payment_method text not null default 'fpx';
+alter table public.donations add column if not exists utm_source text;
+alter table public.donations add column if not exists utm_medium text;
+alter table public.donations add column if not exists utm_campaign text;
+alter table public.donations add column if not exists utm_term text;
+alter table public.donations add column if not exists utm_content text;
 
-do $$
-begin
-  alter table public.donations
-    add constraint donations_payment_method_check
-    check (payment_method in ('fpx', 'qr'));
-exception
-  when duplicate_object then null;
-end $$;
+create index if not exists donations_utm_source_idx on public.donations (utm_source);
 
 -- ---------------------------------------------------------------------
 --  Blog posts

@@ -19,7 +19,6 @@ import { formatDate } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 const ACTION_LABELS: Record<string, string> = {
-  "donation.confirm_paid": "Tandakan sumbangan dibayar",
   "donation.recheck_chip": "Semak semula status CHIP",
   "donation.resend_receipt": "Hantar semula resit",
   "blog.publish": "Terbitkan artikel",

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { markDonationPaid, settleDonationByReference } from "@/lib/donations";
+import { settleDonationByReference } from "@/lib/donations";
 import { getPurchase } from "@/lib/chip";
 import { sendReceiptEmail } from "@/lib/resend";
 import { logActivity } from "@/lib/activity-log";
@@ -23,22 +23,7 @@ function revalidateAll() {
   revalidatePath("/admin");
 }
 
-export async function confirmDonationPaid(formData: FormData) {
-  await requireUser();
-  const id = formData.get("id") as string;
-  if (!id) return;
-
-  const donation = await markDonationPaid(id);
-  if (donation) {
-    await logActivity("donation.confirm_paid", {
-      reference: donation.reference,
-      amount_sen: donation.amount_sen,
-    });
-  }
-  revalidateAll();
-}
-
-/** Re-check a pending/failed FPX donation's true status directly against CHIP. */
+/** Re-check a pending/failed donation's true status directly against CHIP. */
 export async function recheckChipStatus(formData: FormData) {
   const supabase = await requireUser();
   const id = formData.get("id") as string;

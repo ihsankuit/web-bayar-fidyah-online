@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { UtmCapture } from "@/components/site/utm-capture";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | Bayar Fidyah Online",
   },
   description:
-    "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel. Bayar dalam 3 minit — kadar RM4.00 sehari.",
+    "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel. Bayar dalam 3 minit — kadar RM2.00 sehari.",
   keywords: [
     "fidyah",
     "bayar fidyah",
@@ -84,6 +85,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://gate.chip-in.asia" />
       </head>
       <body className={`${jakarta.variable} font-sans antialiased`}>
+        <UtmCapture />
         {children}
         <Toaster richColors position="top-center" />
       </body>

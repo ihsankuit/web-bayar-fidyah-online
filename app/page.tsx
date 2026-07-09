@@ -32,6 +32,8 @@ import { formatMYR } from "@/lib/utils";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
+export const revalidate = 60;
+
 export default async function HomePage() {
   const [content, gallery] = await Promise.all([
     getLandingContent(),

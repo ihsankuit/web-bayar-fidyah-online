@@ -80,3 +80,36 @@ export function momChange(current: number, previous: number): number | null {
   if (previous <= 0) return null;
   return Math.round(((current - previous) / previous) * 100);
 }
+
+export interface SourcePoint {
+  source: string;
+  total: number;
+  count: number;
+}
+
+/**
+ * Rank paid donations by `utm_source` (falling back to "Direct" when unset),
+ * highest total first. Used to show which campaigns/channels are converting.
+ */
+export function buildSourceBreakdown(
+  donations: Donation[],
+  limit = 6
+): SourcePoint[] {
+  const buckets = new Map<string, SourcePoint>();
+
+  for (const donation of donations) {
+    if (donation.status !== "paid") continue;
+    const key = donation.utm_source?.trim() || "Direct";
+    const bucket = buckets.get(key);
+    if (bucket) {
+      bucket.total += donation.amount_sen;
+      bucket.count += 1;
+    } else {
+      buckets.set(key, { source: key, total: donation.amount_sen, count: 1 });
+    }
+  }
+
+  return Array.from(buckets.values())
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
+}

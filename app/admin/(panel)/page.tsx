@@ -32,6 +32,7 @@ import { PaymentsChart } from "@/components/admin/payments-chart";
 import {
   buildMonthlySeries,
   buildBreakdown,
+  buildSourceBreakdown,
   momChange,
   type BreakdownItem,
 } from "@/lib/stats";
@@ -67,6 +68,9 @@ export default async function DashboardPage() {
     rows,
     (d) => d.negeri || "Tidak dinyatakan"
   ).slice(0, 6);
+
+  const sources = buildSourceBreakdown(rows);
+  const maxSourceTotal = Math.max(1, ...sources.map((s) => s.total));
 
   const stats = [
     {
@@ -156,6 +160,44 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sumber Pembayaran</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Sumbangan berjaya mengikut utm_source (kempen/iklan). &quot;Direct&quot;
+            bermaksud tiada tag UTM (pelawat terus ke laman).
+          </p>
+        </CardHeader>
+        <CardContent>
+          {sources.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Belum ada sumbangan berjaya untuk dipaparkan.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {sources.map((s) => (
+                <div key={s.source} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{s.source}</span>
+                    <span className="text-muted-foreground">
+                      {formatMYR(s.total)} · {s.count} bayaran
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{
+                        width: `${(s.total / maxSourceTotal) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
