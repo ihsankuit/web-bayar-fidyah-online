@@ -448,7 +448,7 @@ export default async function HomePage() {
           </div>
         </section>
       </main>
-      <Footer note={content.footer_note} />
+      <Footer />
     </div>
   );
 }

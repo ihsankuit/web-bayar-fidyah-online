@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/site/logo";
 
-export function Footer({ note }: { note?: string }) {
+export function Footer() {
   return (
     <footer className="border-t border-border/60 bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 py-12">
