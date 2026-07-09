@@ -21,7 +21,7 @@ import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PaymentsChart } from "@/components/admin/payments-chart";
-import { buildMonthlySeries } from "@/lib/stats";
+import { buildMonthlySeries, buildSourceBreakdown } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +42,8 @@ export default async function DashboardPage() {
   const totalPaidSen = paid.reduce((sum, d) => sum + d.amount_sen, 0);
   const uniquePayers = new Set(paid.map((d) => d.payer_email)).size;
   const monthlySeries = buildMonthlySeries(rows, 6);
+  const sources = buildSourceBreakdown(rows);
+  const maxSourceTotal = Math.max(1, ...sources.map((s) => s.total));
 
   const stats = [
     {
@@ -95,6 +97,44 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           <PaymentsChart data={monthlySeries} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sumber Pembayaran</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Sumbangan berjaya mengikut utm_source (kempen/iklan). &quot;Direct&quot;
+            bermaksud tiada tag UTM (pelawat terus ke laman).
+          </p>
+        </CardHeader>
+        <CardContent>
+          {sources.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Belum ada sumbangan berjaya untuk dipaparkan.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {sources.map((s) => (
+                <div key={s.source} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{s.source}</span>
+                    <span className="text-muted-foreground">
+                      {formatMYR(s.total)} · {s.count} bayaran
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div
+                      className="h-2 rounded-full bg-primary"
+                      style={{
+                        width: `${(s.total / maxSourceTotal) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

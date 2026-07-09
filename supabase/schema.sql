@@ -27,7 +27,12 @@ create table if not exists public.donations (
   status         text not null default 'pending'
                    check (status in ('pending', 'paid', 'failed')),
   paid_at        timestamptz,
-  created_at     timestamptz not null default now()
+  created_at     timestamptz not null default now(),
+  utm_source     text,
+  utm_medium     text,
+  utm_campaign   text,
+  utm_term       text,
+  utm_content    text
 );
 
 create index if not exists donations_status_idx on public.donations (status);
@@ -49,6 +54,18 @@ begin
 exception
   when duplicate_object then null;
 end $$;
+
+-- ---------------------------------------------------------------------
+--  UTM attribution (campaign tracking).
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists utm_source text;
+alter table public.donations add column if not exists utm_medium text;
+alter table public.donations add column if not exists utm_campaign text;
+alter table public.donations add column if not exists utm_term text;
+alter table public.donations add column if not exists utm_content text;
+
+create index if not exists donations_utm_source_idx on public.donations (utm_source);
 
 -- ---------------------------------------------------------------------
 --  Blog posts

@@ -16,6 +16,11 @@ const schema = z.object({
   multiplier: z.number().int().min(1).max(20),
   message: z.string().trim().max(500).optional().default(""),
   method: z.enum(["fpx", "qr"]).optional().default("fpx"),
+  utm_source: z.string().trim().max(100).optional().default(""),
+  utm_medium: z.string().trim().max(100).optional().default(""),
+  utm_campaign: z.string().trim().max(100).optional().default(""),
+  utm_term: z.string().trim().max(100).optional().default(""),
+  utm_content: z.string().trim().max(100).optional().default(""),
 });
 
 function makeReference(): string {
@@ -98,6 +103,11 @@ export async function POST(request: Request) {
       amount_sen: calc.totalSen,
       message: input.message || null,
       status: "pending",
+      utm_source: input.utm_source || null,
+      utm_medium: input.utm_medium || null,
+      utm_campaign: input.utm_campaign || null,
+      utm_term: input.utm_term || null,
+      utm_content: input.utm_content || null,
     })
     .select()
     .single();
