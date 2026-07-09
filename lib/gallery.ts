@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/public";
 import type { GalleryItem } from "@/lib/database.types";
 
 /** Fetch gallery items ordered for display. Returns [] on any failure. */
 export async function getGalleryItems(): Promise<GalleryItem[]> {
   try {
-    const supabase = await createClient();
+    const supabase = createClient();
     const { data } = await supabase
       .from("gallery_items")
       .select("*")

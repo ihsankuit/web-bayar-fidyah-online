@@ -6,11 +6,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except static assets and the CHIP API
-     * callbacks (which are authenticated by X-Signature, not a session).
-     */
-    "/((?!_next/static|_next/image|favicon.ico|api/chip|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  // Only /admin needs session awareness (auth guard + login redirect). Public
+  // pages don't, so scoping the matcher here avoids a Supabase Auth network
+  // round-trip on every public page view.
+  matcher: ["/admin/:path*"],
 };
