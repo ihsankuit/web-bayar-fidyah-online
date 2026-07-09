@@ -11,7 +11,7 @@ export function Footer() {
               <Logo size="md" />
             </Link>
             <p className="text-sm text-muted-foreground">
-              Platform pembayaran fidyah yang dikuarakan oleh Pertubuhan
+              Platform pembayaran fidyah yang dikuasakan oleh Pertubuhan
               Ihsanku Malaysia. Setiap fidyah disalurkan kepada projek Dapur
               Ihsan untuk golongan asnaf dan fakir miskin di Malaysia dan luar
               negara.
