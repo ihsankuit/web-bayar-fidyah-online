@@ -51,6 +51,26 @@ export const DEFAULT_LANDING: LandingContent = {
       answer:
         "Boleh. Anda boleh membayar fidyah bagi pihak ahli keluarga atau si mati. Nyatakan nama dan butiran pada borang pembayaran.",
     },
+    {
+      question: "Berapakah kadar fidyah di Malaysia?",
+      answer:
+        "Kadar fidyah di Malaysia ditetapkan oleh pihak berkuasa agama negeri berdasarkan harga secupak beras (700 gram) makanan asasi. Nilai semasa ialah RM4.00 sehari. Sila rujuk pejabat agama negeri masing-masing untuk pengesahan rasmi.",
+    },
+    {
+      question: "Bagaimana cara mengira fidyah puasa Ramadan?",
+      answer:
+        "Cara kira fidyah puasa Ramadan adalah mudah: kalikan bilangan hari yang ditinggalkan dengan kadar fidyah Malaysia (RM4.00 sehari). Jika qada' dilewatkan melepasi Ramadan berikutnya, tambah gandaan mengikut bilangan tahun yang ditinggalkan. Gunakan kalkulator fidyah di laman ini untuk pengiraan automatik.",
+    },
+    {
+      question: "Adakah fidyah dan qada' perlu dibayar sekali gus?",
+      answer:
+        "Bagi mereka yang melewatkan qada' puasa sehingga masuk Ramadan berikutnya, kedua-dua qada' dan fidyah wajib ditunaikan. Qada' ialah menggantikan puasa yang ditinggalkan, manakala fidyah ialah denda makanan asasi bagi setiap hari yang dilewatkan.",
+    },
+    {
+      question: "Bolehkah waris membayar fidyah bagi pihak si mati?",
+      answer:
+        "Boleh. Waris dibenarkan membayar fidyah bagi pihak si mati yang meninggalkan puasa dan tidak sempat mengqada'. Ini adalah tanggungan hutang si mati yang perlu diselesaikan oleh waris.",
+    },
   ],
   footer_note:
     "Platform ini memudahkan pembayaran fidyah secara dalam talian. Sila rujuk pihak berkuasa agama negeri masing-masing untuk kadar rasmi terkini.",

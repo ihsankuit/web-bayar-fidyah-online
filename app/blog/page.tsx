@@ -10,11 +10,17 @@ import type { BlogPost } from "@/lib/database.types";
 import { formatDateOnly } from "@/lib/utils";
 
 export const metadata = {
-  title: "Blog",
-  description: "Artikel dan panduan berkaitan fidyah, puasa dan ibadah.",
+  title: "Blog — Panduan Fidyah, Puasa & Ibadah",
+  description:
+    "Artikel, panduan dan info terkini berkaitan fidyah puasa Ramadan, hukum fidyah, cara kira fidyah, dan ibadah di Malaysia.",
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
 export const revalidate = 60;
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
 export default async function BlogIndexPage() {
   let posts: BlogPost[] = [];
@@ -32,6 +38,29 @@ export default async function BlogIndexPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Laman Utama",
+                item: siteUrl,
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Blog",
+                item: `${siteUrl}/blog`,
+              },
+            ],
+          }).replace(/</g, "\\u003c"),
+        }}
+      />
       <Navbar />
       <main className="flex-1">
         <div className="mx-auto max-w-5xl px-4 py-16">

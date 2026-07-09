@@ -12,6 +12,8 @@ import { formatDateOnly } from "@/lib/utils";
 
 export const revalidate = 60;
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
+
 async function getPost(slug: string): Promise<BlogPost | null> {
   try {
     const supabase = await createClient();
@@ -38,6 +40,16 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.excerpt ?? undefined,
+    alternates: {
+      canonical: `/blog/${post.slug}`,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      type: "article",
+      url: `${siteUrl}/blog/${post.slug}`,
+      ...(post.cover_image ? { images: [post.cover_image] } : {}),
+    },
   };
 }
 
@@ -50,8 +62,69 @@ export default async function BlogPostPage({
   const post = await getPost(slug);
   if (!post) notFound();
 
+  const postUrl = `${siteUrl}/blog/${post.slug}`;
+
+  // JSON-LD: Article schema
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt ?? undefined,
+    url: postUrl,
+    datePublished: post.published_at ?? undefined,
+    dateModified: post.updated_at,
+    author: post.author
+      ? { "@type": "Person", name: post.author }
+      : { "@type": "Organization", name: "Bayar Fidyah Online" },
+    publisher: {
+      "@type": "Organization",
+      name: "Bayar Fidyah Online",
+      url: siteUrl,
+    },
+    ...(post.cover_image ? { image: post.cover_image } : {}),
+    inLanguage: "ms",
+  };
+
+  // JSON-LD: BreadcrumbList schema
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Laman Utama",
+        item: siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${siteUrl}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: post.title,
+        item: postUrl,
+      },
+    ],
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(articleJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <Navbar />
       <main className="flex-1">
         <article className="mx-auto max-w-3xl px-4 py-16">

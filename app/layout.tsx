@@ -9,29 +9,66 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyah.online";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Bayar Fidyah Online — Tunaikan Fidyah Anda dengan Mudah",
+    default: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
     template: "%s | Bayar Fidyah Online",
   },
   description:
-    "Selesaikan tanggungan fidyah puasa anda dalam beberapa minit. Kiraan automatik, pembayaran selamat melalui FPX & kad, resit terus ke emel.",
+    "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel. Bayar dalam 3 minit — kadar RM4.00 sehari.",
   keywords: [
     "fidyah",
     "bayar fidyah",
     "fidyah online",
     "fidyah puasa",
     "kalkulator fidyah",
+    "fidyah Malaysia",
+    "cara bayar fidyah",
+    "kadar fidyah Malaysia",
+    "hukum fidyah puasa",
+    "qada fidyah",
   ],
+  authors: [{ name: "Bayar Fidyah Online" }],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    title: "Bayar Fidyah Online",
+    title: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
     description:
-      "Tunaikan fidyah puasa anda dengan mudah dan selamat secara dalam talian.",
+      "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel. Bayar dalam 3 minit.",
     type: "website",
     locale: "ms_MY",
+    url: siteUrl,
+    siteName: "Bayar Fidyah Online",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
+    description:
+      "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel.",
+    images: ["/og-image.png"],
   },
 };
 
@@ -42,6 +79,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ms" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://www.billplz.com" />
+        <link rel="dns-prefetch" href="https://www.billplz.com" />
+      </head>
       <body className={`${jakarta.variable} font-sans antialiased`}>
         {children}
         <Toaster richColors position="top-center" />

@@ -30,14 +30,58 @@ import { getLandingContent } from "@/lib/settings";
 import { getGalleryItems } from "@/lib/gallery";
 import { formatMYR } from "@/lib/utils";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
+
 export default async function HomePage() {
   const [content, gallery] = await Promise.all([
     getLandingContent(),
     getGalleryItems(),
   ]);
 
+  // JSON-LD: WebSite schema
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Bayar Fidyah Online",
+    url: siteUrl,
+    description:
+      "Platform pembayaran fidyah puasa Ramadan secara dalam talian di Malaysia.",
+    inLanguage: "ms",
+    publisher: {
+      "@type": "Organization",
+      name: "Bayar Fidyah Online",
+      url: siteUrl,
+    },
+  };
+
+  // JSON-LD: FAQPage schema
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: content.faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <Navbar />
       <main className="flex-1">
         {/* Hero */}
@@ -95,16 +139,19 @@ export default async function HomePage() {
               icon={<ShieldCheck className="h-5 w-5" />}
               title="Selamat & Dipercayai"
               desc="Pembayaran melalui gerbang Billplz yang menyokong FPX & kad."
+              as="h2"
             />
             <Feature
               icon={<Receipt className="h-5 w-5" />}
               title="Resit Automatik"
               desc="Resit rasmi dihantar terus ke emel anda selepas pembayaran."
+              as="h2"
             />
             <Feature
               icon={<Wallet className="h-5 w-5" />}
               title="Kiraan Tepat"
               desc="Kalkulator automatik mengikut hari & gandaan qada'."
+              as="h2"
             />
           </div>
         </section>
@@ -124,6 +171,13 @@ export default async function HomePage() {
                     {renderBold(para)}
                   </p>
                 ))}
+              <p className="text-pretty">
+                Hukum fidyah puasa Ramadan adalah wajib ke atas umat Islam di
+                Malaysia yang meninggalkan puasa atas sebab-sebab yang dibenarkan
+                syarak. Pembayaran fidyah boleh dibuat secara dalam talian
+                melalui platform ini dengan kiraan automatik mengikut kadar
+                fidyah Malaysia semasa.
+              </p>
             </div>
 
             <figure className="mt-10 rounded-2xl border bg-card p-8 shadow-sm">
@@ -222,6 +276,15 @@ export default async function HomePage() {
                 {renderBold(
                   "Kadar bayaran fidyah ialah sebanyak **secupak atau 700 gram makanan asasi** seperti beras, iaitu bayaran untuk 1 hari puasa yang ditinggalkan."
                 )}
+              </p>
+              <p className="mt-3 text-muted-foreground">
+                Kadar fidyah di Malaysia ditetapkan berdasarkan harga secupak
+                beras makanan asasi. Nilai semasa ialah{" "}
+                <strong className="text-foreground">
+                  {formatMYR(content.fidyah_rate_sen)} sehari
+                </strong>{" "}
+                mengikut kadar piawai kebangsaan. Rujuk pihak berkuasa agama
+                negeri masing-masing untuk pengesahan rasmi.
               </p>
             </div>
 
@@ -416,18 +479,21 @@ function Feature({
   icon,
   title,
   desc,
+  as = "h3",
 }: {
   icon: React.ReactNode;
   title: string;
   desc: string;
+  as?: "h2" | "h3" | "h4";
 }) {
+  const Tag = as;
   return (
     <div className="flex gap-4">
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         {icon}
       </div>
       <div>
-        <h3 className="font-semibold">{title}</h3>
+        <Tag className="font-semibold">{title}</Tag>
         <p className="text-sm text-muted-foreground">{desc}</p>
       </div>
     </div>
