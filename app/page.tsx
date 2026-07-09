@@ -278,13 +278,12 @@ export default async function HomePage() {
                 )}
               </p>
               <p className="mt-3 text-muted-foreground">
-                Kadar fidyah di Malaysia ditetapkan berdasarkan harga secupak
-                beras makanan asasi. Nilai semasa ialah{" "}
+                Nilai semasa ialah{" "}
                 <strong className="text-foreground">
                   {formatMYR(content.fidyah_rate_sen)} sehari
                 </strong>{" "}
-                mengikut kadar piawai kebangsaan. Rujuk pihak berkuasa agama
-                negeri masing-masing untuk pengesahan rasmi.
+                mengikut kadar piawai kebangsaan. Sila rujuk pihak berkuasa
+                agama negeri masing-masing untuk pengesahan rasmi.
               </p>
             </div>
 
