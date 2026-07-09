@@ -15,7 +15,6 @@ const schema = z.object({
   days: z.number().int().min(1).max(365),
   multiplier: z.number().int().min(1).max(20),
   message: z.string().trim().max(500).optional().default(""),
-  method: z.enum(["fpx", "qr"]).optional().default("fpx"),
   utm_source: z.string().trim().max(100).optional().default(""),
   utm_medium: z.string().trim().max(100).optional().default(""),
   utm_campaign: z.string().trim().max(100).optional().default(""),
@@ -64,13 +63,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (input.method === "qr" && !content.qr_image_url) {
-    return NextResponse.json(
-      { error: "Kaedah bayaran QR belum dikonfigurasi. Sila hubungi pentadbir." },
-      { status: 503 }
-    );
-  }
-
   const reference = makeReference();
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ??
@@ -91,7 +83,6 @@ export async function POST(request: Request) {
     .from("donations")
     .insert({
       reference,
-      payment_method: input.method,
       payer_name: input.name,
       payer_email: input.email,
       payer_phone: input.phone || null,
@@ -120,23 +111,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 2a. Manual QR/DuitNow: no gateway involved — hand back the QR details and
-  // wait for an admin to confirm the transfer manually.
-  if (input.method === "qr") {
-    return NextResponse.json({
-      method: "qr",
-      reference,
-      amountSen: calc.totalSen,
-      qr: {
-        imageUrl: content.qr_image_url,
-        bankName: content.qr_bank_name,
-        accountName: content.qr_account_name,
-        accountNumber: content.qr_account_number,
-      },
-    });
-  }
-
-  // 2b. FPX/card via CHIP.
+  // 2. FPX/card/QR via CHIP.
   try {
     const encodedRef = encodeURIComponent(reference);
     const purchase = await createPurchase({
@@ -156,11 +131,7 @@ export async function POST(request: Request) {
       .update({ chip_purchase_id: purchase.id })
       .eq("id", donation.id);
 
-    return NextResponse.json({
-      method: "fpx",
-      url: purchase.checkout_url,
-      reference,
-    });
+    return NextResponse.json({ url: purchase.checkout_url, reference });
   } catch (err) {
     console.error("[fidyah/create] chip failed:", err);
     await supabase

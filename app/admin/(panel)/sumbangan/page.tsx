@@ -22,7 +22,6 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { confirmDonationPaid } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -115,11 +114,9 @@ export default async function SumbanganPage({
                   <TableHead>Kategori</TableHead>
                   <TableHead>Hari</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
-                  <TableHead>Kaedah</TableHead>
                   <TableHead>Sumber</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Tarikh</TableHead>
-                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -143,9 +140,6 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatMYR(d.amount_sen)}
-                    </TableCell>
-                    <TableCell className="text-sm uppercase text-muted-foreground">
-                      {d.payment_method || "fpx"}
                     </TableCell>
                     <TableCell className="text-sm">
                       {d.utm_source ? (
@@ -171,16 +165,6 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(d.created_at)}
-                    </TableCell>
-                    <TableCell>
-                      {d.status !== "paid" && (
-                        <form action={confirmDonationPaid}>
-                          <input type="hidden" name="id" value={d.id} />
-                          <Button type="submit" size="sm" variant="outline">
-                            Tandakan Dibayar
-                          </Button>
-                        </form>
-                      )}
                     </TableCell>
                   </TableRow>
                 ))}

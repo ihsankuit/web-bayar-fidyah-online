@@ -12,8 +12,6 @@ create table if not exists public.donations (
   id             uuid primary key default gen_random_uuid(),
   reference      text not null unique,
   chip_purchase_id text,
-  payment_method text not null default 'fpx'
-                   check (payment_method in ('fpx', 'qr')),
   payer_name     text not null,
   payer_email    text not null,
   payer_phone    text,
@@ -61,20 +59,12 @@ end $$;
 alter table public.donations add column if not exists chip_purchase_id text;
 
 -- ---------------------------------------------------------------------
---  Manual QR (DuitNow / bank transfer) donations.
---  Run this block if upgrading an existing database.
+--  Removes the manual QR / DuitNow payment method (superseded by CHIP,
+--  which already supports QR natively). Safe to run even if the
+--  payment_method column/constraint were never added.
 -- ---------------------------------------------------------------------
-alter table public.donations
-  add column if not exists payment_method text not null default 'fpx';
-
-do $$
-begin
-  alter table public.donations
-    add constraint donations_payment_method_check
-    check (payment_method in ('fpx', 'qr'));
-exception
-  when duplicate_object then null;
-end $$;
+alter table public.donations drop constraint if exists donations_payment_method_check;
+alter table public.donations drop column if exists payment_method;
 
 -- ---------------------------------------------------------------------
 --  UTM attribution (campaign tracking).

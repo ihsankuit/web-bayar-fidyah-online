@@ -71,12 +71,6 @@ export async function saveLanding(
     faqs,
     footer_note:
       (formData.get("footer_note") as string) || DEFAULT_LANDING.footer_note,
-    qr_image_url: ((formData.get("qr_image_url") as string) || "").trim(),
-    qr_bank_name: ((formData.get("qr_bank_name") as string) || "").trim(),
-    qr_account_name:
-      ((formData.get("qr_account_name") as string) || "").trim(),
-    qr_account_number:
-      ((formData.get("qr_account_number") as string) || "").trim(),
   };
 
   const { error } = await supabase
