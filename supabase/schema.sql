@@ -32,11 +32,12 @@ create table if not exists public.donations (
 
 create index if not exists donations_status_idx on public.donations (status);
 create index if not exists donations_created_at_idx on public.donations (created_at desc);
-create index if not exists donations_chip_purchase_idx on public.donations (chip_purchase_id);
 
 -- ---------------------------------------------------------------------
 --  CHIP payment gateway (replaces Billplz).
---  Run this block if upgrading an existing database.
+--  Run this block if upgrading an existing database. Must run before the
+--  chip_purchase_id index below, since the column may not exist yet on an
+--  existing table (rename happens here first).
 -- ---------------------------------------------------------------------
 do $$
 begin
@@ -54,6 +55,8 @@ begin
 end $$;
 
 alter table public.donations add column if not exists chip_purchase_id text;
+
+create index if not exists donations_chip_purchase_idx on public.donations (chip_purchase_id);
 
 -- ---------------------------------------------------------------------
 --  Manual QR (DuitNow / bank transfer) donations.
