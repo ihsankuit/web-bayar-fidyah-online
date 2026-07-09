@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { CheckCircle2, XCircle, HelpCircle, Clock } from "lucide-react";
 
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
@@ -14,27 +14,30 @@ export const dynamic = "force-dynamic";
 export default async function StatusPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; bill?: string }>;
+  searchParams: Promise<{ status?: string; bill?: string; ref?: string }>;
 }) {
-  const { status = "unknown", bill } = await searchParams;
+  const { status: statusParam = "unknown", bill, ref } = await searchParams;
 
   let donation: Donation | null = null;
-  if (bill) {
+  if (bill || ref) {
     try {
       const supabase = createAdminClient();
-      const { data } = await supabase
-        .from("donations")
-        .select("*")
-        .eq("billplz_bill_id", bill)
-        .maybeSingle<Donation>();
+      const query = supabase.from("donations").select("*");
+      const { data } = bill
+        ? await query.eq("billplz_bill_id", bill).maybeSingle<Donation>()
+        : await query.eq("reference", ref!).maybeSingle<Donation>();
       donation = data ?? null;
     } catch {
       // ignore
     }
   }
 
-  const paid = status === "paid";
-  const failed = status === "failed";
+  // The donation row (confirmed by webhook or admin) is the source of truth.
+  // The `status` query param is only a fallback for the no-lookup edge case.
+  const effectiveStatus = donation ? donation.status : statusParam;
+  const paid = effectiveStatus === "paid";
+  const failed = effectiveStatus === "failed";
+  const pending = donation ? effectiveStatus === "pending" : false;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -45,6 +48,8 @@ export default async function StatusPage({
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full">
               {paid ? (
                 <CheckCircle2 className="h-16 w-16 text-primary" />
+              ) : pending ? (
+                <Clock className="h-16 w-16 text-muted-foreground" />
               ) : failed ? (
                 <XCircle className="h-16 w-16 text-destructive" />
               ) : (
@@ -55,17 +60,21 @@ export default async function StatusPage({
             <h1 className="text-2xl font-bold">
               {paid
                 ? "Pembayaran Berjaya!"
-                : failed
-                  ? "Pembayaran Tidak Berjaya"
-                  : "Status Tidak Diketahui"}
+                : pending
+                  ? "Menunggu Pengesahan"
+                  : failed
+                    ? "Pembayaran Tidak Berjaya"
+                    : "Status Tidak Diketahui"}
             </h1>
 
             <p className="text-muted-foreground">
               {paid
                 ? "Terima kasih. Fidyah anda telah diterima dan resit rasmi telah dihantar ke emel anda."
-                : failed
-                  ? "Pembayaran anda tidak dapat diproses. Anda boleh cuba semula."
-                  : "Kami tidak dapat mengesahkan status pembayaran anda."}
+                : pending
+                  ? "Terima kasih. Bayaran anda sedang disemak oleh pentadbir dan akan disahkan tidak lama lagi. Resit akan dihantar ke emel anda sebaik pengesahan selesai."
+                  : failed
+                    ? "Pembayaran anda tidak dapat diproses. Anda boleh cuba semula."
+                    : "Kami tidak dapat mengesahkan status pembayaran anda."}
             </p>
 
             {donation && (
@@ -79,7 +88,7 @@ export default async function StatusPage({
             )}
 
             <div className="flex flex-col gap-2 pt-2">
-              {paid ? (
+              {paid || pending ? (
                 <Button asChild>
                   <Link href="/">Kembali ke Laman Utama</Link>
                 </Button>

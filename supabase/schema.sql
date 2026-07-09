@@ -12,6 +12,8 @@ create table if not exists public.donations (
   id             uuid primary key default gen_random_uuid(),
   reference      text not null unique,
   billplz_bill_id text,
+  payment_method text not null default 'fpx'
+                   check (payment_method in ('fpx', 'qr')),
   payer_name     text not null,
   payer_email    text not null,
   payer_phone    text,
@@ -31,6 +33,22 @@ create table if not exists public.donations (
 create index if not exists donations_status_idx on public.donations (status);
 create index if not exists donations_created_at_idx on public.donations (created_at desc);
 create index if not exists donations_billplz_idx on public.donations (billplz_bill_id);
+
+-- ---------------------------------------------------------------------
+--  Manual QR (DuitNow / bank transfer) donations.
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations
+  add column if not exists payment_method text not null default 'fpx';
+
+do $$
+begin
+  alter table public.donations
+    add constraint donations_payment_method_check
+    check (payment_method in ('fpx', 'qr'));
+exception
+  when duplicate_object then null;
+end $$;
 
 -- ---------------------------------------------------------------------
 --  Blog posts

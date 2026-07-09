@@ -51,3 +51,34 @@ export async function settleDonationByBill(
 
   return donation;
 }
+
+/**
+ * Manually confirm a donation as paid (admin action) — used for the QR /
+ * bank-transfer flow, which has no gateway webhook. Idempotent: a no-op if
+ * already paid. Sends the receipt on the first confirmation.
+ */
+export async function markDonationPaid(
+  donationId: string
+): Promise<Donation | null> {
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("donations")
+    .select("*")
+    .eq("id", donationId)
+    .maybeSingle<Donation>();
+
+  if (!existing) return null;
+  if (existing.status === "paid") return existing;
+
+  const { data: updated } = await supabase
+    .from("donations")
+    .update({ status: "paid", paid_at: new Date().toISOString() })
+    .eq("id", donationId)
+    .select()
+    .single<Donation>();
+
+  const donation = updated ?? existing;
+  await sendReceiptEmail(donation);
+  return donation;
+}
