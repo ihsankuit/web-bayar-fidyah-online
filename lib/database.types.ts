@@ -6,12 +6,14 @@
  */
 
 export type DonationStatus = "pending" | "paid" | "failed";
+export type PaymentMethod = "fpx" | "qr";
 export type PostStatus = "draft" | "published";
 
 export interface Donation {
   id: string;
   reference: string;
   billplz_bill_id: string | null;
+  payment_method: PaymentMethod;
   payer_name: string;
   payer_email: string;
   payer_phone: string | null;
@@ -87,4 +89,9 @@ export interface LandingContent {
   stats: { label: string; value: string }[];
   faqs: { question: string; answer: string }[];
   footer_note: string;
+  /** Manual QR / DuitNow bank transfer details, shown when a payer picks the QR method. */
+  qr_image_url: string;
+  qr_bank_name: string;
+  qr_account_name: string;
+  qr_account_number: string;
 }
