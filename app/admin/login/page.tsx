@@ -35,8 +35,19 @@ function LoginForm() {
         password,
       });
       if (error) throw error;
+
+      const { data: aal } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const needsMfa =
+        aal && aal.nextLevel === "aal2" && aal.currentLevel !== aal.nextLevel;
+
       toast.success("Berjaya log masuk.");
-      router.replace(safeNext(search.get("next")));
+      if (needsMfa) {
+        const next = safeNext(search.get("next"));
+        router.replace(`/admin/mfa?next=${encodeURIComponent(next)}`);
+      } else {
+        router.replace(safeNext(search.get("next")));
+      }
       router.refresh();
     } catch (err) {
       toast.error(

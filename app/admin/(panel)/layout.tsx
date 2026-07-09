@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { needsMfaChallenge } from "@/lib/supabase/mfa";
 import { Sidebar } from "@/components/admin/sidebar";
 
 export default async function PanelLayout({
@@ -8,8 +9,9 @@ export default async function PanelLayout({
   children: React.ReactNode;
 }) {
   let user = null;
+  let supabase;
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
@@ -20,6 +22,7 @@ export default async function PanelLayout({
   }
 
   if (!user) redirect("/admin/login");
+  if (await needsMfaChallenge(supabase)) redirect("/admin/mfa");
 
   return (
     <div className="flex min-h-screen bg-muted/20">
