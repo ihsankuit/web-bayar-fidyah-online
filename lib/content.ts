@@ -73,5 +73,5 @@ export const DEFAULT_LANDING: LandingContent = {
     },
   ],
   footer_note:
-    "Platform ini memudahkan pembayaran fidyah secara dalam talian. Sila rujuk pihak berkuasa agama negeri masing-masing untuk kadar rasmi terkini.",
+    "Platform pembayaran fidyah yang dikuarakan oleh Pertubuhan Ihsanku Malaysia. Setiap fidyah disalurkan kepada projek Dapur Ihsan untuk golongan asnaf dan fakir miskin di Malaysia dan luar negara.",
 };

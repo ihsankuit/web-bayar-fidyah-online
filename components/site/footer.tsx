@@ -6,13 +6,15 @@ export function Footer({ note }: { note?: string }) {
     <footer className="border-t border-border/60 bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col gap-8 md:flex-row md:justify-between">
-          <div className="max-w-sm space-y-3">
+          <div className="max-w-sm space-y-4">
             <Link href="/" aria-label="ihsanku">
-              <Logo size="sm" />
+              <Logo size="md" />
             </Link>
             <p className="text-sm text-muted-foreground">
-              {note ??
-                "Platform pembayaran fidyah secara dalam talian yang mudah, pantas dan selamat."}
+              Platform pembayaran fidyah yang dikuarakan oleh Pertubuhan
+              Ihsanku Malaysia. Setiap fidyah disalurkan kepada projek Dapur
+              Ihsan untuk golongan asnaf dan fakir miskin di Malaysia dan luar
+              negara.
             </p>
           </div>
 

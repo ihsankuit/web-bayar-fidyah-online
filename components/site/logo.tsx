@@ -39,7 +39,7 @@ export function Logo({
   size = "md",
   className,
 }: {
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   className?: string;
 }) {
   return (
@@ -47,7 +47,11 @@ export function Logo({
     <img
       src="/logo-ihsanku.svg"
       alt="ihsanku"
-      className={cn("w-auto", size === "sm" ? "h-7" : "h-9", className)}
+      className={cn(
+        "w-auto",
+        size === "sm" ? "h-7" : size === "lg" ? "h-12" : "h-9",
+        className
+      )}
     />
   );
 }
