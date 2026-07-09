@@ -35,11 +35,12 @@ create table if not exists public.donations (
 
 create index if not exists donations_status_idx on public.donations (status);
 create index if not exists donations_created_at_idx on public.donations (created_at desc);
-create index if not exists donations_chip_purchase_idx on public.donations (chip_purchase_id);
 
 -- ---------------------------------------------------------------------
 --  CHIP payment gateway (replaces Billplz).
---  Run this block if upgrading an existing database.
+--  Run this block if upgrading an existing database. Must run before the
+--  chip_purchase_id index below, since the column may not exist yet on an
+--  existing table (rename happens here first).
 -- ---------------------------------------------------------------------
 do $$
 begin
@@ -57,6 +58,8 @@ begin
 end $$;
 
 alter table public.donations add column if not exists chip_purchase_id text;
+
+create index if not exists donations_chip_purchase_idx on public.donations (chip_purchase_id);
 
 -- ---------------------------------------------------------------------
 --  Removes the manual QR / DuitNow payment method (superseded by CHIP,
@@ -242,4 +245,25 @@ create policy gallery_public_read on public.gallery_items
 
 drop policy if exists gallery_admin_all on public.gallery_items;
 create policy gallery_admin_all on public.gallery_items
+  for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+--  Admin activity log (audit trail for sensitive admin actions)
+--  Run this block if upgrading an existing database.
+-- =====================================================================
+create table if not exists public.admin_activity_log (
+  id         uuid primary key default gen_random_uuid(),
+  actor      text not null,
+  action     text not null,
+  details    jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists admin_activity_log_created_at_idx
+  on public.admin_activity_log (created_at desc);
+
+alter table public.admin_activity_log enable row level security;
+
+drop policy if exists admin_activity_log_all on public.admin_activity_log;
+create policy admin_activity_log_all on public.admin_activity_log
   for all to authenticated using (true) with check (true);

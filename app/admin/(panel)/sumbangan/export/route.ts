@@ -75,7 +75,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Tidak dibenarkan." }, { status: 401 });
   }
 
-  const status = new URL(request.url).searchParams.get("status");
+  const params = new URL(request.url).searchParams;
+  const status = params.get("status");
+  const term = (params.get("q") ?? "").trim().replace(/[%,()]/g, "");
 
   let query = supabase
     .from("donations")
@@ -84,6 +86,11 @@ export async function GET(request: Request) {
 
   if (status && status !== "all") {
     query = query.eq("status", status as DonationStatus);
+  }
+  if (term) {
+    query = query.or(
+      `payer_name.ilike.%${term}%,payer_email.ilike.%${term}%,reference.ilike.%${term}%`
+    );
   }
 
   const { data } = await query;

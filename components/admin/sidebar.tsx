@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   FileText,
   GalleryHorizontalEnd,
+  History,
   Image as ImageIcon,
   LayoutDashboard,
   LogOut,
@@ -24,6 +25,7 @@ const nav = [
   { href: "/admin/galeri", label: "Galeri", icon: GalleryHorizontalEnd },
   { href: "/admin/media", label: "Media", icon: ImageIcon },
   { href: "/admin/laman", label: "Laman Utama", icon: PanelsTopLeft },
+  { href: "/admin/log", label: "Log Aktiviti", icon: History },
 ];
 
 export function Sidebar({ email }: { email: string }) {

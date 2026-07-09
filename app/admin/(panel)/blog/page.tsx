@@ -70,13 +70,19 @@ export default async function AdminBlogPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          post.status === "published" ? "success" : "secondary"
-                        }
-                      >
-                        {post.status === "published" ? "Diterbitkan" : "Draf"}
-                      </Badge>
+                      {post.status === "published" &&
+                      post.published_at &&
+                      new Date(post.published_at) > new Date() ? (
+                        <Badge variant="warning">Dijadualkan</Badge>
+                      ) : (
+                        <Badge
+                          variant={
+                            post.status === "published" ? "success" : "secondary"
+                          }
+                        >
+                          {post.status === "published" ? "Diterbitkan" : "Draf"}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatDate(post.updated_at)}

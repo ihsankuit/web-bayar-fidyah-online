@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { logActivity } from "@/lib/activity-log";
 
 const BUCKET = "media";
 
@@ -71,5 +72,6 @@ export async function deleteMedia(formData: FormData) {
 
   await supabase.storage.from(BUCKET).remove([path]);
   await supabase.from("media_assets").delete().eq("id", id);
+  await logActivity("media.delete", { path });
   revalidatePath("/admin/media");
 }

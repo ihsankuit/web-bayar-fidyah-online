@@ -22,6 +22,7 @@ async function getPost(slug: string): Promise<BlogPost | null> {
       .select("*")
       .eq("slug", slug)
       .eq("status", "published")
+      .lte("published_at", new Date().toISOString())
       .maybeSingle();
     return (data as BlogPost) ?? null;
   } catch {

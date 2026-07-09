@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { logActivity } from "@/lib/activity-log";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -34,11 +35,27 @@ export async function savePost(
   const status = (formData.get("status") as string) === "published"
     ? "published"
     : "draft";
+  const publishedAtInput = (formData.get("published_at") as string)?.trim();
 
   if (!title) return { error: "Tajuk diperlukan." };
 
   const slug = slugify(rawSlug || title);
   if (!slug) return { error: "Slug tidak sah." };
+
+  // A datetime-local value in the future schedules the post — it only
+  // becomes publicly visible once its published_at passes (see the public
+  // blog queries, which filter on published_at <= now()).
+  let publishedAt: string | null = null;
+  if (status === "published") {
+    if (publishedAtInput) {
+      const parsed = new Date(publishedAtInput);
+      publishedAt = Number.isNaN(parsed.getTime())
+        ? new Date().toISOString()
+        : parsed.toISOString();
+    } else {
+      publishedAt = new Date().toISOString();
+    }
+  }
 
   const payload = {
     title,
@@ -48,17 +65,23 @@ export async function savePost(
     cover_image,
     author,
     status,
-    published_at: status === "published" ? new Date().toISOString() : null,
+    published_at: publishedAt,
   };
 
   if (id) {
-    // Preserve original published_at when already published.
+    // Keep the original published_at when re-saving an already-published
+    // post without explicitly changing the date.
     const { data: existing } = await supabase
       .from("blog_posts")
       .select("published_at, status")
       .eq("id", id)
       .maybeSingle();
-    if (existing?.status === "published" && status === "published") {
+    if (
+      status === "published" &&
+      !publishedAtInput &&
+      existing?.status === "published" &&
+      existing.published_at
+    ) {
       payload.published_at = existing.published_at;
     }
     const { error } = await supabase
@@ -71,6 +94,12 @@ export async function savePost(
     if (error) return { error: error.message };
   }
 
+  await logActivity(status === "published" ? "blog.publish" : "blog.save_draft", {
+    slug,
+    title,
+    published_at: payload.published_at,
+  });
+
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
@@ -81,7 +110,13 @@ export async function deletePost(formData: FormData) {
   const supabase = await requireUser();
   const id = formData.get("id") as string;
   if (id) {
+    const { data: existing } = await supabase
+      .from("blog_posts")
+      .select("slug, title")
+      .eq("id", id)
+      .maybeSingle();
     await supabase.from("blog_posts").delete().eq("id", id);
+    await logActivity("blog.delete", existing ?? { id });
     revalidatePath("/admin/blog");
     revalidatePath("/blog");
   }
