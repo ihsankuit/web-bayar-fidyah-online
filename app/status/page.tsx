@@ -14,18 +14,19 @@ export const dynamic = "force-dynamic";
 export default async function StatusPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; bill?: string; ref?: string }>;
+  searchParams: Promise<{ status?: string; ref?: string }>;
 }) {
-  const { status: statusParam = "unknown", bill, ref } = await searchParams;
+  const { status: statusParam = "unknown", ref } = await searchParams;
 
   let donation: Donation | null = null;
-  if (bill || ref) {
+  if (ref) {
     try {
       const supabase = createAdminClient();
-      const query = supabase.from("donations").select("*");
-      const { data } = bill
-        ? await query.eq("billplz_bill_id", bill).maybeSingle<Donation>()
-        : await query.eq("reference", ref!).maybeSingle<Donation>();
+      const { data } = await supabase
+        .from("donations")
+        .select("*")
+        .eq("reference", ref)
+        .maybeSingle<Donation>();
       donation = data ?? null;
     } catch {
       // ignore

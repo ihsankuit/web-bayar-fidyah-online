@@ -8,9 +8,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except static assets and the Billplz API
+     * Match all request paths except static assets and the CHIP API
      * callbacks (which are authenticated by X-Signature, not a session).
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/billplz|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/chip|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

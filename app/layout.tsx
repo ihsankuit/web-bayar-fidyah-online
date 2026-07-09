@@ -80,8 +80,8 @@ export default function RootLayout({
   return (
     <html lang="ms" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://www.billplz.com" />
-        <link rel="dns-prefetch" href="https://www.billplz.com" />
+        <link rel="preconnect" href="https://gate.chip-in.asia" />
+        <link rel="dns-prefetch" href="https://gate.chip-in.asia" />
       </head>
       <body className={`${jakarta.variable} font-sans antialiased`}>
         {children}

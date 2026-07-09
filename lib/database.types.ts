@@ -12,7 +12,7 @@ export type PostStatus = "draft" | "published";
 export interface Donation {
   id: string;
   reference: string;
-  billplz_bill_id: string | null;
+  chip_purchase_id: string | null;
   payment_method: PaymentMethod;
   payer_name: string;
   payer_email: string;

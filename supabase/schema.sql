@@ -11,7 +11,7 @@ create extension if not exists "pgcrypto";
 create table if not exists public.donations (
   id             uuid primary key default gen_random_uuid(),
   reference      text not null unique,
-  billplz_bill_id text,
+  chip_purchase_id text,
   payment_method text not null default 'fpx'
                    check (payment_method in ('fpx', 'qr')),
   payer_name     text not null,
@@ -32,7 +32,28 @@ create table if not exists public.donations (
 
 create index if not exists donations_status_idx on public.donations (status);
 create index if not exists donations_created_at_idx on public.donations (created_at desc);
-create index if not exists donations_billplz_idx on public.donations (billplz_bill_id);
+create index if not exists donations_chip_purchase_idx on public.donations (chip_purchase_id);
+
+-- ---------------------------------------------------------------------
+--  CHIP payment gateway (replaces Billplz).
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'donations'
+      and column_name = 'billplz_bill_id'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'donations'
+      and column_name = 'chip_purchase_id'
+  ) then
+    alter table public.donations rename column billplz_bill_id to chip_purchase_id;
+  end if;
+end $$;
+
+alter table public.donations add column if not exists chip_purchase_id text;
 
 -- ---------------------------------------------------------------------
 --  Manual QR (DuitNow / bank transfer) donations.
