@@ -493,7 +493,7 @@ function Feature({
         {icon}
       </div>
       <div>
-        <Tag className="font-semibold">{title}</Tag>
+        <Tag className="text-base font-semibold">{title}</Tag>
         <p className="text-sm text-muted-foreground">{desc}</p>
       </div>
     </div>
