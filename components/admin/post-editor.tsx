@@ -12,7 +12,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Markdown } from "@/components/site/markdown";
 import { slugify } from "@/lib/utils";
+
+/** Format an ISO timestamp for a `datetime-local` input's value (local time). */
+function toDatetimeLocal(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -32,6 +45,8 @@ export function PostEditor({ post }: { post?: BlogPost }) {
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [slugEdited, setSlugEdited] = useState(Boolean(post?.slug));
+  const [content, setContent] = useState(post?.content ?? "");
+  const [status, setStatus] = useState(post?.status ?? "draft");
 
   useEffect(() => {
     if (state.error) toast.error(state.error);
@@ -81,13 +96,33 @@ export function PostEditor({ post }: { post?: BlogPost }) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="content">Kandungan (Markdown)</Label>
-              <Textarea
-                id="content"
-                name="content"
-                defaultValue={post?.content ?? ""}
-                className="min-h-[360px] font-mono text-sm"
-                placeholder={"## Tajuk\n\nTulis kandungan artikel di sini..."}
-              />
+              <Tabs defaultValue="write">
+                <TabsList>
+                  <TabsTrigger value="write">Tulis</TabsTrigger>
+                  <TabsTrigger value="preview">Pratonton</TabsTrigger>
+                </TabsList>
+                <TabsContent value="write">
+                  <Textarea
+                    id="content"
+                    name="content"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="min-h-[360px] font-mono text-sm"
+                    placeholder={"## Tajuk\n\nTulis kandungan artikel di sini..."}
+                  />
+                </TabsContent>
+                <TabsContent value="preview">
+                  <div className="min-h-[360px] rounded-md border border-input p-4">
+                    {content.trim() ? (
+                      <Markdown>{content}</Markdown>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Tiada kandungan untuk dipratonton lagi.
+                      </p>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </CardContent>
         </Card>
@@ -101,13 +136,31 @@ export function PostEditor({ post }: { post?: BlogPost }) {
               <select
                 id="status"
                 name="status"
-                defaultValue={post?.status ?? "draft"}
+                value={status}
+                onChange={(e) =>
+                  setStatus(e.target.value as "draft" | "published")
+                }
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="draft">Draf</option>
                 <option value="published">Diterbitkan</option>
               </select>
             </div>
+            {status === "published" && (
+              <div className="space-y-2">
+                <Label htmlFor="published_at">Tarikh & Masa Terbit</Label>
+                <Input
+                  id="published_at"
+                  name="published_at"
+                  type="datetime-local"
+                  defaultValue={toDatetimeLocal(post?.published_at)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Kosongkan untuk terbit sekarang. Tetapkan masa depan untuk
+                  jadualkan penerbitan.
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="author">Penulis</Label>
               <Input

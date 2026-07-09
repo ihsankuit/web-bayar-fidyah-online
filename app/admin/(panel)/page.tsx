@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Users, Clock, FileText } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  TrendingUp,
+  Users,
+  Clock,
+  FileText,
+} from "lucide-react";
 
 import {
   Card,
@@ -21,7 +29,12 @@ import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PaymentsChart } from "@/components/admin/payments-chart";
-import { buildMonthlySeries } from "@/lib/stats";
+import {
+  buildMonthlySeries,
+  buildBreakdown,
+  momChange,
+  type BreakdownItem,
+} from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
@@ -42,12 +55,25 @@ export default async function DashboardPage() {
   const totalPaidSen = paid.reduce((sum, d) => sum + d.amount_sen, 0);
   const uniquePayers = new Set(paid.map((d) => d.payer_email)).size;
   const monthlySeries = buildMonthlySeries(rows, 6);
+  const thisMonth = monthlySeries[monthlySeries.length - 1]?.total ?? 0;
+  const lastMonth = monthlySeries[monthlySeries.length - 2]?.total ?? 0;
+  const mom = momChange(thisMonth, lastMonth);
+
+  const categoryBreakdown = buildBreakdown(
+    rows,
+    (d) => getCategory(d.category)?.title ?? d.category
+  );
+  const negeriBreakdown = buildBreakdown(
+    rows,
+    (d) => d.negeri || "Tidak dinyatakan"
+  ).slice(0, 6);
 
   const stats = [
     {
       label: "Jumlah Terkumpul",
       value: formatMYR(totalPaidSen),
       icon: TrendingUp,
+      badge: mom,
     },
     { label: "Pembayar", value: String(uniquePayers), icon: Users },
     {
@@ -76,6 +102,20 @@ export default async function DashboardPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">{s.label}</p>
                   <p className="mt-1 text-2xl font-bold">{s.value}</p>
+                  {"badge" in s && s.badge !== null && s.badge !== undefined && (
+                    <p
+                      className={`mt-1 flex items-center gap-0.5 text-xs font-medium ${
+                        s.badge >= 0 ? "text-emerald-600" : "text-destructive"
+                      }`}
+                    >
+                      {s.badge >= 0 ? (
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowDownRight className="h-3.5 w-3.5" />
+                      )}
+                      {Math.abs(s.badge)}% berbanding bulan lepas
+                    </p>
+                  )}
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Icon className="h-5 w-5" />
@@ -97,6 +137,25 @@ export default async function DashboardPage() {
           <PaymentsChart data={monthlySeries} />
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mengikut Kategori</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BreakdownList items={categoryBreakdown} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Mengikut Negeri</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BreakdownList items={negeriBreakdown} />
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -156,6 +215,37 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function BreakdownList({ items }: { items: BreakdownItem[] }) {
+  if (items.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        Belum ada data.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {items.map((item) => (
+        <div key={item.label} className="space-y-1">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">{item.label}</span>
+            <span className="text-muted-foreground">
+              {formatMYR(item.totalSen)} · {item.count}
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${item.percent}%` }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

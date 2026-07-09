@@ -53,6 +53,14 @@ export interface MediaAsset {
   created_at: string;
 }
 
+export interface ActivityLogEntry {
+  id: string;
+  actor: string;
+  action: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
 export type GalleryType = "image" | "video";
 
 export interface GalleryItem {

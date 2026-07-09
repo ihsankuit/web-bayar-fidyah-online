@@ -30,6 +30,7 @@ export default async function BlogIndexPage() {
       .from("blog_posts")
       .select("*")
       .eq("status", "published")
+      .lte("published_at", new Date().toISOString())
       .order("published_at", { ascending: false });
     posts = (data as BlogPost[]) ?? [];
   } catch {
