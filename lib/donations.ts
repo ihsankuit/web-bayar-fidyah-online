@@ -23,6 +23,13 @@ export async function settleDonationByBill(
   if (!existing) return null;
 
   const alreadyPaid = existing.status === "paid";
+
+  // A confirmed payment must never be regressed back to failed by a later
+  // (possibly stale or replayed) callback/redirect.
+  if (alreadyPaid && !paid) {
+    return existing;
+  }
+
   const nextStatus = paid ? "paid" : "failed";
 
   const { data: updated } = await supabase
