@@ -39,7 +39,7 @@ export const DEFAULT_LANDING: LandingContent = {
     {
       question: "Adakah pembayaran ini selamat?",
       answer:
-        "Ya. Semua pembayaran diproses melalui gerbang pembayaran Billplz yang menyokong FPX perbankan internet dan kad kredit/debit. Kami tidak menyimpan maklumat kad anda.",
+        "Ya. Semua pembayaran diproses melalui gerbang pembayaran CHIP yang menyokong FPX perbankan internet dan kad kredit/debit. Kami tidak menyimpan maklumat kad anda.",
     },
     {
       question: "Adakah saya menerima resit?",

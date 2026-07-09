@@ -138,7 +138,7 @@ export default async function HomePage() {
             <Feature
               icon={<ShieldCheck className="h-5 w-5" />}
               title="Selamat & Dipercayai"
-              desc="Pembayaran melalui gerbang Billplz yang menyokong FPX & kad."
+              desc="Pembayaran melalui gerbang CHIP yang menyokong FPX & kad."
               as="h2"
             />
             <Feature

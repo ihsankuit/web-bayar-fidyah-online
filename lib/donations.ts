@@ -3,12 +3,12 @@ import { sendReceiptEmail } from "@/lib/resend";
 import type { Donation } from "@/lib/database.types";
 
 /**
- * Settle a donation by its Billplz bill id. Marks it paid/failed, and — on the
- * first transition to `paid` — sends the receipt email exactly once.
- * Returns the updated donation, or null if not found.
+ * Settle a donation by its (self-assigned) reference. Marks it paid/failed,
+ * and — on the first transition to `paid` — sends the receipt email exactly
+ * once. Returns the updated donation, or null if not found.
  */
-export async function settleDonationByBill(
-  billId: string,
+export async function settleDonationByReference(
+  reference: string,
   paid: boolean,
   paidAt: string | null
 ): Promise<Donation | null> {
@@ -17,7 +17,7 @@ export async function settleDonationByBill(
   const { data: existing } = await supabase
     .from("donations")
     .select("*")
-    .eq("billplz_bill_id", billId)
+    .eq("reference", reference)
     .maybeSingle<Donation>();
 
   if (!existing) return null;

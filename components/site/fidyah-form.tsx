@@ -279,7 +279,7 @@ export function FidyahForm({ rateSen }: { rateSen: number }) {
           <p className="text-center text-xs text-muted-foreground">
             {method === "qr"
               ? "Anda akan diminta mengimbas kod QR selepas menghantar borang ini."
-              : "Pembayaran diproses dengan selamat melalui Billplz (FPX & kad)."}
+              : "Pembayaran diproses dengan selamat melalui CHIP (FPX & kad)."}
           </p>
         </form>
       </CardContent>

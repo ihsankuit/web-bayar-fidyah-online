@@ -1,7 +1,7 @@
 # Bayar Fidyah Online
 
 Platform pembayaran fidyah puasa secara dalam talian — kalkulator automatik,
-pembayaran selamat melalui **Billplz** (FPX & kad), resit emel automatik
+pembayaran selamat melalui **CHIP** (FPX & kad), resit emel automatik
 melalui **Resend**, dan dashboard pentadbir untuk mengurus sumbangan, blog,
 media serta kandungan laman utama.
 
@@ -16,7 +16,7 @@ Dibina dengan **Next.js 16 (App Router)** + **TypeScript** + **Tailwind CSS v4**
 | Modul | Keterangan |
 | --- | --- |
 | **Laman utama** | Hero, kalkulator fidyah, kategori, langkah bayaran, FAQ — semua boleh diedit dari dashboard. |
-| **Pembayaran** | Kalkulator hari × kadar × gandaan qada', integrasi Billplz, pengesahan X-Signature. |
+| **Pembayaran** | Kalkulator hari × kadar × gandaan qada', integrasi CHIP, pengesahan X-Signature. |
 | **Resit emel** | Resit rasmi dihantar automatik melalui Resend selepas pembayaran berjaya. |
 | **Dashboard** | Statistik sumbangan, senarai pembayar, penapis status. |
 | **Blog** | CRUD artikel Markdown, draf/terbit, imej kulit. |
@@ -35,11 +35,11 @@ app/
     login/                  Log masuk pentadbir
     (panel)/                Kawasan dilindungi (dashboard, sumbangan, blog, media, laman)
   api/
-    fidyah/create/          Cipta rekod + bil Billplz
-    billplz/callback/       Webhook X-Signature (server-to-server)
-    billplz/redirect/       Redirect selepas bayaran (browser)
+    fidyah/create/          Cipta rekod + purchase CHIP
+    chip/callback/          Webhook X-Signature (server-to-server)
+    chip/redirect/          Redirect selepas bayaran (browser)
 components/                 UI (shadcn), site/, admin/
-lib/                        supabase/, billplz, resend, fidyah, settings, content
+lib/                        supabase/, chip, resend, fidyah, settings, content
 supabase/schema.sql         Skema DB + RLS + storage bucket
 proxy.ts                    Refresh sesi + lindung /admin
 ```
@@ -47,7 +47,7 @@ proxy.ts                    Refresh sesi + lindung /admin
 ## Prasyarat
 
 - Node.js 20+
-- Akaun [Supabase](https://supabase.com), [Billplz](https://www.billplz.com),
+- Akaun [Supabase](https://supabase.com), [CHIP](https://www.chip-in.asia),
   [Resend](https://resend.com), [Vercel](https://vercel.com) dan
   [Cloudflare](https://cloudflare.com).
 
@@ -63,7 +63,7 @@ Buka http://localhost:3000.
 
 > Tanpa pembolehubah persekitaran, laman utama & blog tetap dipaparkan
 > (menggunakan kandungan lalai), tetapi pembayaran dan dashboard memerlukan
-> Supabase & Billplz dikonfigurasi.
+> Supabase & CHIP dikonfigurasi.
 
 ## 2. Supabase
 
@@ -78,21 +78,22 @@ Buka http://localhost:3000.
 4. Cipta pengguna pentadbir di **Authentication → Users → Add user** (emel +
    kata laluan). Guna kredensial ini untuk log masuk di `/admin/login`.
 
-## 3. Billplz (gerbang pembayaran)
+## 3. CHIP (gerbang pembayaran)
 
-1. Di dashboard Billplz, cipta satu **Collection** untuk fidyah.
-2. Di **Settings → API keys**, salin:
-   - `Secret Key` → `BILLPLZ_API_KEY`
-   - `X Signature Key` → `BILLPLZ_X_SIGNATURE_KEY`
-   - `Collection ID` → `BILLPLZ_COLLECTION_ID`
-3. Untuk ujian, gunakan akaun [sandbox](https://www.billplz-sandbox.com) dan set
-   `BILLPLZ_SANDBOX=true`. Tukar ke `false` untuk pengeluaran.
+1. Di [Merchant Portal CHIP](https://gate.chip-in.asia), cipta satu **Brand**
+   untuk fidyah.
+2. Di **Developers**, salin:
+   - `Secret Key` → `CHIP_API_KEY`
+   - `Brand ID` → `CHIP_BRAND_ID`
+3. Untuk ujian, guna kelayakan akaun ujian CHIP (rujuk dashboard CHIP untuk
+   mod ujian) — API base URL boleh ditindih dengan `CHIP_BASE_URL` jika perlu.
 
 Aliran pembayaran:
-`/api/fidyah/create` → cipta rekod `pending` + bil Billplz → pengguna bayar →
-Billplz panggil `/api/billplz/callback` (webhook, sahkan X-Signature, tanda
-`paid`, hantar resit) dan alihkan pengguna ke `/api/billplz/redirect` →
-`/status`.
+`/api/fidyah/create` → cipta rekod `pending` + purchase CHIP → pengguna bayar
+di halaman checkout CHIP → CHIP panggil `/api/chip/callback` (webhook, sahkan
+X-Signature, tanda `paid`, hantar resit) dan alihkan pengguna ke
+`/api/chip/redirect` (sahkan status semula terus dengan API CHIP sebagai
+sandaran kepada webhook) → `/status`.
 
 ## 4. Resend (emel resit)
 
@@ -113,7 +114,7 @@ Billplz panggil `/api/billplz/callback` (webhook, sahkan X-Signature, tanda
 2. Di Vercel, tambah domain tersuai anda dan ikut arahan DNS.
 3. Di Cloudflare, tambah rekod yang diberi Vercel (`A`/`CNAME` untuk apex/`www`).
 4. Pastikan `NEXT_PUBLIC_SITE_URL` sepadan dengan domain akhir supaya
-   callback/redirect Billplz betul.
+   callback/redirect CHIP betul.
 
 ## Skrip
 
@@ -128,7 +129,8 @@ npm run lint    # ESLint
 
 - `SUPABASE_SERVICE_ROLE_KEY` hanya digunakan dalam route handler/webhook server
   dan **tidak pernah** didedahkan ke pelayar.
-- Semua callback Billplz disahkan menggunakan HMAC-SHA256 X-Signature.
+- Semua callback CHIP disahkan menggunakan tandatangan RSA-SHA256 X-Signature
+  terhadap kunci awam syarikat.
 - Row Level Security dikuatkuasakan: orang awam hanya boleh membaca artikel
   yang diterbitkan dan tetapan laman; selebihnya memerlukan pentadbir yang
   disahkan.

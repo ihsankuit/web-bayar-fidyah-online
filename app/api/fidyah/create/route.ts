@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createBill } from "@/lib/billplz";
+import { createPurchase } from "@/lib/chip";
 import { calculateFidyah, getCategory } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
 
@@ -136,26 +136,33 @@ export async function POST(request: Request) {
     });
   }
 
-  // 2b. FPX/card via Billplz.
+  // 2b. FPX/card via CHIP.
   try {
-    const bill = await createBill({
+    const encodedRef = encodeURIComponent(reference);
+    const purchase = await createPurchase({
       email: input.email,
       name: input.name,
+      phone: input.phone,
       amountSen: calc.totalSen,
       description: `Fidyah ${calc.days} hari — ${reference}`,
-      callbackUrl: `${siteUrl}/api/billplz/callback`,
-      redirectUrl: `${siteUrl}/api/billplz/redirect`,
+      successCallbackUrl: `${siteUrl}/api/chip/callback`,
+      successRedirectUrl: `${siteUrl}/api/chip/redirect?ref=${encodedRef}&result=success`,
+      failureRedirectUrl: `${siteUrl}/api/chip/redirect?ref=${encodedRef}&result=failure`,
       reference,
     });
 
     await supabase
       .from("donations")
-      .update({ billplz_bill_id: bill.id })
+      .update({ chip_purchase_id: purchase.id })
       .eq("id", donation.id);
 
-    return NextResponse.json({ method: "fpx", url: bill.url, reference });
+    return NextResponse.json({
+      method: "fpx",
+      url: purchase.checkout_url,
+      reference,
+    });
   } catch (err) {
-    console.error("[fidyah/create] billplz failed:", err);
+    console.error("[fidyah/create] chip failed:", err);
     await supabase
       .from("donations")
       .update({ status: "failed" })
