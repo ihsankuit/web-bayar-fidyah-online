@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/public";
 import { DEFAULT_LANDING } from "@/lib/content";
 import type { LandingContent } from "@/lib/database.types";
 
@@ -8,7 +8,7 @@ import type { LandingContent } from "@/lib/database.types";
  */
 export async function getLandingContent(): Promise<LandingContent> {
   try {
-    const supabase = await createClient();
+    const supabase = createClient();
     const { data } = await supabase
       .from("site_settings")
       .select("value")
