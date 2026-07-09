@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 
 import {
   Card,
@@ -72,21 +73,28 @@ export default async function SumbanganPage({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {filters.map((f) => (
-          <Link
-            key={f.key}
-            href={`/admin/sumbangan?status=${f.key}`}
-            className={cn(
-              "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
-              status === f.key
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-muted-foreground hover:bg-accent"
-            )}
-          >
-            {f.label}
-          </Link>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          {filters.map((f) => (
+            <Link
+              key={f.key}
+              href={`/admin/sumbangan?status=${f.key}`}
+              className={cn(
+                "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                status === f.key
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:bg-accent"
+              )}
+            >
+              {f.label}
+            </Link>
+          ))}
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <a href={`/admin/sumbangan/export?status=${status}`}>
+            <Download className="h-4 w-4" /> Eksport CSV
+          </a>
+        </Button>
       </div>
 
       <Card>
@@ -137,7 +145,7 @@ export default async function SumbanganPage({
                       {formatMYR(d.amount_sen)}
                     </TableCell>
                     <TableCell className="text-sm uppercase text-muted-foreground">
-                      {d.payment_method}
+                      {d.payment_method || "fpx"}
                     </TableCell>
                     <TableCell className="text-sm">
                       {d.utm_source ? (
@@ -146,9 +154,11 @@ export default async function SumbanganPage({
                             {d.utm_source}
                             {d.utm_medium ? ` / ${d.utm_medium}` : ""}
                           </div>
-                          {d.utm_campaign && (
+                          {(d.utm_campaign || d.utm_content || d.utm_term) && (
                             <div className="text-xs text-muted-foreground">
-                              {d.utm_campaign}
+                              {[d.utm_campaign, d.utm_content, d.utm_term]
+                                .filter(Boolean)
+                                .join(" · ")}
                             </div>
                           )}
                         </div>
