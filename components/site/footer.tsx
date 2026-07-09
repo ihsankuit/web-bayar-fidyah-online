@@ -7,7 +7,7 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col gap-8 md:flex-row md:justify-between">
           <div className="max-w-sm space-y-10">
-            <Link href="/" aria-label="ihsanku">
+            <Link href="/" aria-label="ihsanku" className="inline-block">
               <Logo size="lg" />
             </Link>
             <p className="text-sm text-muted-foreground">
