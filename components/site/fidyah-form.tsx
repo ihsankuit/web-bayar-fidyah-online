@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { calculateFidyah, FIDYAH_CATEGORIES, NEGERI } from "@/lib/fidyah";
 import { formatMYR } from "@/lib/utils";
+import { getStoredUtm } from "@/lib/utm";
 import type { PaymentMethod } from "@/lib/database.types";
 
 interface QrPaymentData {
@@ -64,6 +65,7 @@ export function FidyahForm({ rateSen }: { rateSen: number }) {
 
     setSubmitting(true);
     try {
+      const utm = getStoredUtm();
       const res = await fetch("/api/fidyah/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,6 +79,7 @@ export function FidyahForm({ rateSen }: { rateSen: number }) {
           multiplier: result.multiplier,
           message,
           method,
+          ...(utm ?? {}),
         }),
       });
       const data = await res.json();

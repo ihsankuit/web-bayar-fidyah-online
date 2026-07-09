@@ -108,6 +108,7 @@ export default async function SumbanganPage({
                   <TableHead>Hari</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
                   <TableHead>Kaedah</TableHead>
+                  <TableHead>Sumber</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Tarikh</TableHead>
                   <TableHead />
@@ -137,6 +138,23 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell className="text-sm uppercase text-muted-foreground">
                       {d.payment_method}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {d.utm_source ? (
+                        <div>
+                          <div className="font-medium">
+                            {d.utm_source}
+                            {d.utm_medium ? ` / ${d.utm_medium}` : ""}
+                          </div>
+                          {d.utm_campaign && (
+                            <div className="text-xs text-muted-foreground">
+                              {d.utm_campaign}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Direct</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={d.status} />
