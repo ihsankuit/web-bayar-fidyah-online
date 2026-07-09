@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="border-t border-border/60 bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col gap-8 md:flex-row md:justify-between">
-          <div className="max-w-sm space-y-8">
+          <div className="max-w-sm space-y-10">
             <Link href="/" aria-label="ihsanku">
               <Logo size="lg" />
             </Link>
