@@ -72,7 +72,7 @@ export default async function StatusPage({
               {paid
                 ? "Terima kasih. Fidyah anda telah diterima dan resit rasmi telah dihantar ke emel anda."
                 : pending
-                  ? "Terima kasih. Bayaran anda sedang disemak oleh pentadbir dan akan disahkan tidak lama lagi. Resit akan dihantar ke emel anda sebaik pengesahan selesai."
+                  ? "Terima kasih. Bayaran anda sedang diproses. Ini biasanya mengambil masa beberapa saat sahaja — resit akan dihantar ke emel anda sebaik pengesahan diterima."
                   : failed
                     ? "Pembayaran anda tidak dapat diproses. Anda boleh cuba semula."
                     : "Kami tidak dapat mengesahkan status pembayaran anda."}

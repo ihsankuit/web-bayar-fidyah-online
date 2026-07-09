@@ -155,48 +155,6 @@ export function LandingEditor({ content }: { content: LandingContent }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Pembayaran QR (DuitNow / Bank)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="qr_image_url">URL Imej QR</Label>
-            <Input
-              id="qr_image_url"
-              name="qr_image_url"
-              defaultValue={content.qr_image_url}
-              placeholder="https://... (muat naik di pustaka Media, salin URL)"
-            />
-            <p className="text-xs text-muted-foreground">
-              Imej QR bank/DuitNow rasmi anda. Kosongkan untuk sembunyikan
-              pilihan bayaran QR di borang bayaran.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field
-              label="Nama bank"
-              name="qr_bank_name"
-              defaultValue={content.qr_bank_name}
-            />
-            <Field
-              label="Nama pemegang akaun"
-              name="qr_account_name"
-              defaultValue={content.qr_account_name}
-            />
-            <Field
-              label="No. akaun"
-              name="qr_account_number"
-              defaultValue={content.qr_account_number}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Bayaran QR disahkan secara manual oleh pentadbir di halaman
-            Sumbangan selepas menyemak penyata bank.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Soalan Lazim & Footer</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
