@@ -277,7 +277,7 @@ export default async function HomePage() {
                   "Kadar bayaran fidyah ialah sebanyak **secupak atau 700 gram makanan asasi** seperti beras, iaitu bayaran untuk 1 hari puasa yang ditinggalkan."
                 )}
               </p>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-3 text-lg text-muted-foreground">
                 Nilai semasa ialah{" "}
                 <strong className="text-foreground">
                   {formatMYR(content.fidyah_rate_sen)} sehari
