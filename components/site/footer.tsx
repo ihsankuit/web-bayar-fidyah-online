@@ -6,9 +6,9 @@ export function Footer() {
     <footer className="border-t border-border/60 bg-muted/30">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col gap-8 md:flex-row md:justify-between">
-          <div className="max-w-sm space-y-4">
+          <div className="max-w-sm space-y-6">
             <Link href="/" aria-label="ihsanku">
-              <Logo size="md" />
+              <Logo size="lg" />
             </Link>
             <p className="text-sm text-muted-foreground">
               Platform pembayaran fidyah yang dikuasakan oleh Pertubuhan
