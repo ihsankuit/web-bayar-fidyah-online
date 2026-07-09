@@ -71,7 +71,6 @@ export default async function StatusPage({
             {donation && (
               <div className="rounded-lg border bg-muted/40 p-4 text-left text-sm">
                 <Row label="No. Rujukan" value={donation.reference} />
-                <Row label="Nama" value={donation.payer_name} />
                 <Row
                   label="Jumlah"
                   value={formatMYR(donation.amount_sen)}

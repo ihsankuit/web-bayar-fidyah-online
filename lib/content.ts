@@ -54,12 +54,12 @@ export const DEFAULT_LANDING: LandingContent = {
     {
       question: "Berapakah kadar fidyah di Malaysia?",
       answer:
-        "Kadar fidyah di Malaysia ditetapkan oleh pihak berkuasa agama negeri berdasarkan harga secupak beras (700 gram) makanan asasi. Nilai semasa ialah RM4.00 sehari. Sila rujuk pejabat agama negeri masing-masing untuk pengesahan rasmi.",
+        "Kadar fidyah di Malaysia ditetapkan oleh pihak berkuasa agama negeri berdasarkan harga secupak beras (700 gram) makanan asasi. Nilai semasa ialah RM2.00 sehari. Sila rujuk pejabat agama negeri masing-masing untuk pengesahan rasmi.",
     },
     {
       question: "Bagaimana cara mengira fidyah puasa Ramadan?",
       answer:
-        "Cara kira fidyah puasa Ramadan adalah mudah: kalikan bilangan hari yang ditinggalkan dengan kadar fidyah Malaysia (RM4.00 sehari). Jika qada' dilewatkan melepasi Ramadan berikutnya, tambah gandaan mengikut bilangan tahun yang ditinggalkan. Gunakan kalkulator fidyah di laman ini untuk pengiraan automatik.",
+        "Cara kira fidyah puasa Ramadan adalah mudah: kalikan bilangan hari yang ditinggalkan dengan kadar fidyah Malaysia (RM2.00 sehari). Jika qada' dilewatkan melepasi Ramadan berikutnya, tambah gandaan mengikut bilangan tahun yang ditinggalkan. Gunakan kalkulator fidyah di laman ini untuk pengiraan automatik.",
     },
     {
       question: "Adakah fidyah dan qada' perlu dibayar sekali gus?",

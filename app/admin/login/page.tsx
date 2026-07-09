@@ -12,6 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/site/logo";
 
+/** Only allow same-origin relative paths as a post-login redirect target. */
+function safeNext(next: string | null): string {
+  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
+  return "/admin";
+}
+
 function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
@@ -30,7 +36,7 @@ function LoginForm() {
       });
       if (error) throw error;
       toast.success("Berjaya log masuk.");
-      router.replace(search.get("next") || "/admin");
+      router.replace(safeNext(search.get("next")));
       router.refresh();
     } catch (err) {
       toast.error(
