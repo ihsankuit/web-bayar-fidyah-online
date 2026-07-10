@@ -68,18 +68,23 @@ create index if not exists donations_chip_purchase_idx on public.donations (chip
 --  Manual bank transfer (payer uploads proof of payment for admin
 --  confirmation), alongside CHIP.
 --  Run this block if upgrading an existing database.
+--
+--  Unconditionally drop + re-add the check constraint (rather than
+--  add-and-ignore-if-exists) so upgrading always converges on the current
+--  allowed values, even if an older constraint under the same name (e.g.
+--  the pre-CHIP 'fpx'/'qr' values) is still sitting on the table.
 -- ---------------------------------------------------------------------
 alter table public.donations add column if not exists payment_method text not null default 'chip';
 alter table public.donations add column if not exists proof_of_payment_path text;
 
-do $$
-begin
-  alter table public.donations
-    add constraint donations_payment_method_check
-    check (payment_method in ('chip', 'manual'));
-exception
-  when duplicate_object then null;
-end $$;
+update public.donations
+  set payment_method = 'chip'
+  where payment_method is null or payment_method not in ('chip', 'manual');
+
+alter table public.donations drop constraint if exists donations_payment_method_check;
+alter table public.donations add constraint donations_payment_method_check
+  check (payment_method in ('chip', 'manual'));
+alter table public.donations alter column payment_method set default 'chip';
 
 -- ---------------------------------------------------------------------
 --  UTM attribution (campaign tracking).
