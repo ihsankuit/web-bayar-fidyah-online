@@ -4,9 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Redirects an admin to a short-lived signed URL for a donation's uploaded
- * proof of payment. The `payment-proofs` bucket is private, so this is the
- * only way to view a proof — direct bucket URLs aren't public.
+ * Returns a short-lived signed URL for a donation's uploaded proof of
+ * payment. The `payment-proofs` bucket is private, so this is the only way
+ * to view a proof — direct bucket URLs aren't public. Consumed by the
+ * ProofViewer dialog (fetched via JS, not navigated to directly).
  */
 export async function GET(
   request: Request,
@@ -43,5 +44,5 @@ export async function GET(
     );
   }
 
-  return NextResponse.redirect(signed.signedUrl);
+  return NextResponse.json({ url: signed.signedUrl });
 }

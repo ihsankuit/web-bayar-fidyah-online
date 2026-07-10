@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, FileCheck, RefreshCw, Send } from "lucide-react";
+import { Download, RefreshCw, Send } from "lucide-react";
 
 import {
   Card,
@@ -23,6 +23,7 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { ProofViewer } from "@/components/admin/proof-viewer";
 import {
   confirmManualPayment,
   recheckChipStatus,
@@ -258,15 +259,10 @@ export default async function SumbanganPage({
                           </form>
                         )}
                         {d.payment_method === "manual" && d.proof_of_payment_path && (
-                          <Button asChild size="sm" variant="ghost">
-                            <a
-                              href={`/admin/sumbangan/proof/${d.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <FileCheck /> Lihat Bukti
-                            </a>
-                          </Button>
+                          <ProofViewer
+                            donationId={d.id}
+                            path={d.proof_of_payment_path}
+                          />
                         )}
                         {d.payment_method === "manual" && d.status !== "paid" && (
                           <form action={confirmManualPayment}>
