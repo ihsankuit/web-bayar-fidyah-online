@@ -18,7 +18,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-8">
             <FooterCol title="Laman">
               <FooterLink href="/#kira">Kalkulator</FooterLink>
               <FooterLink href="/#hukum">Hukum Fidyah</FooterLink>
@@ -29,9 +29,6 @@ export function Footer() {
               <FooterLink href="/blog">Blog</FooterLink>
               <FooterLink href="/#galeri">Galeri</FooterLink>
               <FooterLink href="/#kategori">Kategori</FooterLink>
-            </FooterCol>
-            <FooterCol title="Pentadbir">
-              <FooterLink href="/admin">Log Masuk Admin</FooterLink>
             </FooterCol>
           </div>
         </div>
