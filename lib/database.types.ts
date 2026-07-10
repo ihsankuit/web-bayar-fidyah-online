@@ -6,12 +6,15 @@
  */
 
 export type DonationStatus = "pending" | "paid" | "failed";
+export type PaymentMethod = "chip" | "manual";
 export type PostStatus = "draft" | "published";
 
 export interface Donation {
   id: string;
   reference: string;
   chip_purchase_id: string | null;
+  payment_method: PaymentMethod;
+  proof_of_payment_path: string | null;
   payer_name: string;
   payer_email: string;
   payer_phone: string | null;
@@ -100,4 +103,8 @@ export interface LandingContent {
   stats: { label: string; value: string }[];
   faqs: { question: string; answer: string }[];
   footer_note: string;
+  /** Bank account details shown for the manual bank transfer payment method. */
+  bank_name: string;
+  bank_account_name: string;
+  bank_account_number: string;
 }

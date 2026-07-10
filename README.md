@@ -95,6 +95,19 @@ X-Signature, tanda `paid`, hantar resit) dan alihkan pengguna ke
 `/api/chip/redirect` (sahkan status semula terus dengan API CHIP sebagai
 sandaran kepada webhook) → `/status`.
 
+### Pindahan bank manual (pilihan)
+
+Selain CHIP, pembayar boleh pilih **Pindahan Bank** — pindah terus ke akaun
+bank dan muat naik bukti pembayaran. Isi butiran akaun di
+**Dashboard → Laman Utama → Pindahan Bank Manual**; kaedah ini tersembunyi di
+laman utama selagi No. akaun belum diisi.
+
+Aliran: `/api/fidyah/create` (method `manual`) → cipta rekod `pending` →
+pembayar muat naik bukti melalui `/api/fidyah/upload-proof` (disimpan dalam
+storan peribadi `payment-proofs`, bukan awam) → pentadbir semak bukti di
+**Sumbangan** (butang "Lihat Bukti" — pautan bertandatangan sementara) dan
+tekan "Tandakan Dibayar" untuk sahkan secara manual.
+
 ## 4. Resend (emel resit)
 
 1. Sahkan domain anda di Resend (atau guna `onboarding@resend.dev` untuk ujian).

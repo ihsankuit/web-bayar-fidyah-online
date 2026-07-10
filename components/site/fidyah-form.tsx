@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,17 +26,34 @@ import {
 import { calculateFidyah, FIDYAH_CATEGORIES, NEGERI } from "@/lib/fidyah";
 import { formatMYR } from "@/lib/utils";
 import { getStoredUtm } from "@/lib/utm";
+import type { PaymentMethod } from "@/lib/database.types";
 
-export function FidyahForm({ rateSen }: { rateSen: number }) {
+interface ManualTransferData {
+  reference: string;
+  amountSen: number;
+  bank: { name: string; accountName: string; accountNumber: string };
+}
+
+export function FidyahForm({
+  rateSen,
+  manualTransferAvailable = false,
+}: {
+  rateSen: number;
+  manualTransferAvailable?: boolean;
+}) {
   const [days, setDays] = useState(1);
   const [multiplier, setMultiplier] = useState(1);
   const [category, setCategory] = useState(FIDYAH_CATEGORIES[0].id as string);
+  const [method, setMethod] = useState<PaymentMethod>("chip");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [negeri, setNegeri] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [manualTransfer, setManualTransfer] = useState<ManualTransferData | null>(
+    null
+  );
 
   const result = useMemo(
     () => calculateFidyah({ days, multiplier, rateSen }),
@@ -64,11 +82,22 @@ export function FidyahForm({ rateSen }: { rateSen: number }) {
           days: result.days,
           multiplier: result.multiplier,
           message,
+          method,
           ...(utm ?? {}),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Ralat tidak dijangka.");
+
+      if (data.method === "manual") {
+        setManualTransfer({
+          reference: data.reference,
+          amountSen: data.amountSen,
+          bank: data.bank,
+        });
+        setSubmitting(false);
+        return;
+      }
 
       if (data.url) {
         window.location.href = data.url as string;
@@ -81,6 +110,10 @@ export function FidyahForm({ rateSen }: { rateSen: number }) {
       );
       setSubmitting(false);
     }
+  }
+
+  if (manualTransfer) {
+    return <ManualTransferCard data={manualTransfer} />;
   }
 
   return (
@@ -201,6 +234,42 @@ export function FidyahForm({ rateSen }: { rateSen: number }) {
             />
           </div>
 
+          {manualTransferAvailable && (
+            <div className="space-y-2">
+              <Label>Kaedah pembayaran</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMethod("chip")}
+                  className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors ${
+                    method === "chip"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  FPX / Kad / QR
+                  <p className="mt-0.5 text-xs font-normal text-muted-foreground">
+                    Pembayaran segera melalui CHIP
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod("manual")}
+                  className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors ${
+                    method === "manual"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  Pindahan Bank
+                  <p className="mt-0.5 text-xs font-normal text-muted-foreground">
+                    Pindah manual & muat naik bukti bayaran
+                  </p>
+                </button>
+              </div>
+            </div>
+          )}
+
           <Button
             type="submit"
             size="lg"
@@ -211,11 +280,119 @@ export function FidyahForm({ rateSen }: { rateSen: number }) {
             Bayar {formatMYR(result.totalSen)} Sekarang
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            Pembayaran diproses dengan selamat melalui CHIP (FPX, kad & QR).
+            {method === "manual"
+              ? "Anda akan diminta pindahkan bayaran secara manual dan muat naik bukti pembayaran."
+              : "Pembayaran diproses dengan selamat melalui CHIP (FPX, kad & QR)."}
           </p>
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+function ManualTransferCard({ data }: { data: ManualTransferData }) {
+  const router = useRouter();
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState(false);
+
+  async function handleUpload(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) return toast.error("Sila pilih fail bukti pembayaran.");
+
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.set("reference", data.reference);
+      form.set("file", file);
+      const res = await fetch("/api/fidyah/upload-proof", {
+        method: "POST",
+        body: form,
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error ?? "Ralat tidak dijangka.");
+      setUploaded(true);
+      toast.success("Bukti pembayaran diterima.");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Gagal memuat naik bukti."
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Card className="border-primary/20 shadow-lg shadow-primary/5">
+      <CardHeader>
+        <CardTitle className="text-2xl">Pindahan Bank Manual</CardTitle>
+        <CardDescription>
+          Pindahkan jumlah di bawah ke akaun bank berikut, kemudian muat naik
+          bukti pembayaran (resit/tangkapan skrin).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+          <Row label="Jumlah" value={formatMYR(data.amountSen)} />
+          <Row label="Rujukan" value={data.reference} />
+          {data.bank.name && <Row label="Bank" value={data.bank.name} />}
+          {data.bank.accountName && (
+            <Row label="Nama akaun" value={data.bank.accountName} />
+          )}
+          {data.bank.accountNumber && (
+            <Row label="No. akaun" value={data.bank.accountNumber} />
+          )}
+        </div>
+
+        {uploaded ? (
+          <div className="space-y-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Terima kasih. Bukti pembayaran anda telah diterima dan sedang
+              disemak oleh pentadbir. Resit akan dihantar ke emel anda sebaik
+              pengesahan selesai.
+            </p>
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={() => router.push(`/status?ref=${data.reference}`)}
+            >
+              Semak Status
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleUpload} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="proof">Bukti pembayaran (imej atau PDF, maks 5MB)</Label>
+              <Input
+                id="proof"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={uploading}
+            >
+              {uploading && <Loader2 className="animate-spin" />}
+              Hantar Bukti Pembayaran
+            </Button>
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between border-b border-border/60 py-1.5 last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
   );
 }
 

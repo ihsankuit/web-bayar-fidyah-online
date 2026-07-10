@@ -74,4 +74,7 @@ export const DEFAULT_LANDING: LandingContent = {
   ],
   footer_note:
     "Platform pembayaran fidyah yang dikuasakan oleh Pertubuhan Ihsanku Malaysia. Setiap fidyah disalurkan kepada projek Dapur Ihsan untuk golongan asnaf dan fakir miskin di Malaysia dan luar negara.",
+  bank_name: "",
+  bank_account_name: "",
+  bank_account_number: "",
 };

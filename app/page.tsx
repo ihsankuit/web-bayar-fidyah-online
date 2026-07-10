@@ -129,7 +129,10 @@ export default async function HomePage() {
             </div>
 
             <div id="kira" className="scroll-mt-20">
-              <FidyahForm rateSen={content.fidyah_rate_sen} />
+              <FidyahForm
+                rateSen={content.fidyah_rate_sen}
+                manualTransferAvailable={Boolean(content.bank_account_number)}
+              />
             </div>
           </div>
         </section>
