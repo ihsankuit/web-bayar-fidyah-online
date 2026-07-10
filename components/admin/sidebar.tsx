@@ -11,6 +11,7 @@ import {
   LogOut,
   PanelsTopLeft,
   ShieldCheck,
+  Users,
   Wallet,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ const nav = [
   { href: "/admin/laman", label: "Laman Utama", icon: PanelsTopLeft },
   { href: "/admin/log", label: "Log Aktiviti", icon: History },
   { href: "/admin/keselamatan", label: "Keselamatan", icon: ShieldCheck },
+  { href: "/admin/pentadbir", label: "Pentadbir", icon: Users },
 ];
 
 export function Sidebar({ email }: { email: string }) {

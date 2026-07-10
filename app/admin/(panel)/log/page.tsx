@@ -26,6 +26,8 @@ const ACTION_LABELS: Record<string, string> = {
   "blog.save_draft": "Simpan draf artikel",
   "blog.delete": "Padam artikel",
   "media.delete": "Padam media",
+  "admin.create": "Tambah pentadbir baharu",
+  "admin.delete": "Padam pentadbir",
 };
 
 function describe(entry: ActivityLogEntry): string {
