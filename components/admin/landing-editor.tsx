@@ -155,6 +155,34 @@ export function LandingEditor({ content }: { content: LandingContent }) {
 
       <Card>
         <CardHeader>
+          <CardTitle>Pindahan Bank Manual</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Butiran akaun ditunjukkan kepada pembayar yang memilih kaedah
+            &quot;Pindahan Bank&quot;. Kosongkan No. akaun untuk sembunyikan
+            kaedah ini di laman utama.
+          </p>
+          <Field
+            label="Nama bank"
+            name="bank_name"
+            defaultValue={content.bank_name}
+          />
+          <Field
+            label="Nama pemegang akaun"
+            name="bank_account_name"
+            defaultValue={content.bank_account_name}
+          />
+          <Field
+            label="No. akaun"
+            name="bank_account_number"
+            defaultValue={content.bank_account_number}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Soalan Lazim & Footer</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

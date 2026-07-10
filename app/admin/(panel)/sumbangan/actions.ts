@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { settleDonationByReference } from "@/lib/donations";
+import { markDonationPaid, settleDonationByReference } from "@/lib/donations";
 import { getPurchase } from "@/lib/chip";
 import { sendReceiptEmail } from "@/lib/resend";
 import { logActivity } from "@/lib/activity-log";
@@ -47,6 +47,22 @@ export async function recheckChipStatus(formData: FormData) {
     });
   } catch (err) {
     console.error("[sumbangan/recheckChipStatus] failed:", err);
+  }
+  revalidateAll();
+}
+
+/** Confirm a manual bank transfer donation as paid (admin verified the proof). */
+export async function confirmManualPayment(formData: FormData) {
+  await requireUser();
+  const id = formData.get("id") as string;
+  if (!id) return;
+
+  const donation = await markDonationPaid(id);
+  if (donation) {
+    await logActivity("donation.confirm_manual_paid", {
+      reference: donation.reference,
+      amount_sen: donation.amount_sen,
+    });
   }
   revalidateAll();
 }

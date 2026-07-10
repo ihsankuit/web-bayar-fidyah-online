@@ -71,6 +71,11 @@ export async function saveLanding(
     faqs,
     footer_note:
       (formData.get("footer_note") as string) || DEFAULT_LANDING.footer_note,
+    bank_name: (formData.get("bank_name") as string)?.trim() || "",
+    bank_account_name:
+      (formData.get("bank_account_name") as string)?.trim() || "",
+    bank_account_number:
+      (formData.get("bank_account_number") as string)?.trim() || "",
   };
 
   const { error } = await supabase

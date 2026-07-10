@@ -12,6 +12,9 @@ create table if not exists public.donations (
   id             uuid primary key default gen_random_uuid(),
   reference      text not null unique,
   chip_purchase_id text,
+  payment_method text not null default 'chip'
+                   check (payment_method in ('chip', 'manual')),
+  proof_of_payment_path text,
   payer_name     text not null,
   payer_email    text not null,
   payer_phone    text,
@@ -62,12 +65,21 @@ alter table public.donations add column if not exists chip_purchase_id text;
 create index if not exists donations_chip_purchase_idx on public.donations (chip_purchase_id);
 
 -- ---------------------------------------------------------------------
---  Removes the manual QR / DuitNow payment method (superseded by CHIP,
---  which already supports QR natively). Safe to run even if the
---  payment_method column/constraint were never added.
+--  Manual bank transfer (payer uploads proof of payment for admin
+--  confirmation), alongside CHIP.
+--  Run this block if upgrading an existing database.
 -- ---------------------------------------------------------------------
-alter table public.donations drop constraint if exists donations_payment_method_check;
-alter table public.donations drop column if exists payment_method;
+alter table public.donations add column if not exists payment_method text not null default 'chip';
+alter table public.donations add column if not exists proof_of_payment_path text;
+
+do $$
+begin
+  alter table public.donations
+    add constraint donations_payment_method_check
+    check (payment_method in ('chip', 'manual'));
+exception
+  when duplicate_object then null;
+end $$;
 
 -- ---------------------------------------------------------------------
 --  UTM attribution (campaign tracking).
@@ -202,6 +214,16 @@ create policy "media admin write" on storage.objects
 drop policy if exists "media admin delete" on storage.objects;
 create policy "media admin delete" on storage.objects
   for delete to authenticated using (bucket_id = 'media');
+
+-- =====================================================================
+--  Storage bucket for manual bank transfer proof-of-payment uploads.
+--  Private: payers upload and admins read proofs only via server routes
+--  using the service role key (which bypasses RLS), so no anon/authenticated
+--  policies are needed here.
+-- =====================================================================
+insert into storage.buckets (id, name, public)
+values ('payment-proofs', 'payment-proofs', false)
+on conflict (id) do nothing;
 
 -- =====================================================================
 --  Seed: a couple of published blog posts (optional)

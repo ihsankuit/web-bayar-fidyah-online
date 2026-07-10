@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, RefreshCw, Send } from "lucide-react";
+import { Download, FileCheck, RefreshCw, Send } from "lucide-react";
 
 import {
   Card,
@@ -23,7 +23,11 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { recheckChipStatus, resendReceipt } from "./actions";
+import {
+  confirmManualPayment,
+  recheckChipStatus,
+  resendReceipt,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -181,6 +185,7 @@ export default async function SumbanganPage({
                   <TableHead>Kategori</TableHead>
                   <TableHead>Hari</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
+                  <TableHead>Kaedah</TableHead>
                   <TableHead>Sumber</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Tarikh</TableHead>
@@ -208,6 +213,9 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatMYR(d.amount_sen)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {d.payment_method === "manual" ? "Pindahan Manual" : "CHIP"}
                     </TableCell>
                     <TableCell className="text-sm">
                       {d.utm_source ? (
@@ -246,6 +254,25 @@ export default async function SumbanganPage({
                               title="Semak status terkini di CHIP"
                             >
                               <RefreshCw /> Semak CHIP
+                            </Button>
+                          </form>
+                        )}
+                        {d.payment_method === "manual" && d.proof_of_payment_path && (
+                          <Button asChild size="sm" variant="ghost">
+                            <a
+                              href={`/admin/sumbangan/proof/${d.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <FileCheck /> Lihat Bukti
+                            </a>
+                          </Button>
+                        )}
+                        {d.payment_method === "manual" && d.status !== "paid" && (
+                          <form action={confirmManualPayment}>
+                            <input type="hidden" name="id" value={d.id} />
+                            <Button type="submit" size="sm" variant="outline">
+                              Tandakan Dibayar
                             </Button>
                           </form>
                         )}
