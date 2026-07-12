@@ -11,7 +11,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ reference: string }> }
 ) {
-  if (!isAuthorized(request)) return unauthorized();
+  if (!(await isAuthorized(request))) return unauthorized();
 
   const { reference } = await params;
 

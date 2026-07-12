@@ -1,13 +1,13 @@
 import Script from "next/script";
+import { getTrackingSettings } from "@/lib/tracking/settings";
 
 /**
- * Loads Google Analytics (GA4) and the Facebook Pixel base scripts.
- * Each is only injected when its env id is configured, so the site runs fine
- * without any tracking set up.
+ * Loads Google Analytics (GA4) and the Facebook Pixel base scripts using ids
+ * managed from Admin > Integrasi (or the env fallback). Each is only injected
+ * when its id is configured, so the site runs fine without any tracking set up.
  */
-export function TrackingScripts() {
-  const gaId = process.env.NEXT_PUBLIC_GA_ID;
-  const pixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
+export async function TrackingScripts() {
+  const { gaId, pixelId } = await getTrackingSettings();
 
   return (
     <>

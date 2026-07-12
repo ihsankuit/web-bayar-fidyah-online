@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import type { Donation } from "@/lib/database.types";
+import { getIntegrationSettings } from "@/lib/integrations";
 
 /**
  * Outbound webhooks — POST events to an external automation endpoint (e.g. an
@@ -18,7 +19,8 @@ export async function sendWebhook(
   event: WebhookEvent,
   data: unknown
 ): Promise<void> {
-  const url = process.env.N8N_WEBHOOK_URL;
+  const { n8n_webhook_url: url, webhook_signing_secret: secret } =
+    await getIntegrationSettings();
   if (!url) return;
 
   const body = JSON.stringify({
@@ -32,7 +34,6 @@ export async function sendWebhook(
     "X-Webhook-Event": event,
   };
 
-  const secret = process.env.WEBHOOK_SIGNING_SECRET;
   if (secret) {
     const signature = crypto
       .createHmac("sha256", secret)

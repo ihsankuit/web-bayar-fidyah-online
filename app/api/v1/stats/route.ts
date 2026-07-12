@@ -8,7 +8,7 @@ import type { Donation } from "@/lib/database.types";
  * Aggregate donation totals for dashboards/automations. Auth: API key.
  */
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) return unauthorized();
+  if (!(await isAuthorized(request))) return unauthorized();
 
   try {
     const supabase = createAdminClient();

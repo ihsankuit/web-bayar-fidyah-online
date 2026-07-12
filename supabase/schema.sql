@@ -294,3 +294,32 @@ alter table public.admin_activity_log enable row level security;
 drop policy if exists admin_activity_log_all on public.admin_activity_log;
 create policy admin_activity_log_all on public.admin_activity_log
   for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+--  Integration settings (webhook + REST API config for n8n)
+--  Secrets stored here are readable ONLY by authenticated admins and the
+--  service role — never by the anon/public role. Run this block if upgrading.
+-- =====================================================================
+create table if not exists public.integration_settings (
+  id                     integer primary key default 1,
+  n8n_webhook_url        text,
+  webhook_signing_secret text,
+  api_key                text,
+  updated_at             timestamptz not null default now(),
+  constraint integration_settings_singleton check (id = 1)
+);
+
+alter table public.integration_settings enable row level security;
+
+drop policy if exists integration_settings_admin_all on public.integration_settings;
+create policy integration_settings_admin_all on public.integration_settings
+  for all to authenticated using (true) with check (true);
+
+-- Analytics/tracking config (managed from Admin > Integrasi).
+-- Public ids (ga/pixel) are injected into pages; secrets are used server-side.
+alter table public.integration_settings
+  add column if not exists ga_measurement_id   text,
+  add column if not exists ga_api_secret        text,
+  add column if not exists fb_pixel_id          text,
+  add column if not exists fb_capi_access_token text,
+  add column if not exists fb_test_event_code   text;

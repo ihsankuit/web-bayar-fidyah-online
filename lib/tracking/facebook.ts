@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { getTrackingSettings } from "@/lib/tracking/settings";
 
 const API_VERSION = "v19.0";
 
@@ -30,8 +31,8 @@ export interface CapiPurchaseInput {
 export async function sendFacebookPurchase(
   input: CapiPurchaseInput
 ): Promise<boolean> {
-  const pixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
-  const token = process.env.FB_CAPI_ACCESS_TOKEN;
+  const { pixelId, capiToken: token, testEventCode } =
+    await getTrackingSettings();
   if (!pixelId || !token) return false;
 
   const userData: Record<string, unknown> = {};
@@ -59,8 +60,8 @@ export async function sendFacebookPurchase(
     ],
   };
 
-  if (process.env.FB_TEST_EVENT_CODE) {
-    body.test_event_code = process.env.FB_TEST_EVENT_CODE;
+  if (testEventCode) {
+    body.test_event_code = testEventCode;
   }
 
   try {

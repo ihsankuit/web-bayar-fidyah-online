@@ -2,6 +2,8 @@
  * Server-side GA4 purchase event via the Measurement Protocol. Complements the
  * client-side gtag purchase (GA4 deduplicates by transaction_id). Fails soft.
  */
+import { getTrackingSettings } from "@/lib/tracking/settings";
+
 export interface Ga4PurchaseInput {
   transactionId: string;
   value: number; // Ringgit float
@@ -12,8 +14,8 @@ export interface Ga4PurchaseInput {
 export async function sendGa4Purchase(
   input: Ga4PurchaseInput
 ): Promise<boolean> {
-  const measurementId = process.env.NEXT_PUBLIC_GA_ID;
-  const apiSecret = process.env.GA_API_SECRET;
+  const { gaId: measurementId, gaApiSecret: apiSecret } =
+    await getTrackingSettings();
   if (!measurementId || !apiSecret) return false;
 
   const body = {

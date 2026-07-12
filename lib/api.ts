@@ -1,13 +1,15 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 import type { Donation } from "@/lib/database.types";
+import { getIntegrationSettings } from "@/lib/integrations";
 
 /**
- * Bearer/API-key auth for the public REST API (`/api/v1/*`). Set `API_KEY` to
- * enable it. Clients send `Authorization: Bearer <key>` or `X-API-Key: <key>`.
+ * Bearer/API-key auth for the public REST API (`/api/v1/*`). The key is managed
+ * from the admin panel (Integrasi) or falls back to the `API_KEY` env var.
+ * Clients send `Authorization: Bearer <key>` or `X-API-Key: <key>`.
  */
-export function isAuthorized(request: Request): boolean {
-  const key = process.env.API_KEY;
+export async function isAuthorized(request: Request): Promise<boolean> {
+  const { api_key: key } = await getIntegrationSettings();
   if (!key) return false; // API disabled until a key is configured.
 
   const auth = request.headers.get("authorization");

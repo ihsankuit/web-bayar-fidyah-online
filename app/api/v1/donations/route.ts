@@ -9,7 +9,7 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
  * Query params: status, limit (<=200), offset, from, to (ISO, on created_at).
  */
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) return unauthorized();
+  if (!(await isAuthorized(request))) return unauthorized();
 
   const url = new URL(request.url);
   const status = url.searchParams.get("status") as DonationStatus | null;
