@@ -1,0 +1,57 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
+/**
+ * Fires the conversion on the payment status page for a paid donation:
+ *  - Facebook Pixel "Purchase" (browser) with eventID = reference
+ *  - GA4 gtag "purchase" (browser) with transaction_id = reference
+ *  - a POST to /api/track/purchase for the server-side CAPI + GA4 MP events,
+ *    which share the same ids so the platforms deduplicate.
+ * Uses sessionStorage so a page refresh does not re-fire the browser events.
+ */
+export function PurchaseTracker({
+  reference,
+  value,
+  currency = "MYR",
+}: {
+  reference: string;
+  value: number;
+  currency?: string;
+}) {
+  const done = useRef(false);
+
+  useEffect(() => {
+    if (done.current) return;
+    done.current = true;
+
+    const key = `purchase-tracked:${reference}`;
+    const alreadyTracked =
+      typeof window !== "undefined" && sessionStorage.getItem(key);
+
+    if (!alreadyTracked) {
+      window.fbq?.("track", "Purchase", { value, currency }, { eventID: reference });
+      window.gtag?.("event", "purchase", {
+        transaction_id: reference,
+        value,
+        currency,
+      });
+      try {
+        sessionStorage.setItem(key, "1");
+      } catch {
+        // ignore storage errors
+      }
+    }
+
+    // Server-side conversions (CAPI + GA4 MP). Safe to call again — the
+    // platforms deduplicate on the shared event id / transaction id.
+    fetch("/api/track/purchase", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [reference, value, currency]);
+
+  return null;
+}

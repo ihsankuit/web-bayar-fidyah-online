@@ -129,6 +129,26 @@ tekan "Tandakan Dibayar" untuk sahkan secara manual.
 4. Pastikan `NEXT_PUBLIC_SITE_URL` sepadan dengan domain akhir supaya
    callback/redirect CHIP betul.
 
+## 7. Analytics & tracking (pilihan)
+
+Sokongan terbina untuk **Google Analytics 4**, **Facebook Pixel** dan
+**Facebook Conversions API (CAPI)**. Semua pilihan — jika env id tidak diset,
+tiada skrip dimuatkan.
+
+- **GA4 (pelayar)** — set `NEXT_PUBLIC_GA_ID`. `page_view` dijejak automatik
+  termasuk navigasi dalam laman.
+- **Facebook Pixel (pelayar)** — set `NEXT_PUBLIC_FB_PIXEL_ID`. `PageView`
+  dijejak automatik.
+- **Peristiwa Purchase** — apabila pembayaran berjaya (halaman `/status`), Pixel
+  `Purchase` dan GA4 `purchase` dicetuskan dengan `event_id` = rujukan fidyah.
+- **CAPI + GA4 Measurement Protocol (pelayan)** — halaman status memanggil
+  `/api/track/purchase`, yang menghantar peristiwa `Purchase` sisi-pelayan.
+  Set `FB_CAPI_ACCESS_TOKEN` (dan `GA_API_SECRET` untuk GA4 sisi-pelayan).
+  Nilai diambil dari pangkalan data (bukan pelayar) dan hanya untuk sumbangan
+  berstatus `paid`. `event_id`/`transaction_id` yang sama memastikan Facebook &
+  Google **menyahduplikasi** peristiwa pelayar vs pelayan.
+- Untuk uji CAPI, set `FB_TEST_EVENT_CODE` dari Events Manager.
+
 ## Skrip
 
 ```bash

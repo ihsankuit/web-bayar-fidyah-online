@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Donation } from "@/lib/database.types";
 import { formatMYR } from "@/lib/utils";
+import { PurchaseTracker } from "@/components/analytics/purchase-tracker";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,12 @@ export default async function StatusPage({
 
   return (
     <div className="flex min-h-screen flex-col">
+      {paid && donation && (
+        <PurchaseTracker
+          reference={donation.reference}
+          value={donation.amount_sen / 100}
+        />
+      )}
       <Navbar />
       <main className="flex flex-1 items-center justify-center px-4 py-16">
         <Card className="w-full max-w-md text-center">
