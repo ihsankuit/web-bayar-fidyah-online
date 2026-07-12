@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPurchase } from "@/lib/chip";
 import { calculateFidyah, getCategory } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
+import { emitDonationEvent } from "@/lib/webhooks";
+import type { Donation } from "@/lib/database.types";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -122,6 +124,9 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+
+  // Notify automations that a new (pending) donation was created.
+  await emitDonationEvent("donation.created", donation as Donation);
 
   // 2a. Manual bank transfer — hand back the account details and wait for
   // the payer to upload proof and an admin to confirm.

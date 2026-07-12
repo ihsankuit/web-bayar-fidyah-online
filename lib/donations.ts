@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendReceiptEmail } from "@/lib/resend";
+import { emitDonationEvent } from "@/lib/webhooks";
 import type { Donation } from "@/lib/database.types";
 
 /**
@@ -47,6 +48,7 @@ export async function settleDonationByReference(
   // Send the receipt only on the first successful settlement.
   if (paid && !alreadyPaid) {
     await sendReceiptEmail(donation);
+    await emitDonationEvent("donation.paid", donation);
   }
 
   return donation;
@@ -80,5 +82,6 @@ export async function markDonationPaid(
 
   const donation = updated ?? existing;
   await sendReceiptEmail(donation);
+  await emitDonationEvent("donation.paid", donation);
   return donation;
 }
