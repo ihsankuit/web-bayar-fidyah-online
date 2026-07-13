@@ -3,7 +3,6 @@ import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle2,
-  HeartHandshake,
   Image as ImageIcon,
   Receipt,
   ShieldCheck,
@@ -18,7 +17,7 @@ import { Footer } from "@/components/site/footer";
 import { FidyahForm } from "@/components/site/fidyah-form";
 import { Gallery } from "@/components/site/gallery";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -28,12 +27,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FIDYAH_CATEGORIES, QADA_FIDYAH_SITUATIONS, NEGERI } from "@/lib/fidyah";
+import {
+  FIDYAH_CATEGORIES,
+  QADA_FIDYAH_SITUATIONS,
+  NEGERI,
+  type FidyahCategoryId,
+} from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
 import { getGalleryItems } from "@/lib/gallery";
 import { formatMYR } from "@/lib/utils";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
+
+// Illustrations for the "Siapa Yang Wajib Membayar Fidyah?" category cards.
+// hamil_menyusu gets two images (hamil + menyusu) since the category covers
+// both.
+const CATEGORY_IMAGES: Partial<Record<FidyahCategoryId, string[]>> = {
+  uzur_tua: ["/kategori/warga-emas.webp"],
+  sakit_kronik: ["/kategori/uzur-sakit.webp"],
+  hamil_menyusu: ["/kategori/hamil.webp", "/kategori/menyusu.webp"],
+  lewat_qada: ["/kategori/lewat-qada.webp"],
+  meninggal_dunia: ["/kategori/meninggal-dunia.webp"],
+};
 
 export const revalidate = 60;
 
@@ -252,20 +267,38 @@ export default async function HomePage() {
                 puasa Ramadan.
               </p>
             </div>
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {FIDYAH_CATEGORIES.filter((c) => c.id !== "lain").map((c) => (
-                <Card key={c.id} className="h-full">
-                  <CardContent className="space-y-3 p-6">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <HeartHandshake className="h-5 w-5" />
+            <div className="mt-12 flex flex-wrap justify-center gap-6">
+              {FIDYAH_CATEGORIES.filter((c) => c.id !== "lain").map((c) => {
+                const images = CATEGORY_IMAGES[c.id] ?? [];
+                return (
+                  <Card
+                    key={c.id}
+                    className="h-full w-full overflow-hidden sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]"
+                  >
+                    {images.length > 0 && (
+                      <div className="flex aspect-[4/3] gap-0.5 bg-muted">
+                        {images.map((src) => (
+                          <div key={src} className="relative flex-1">
+                            <Image
+                              src={src}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="space-y-2 p-6">
+                      <h3 className="font-semibold">{c.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {c.description}
+                      </p>
                     </div>
-                    <h3 className="font-semibold">{c.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {c.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
