@@ -267,11 +267,14 @@ export default async function HomePage() {
                 puasa Ramadan.
               </p>
             </div>
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 flex flex-wrap justify-center gap-6">
               {FIDYAH_CATEGORIES.filter((c) => c.id !== "lain").map((c) => {
                 const images = CATEGORY_IMAGES[c.id] ?? [];
                 return (
-                  <Card key={c.id} className="h-full overflow-hidden">
+                  <Card
+                    key={c.id}
+                    className="h-full w-full overflow-hidden sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]"
+                  >
                     {images.length > 0 && (
                       <div className="flex aspect-[4/3] gap-0.5 bg-muted">
                         {images.map((src) => (
