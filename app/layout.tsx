@@ -70,21 +70,12 @@ export const metadata: Metadata = {
     locale: "ms_MY",
     url: siteUrl,
     siteName: "Bayar Fidyah Online",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
     description:
       "Bayar fidyah puasa Ramadan secara online — semua negeri di Malaysia. Kiraan automatik, pembayaran selamat FPX, kad & QR, resit ke emel.",
-    images: ["/og-image.png"],
   },
 };
 
