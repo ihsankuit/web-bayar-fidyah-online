@@ -92,6 +92,8 @@ export interface LandingContent {
   hero_title: string;
   hero_subtitle: string;
   hero_cta: string;
+  /** Optional soft background image behind the hero section. */
+  hero_image_url: string;
   about_title: string;
   about_body: string;
   hukum_title: string;

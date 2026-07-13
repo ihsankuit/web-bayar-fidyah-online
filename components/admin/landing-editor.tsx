@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
@@ -67,6 +68,25 @@ export function LandingEditor({ content }: { content: LandingContent }) {
             name="hero_cta"
             defaultValue={content.hero_cta}
           />
+          <div className="space-y-2">
+            <Label htmlFor="hero_image_url">
+              URL gambar latar belakang hero (pilihan)
+            </Label>
+            <Input
+              id="hero_image_url"
+              name="hero_image_url"
+              defaultValue={content.hero_image_url}
+              placeholder="https://... (muat naik di Media, salin URL)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Dipaparkan sebagai latar lembut di belakang teks hero. Kosongkan
+              untuk tiada gambar. Muat naik gambar di{" "}
+              <Link href="/admin/media" className="underline">
+                Media
+              </Link>{" "}
+              dahulu, kemudian salin URL fail tersebut ke sini.
+            </p>
+          </div>
         </CardContent>
       </Card>
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle2,
@@ -107,6 +108,21 @@ export default async function HomePage() {
       <main className="flex-1">
         {/* Hero */}
         <section className="relative overflow-hidden">
+          {content.hero_image_url && (
+            <>
+              <div className="pointer-events-none absolute inset-0 -z-20">
+                <Image
+                  src={content.hero_image_url}
+                  alt=""
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover opacity-15"
+                />
+              </div>
+              <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background/50 via-background/60 to-background" />
+            </>
+          )}
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]" />
           <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
             <div className="space-y-6">

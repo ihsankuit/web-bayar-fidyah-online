@@ -8,6 +8,7 @@ export const DEFAULT_LANDING: LandingContent = {
   hero_subtitle:
     "Selesaikan tanggungan fidyah puasa anda dalam beberapa minit sahaja. Kiraan automatik, pembayaran selamat melalui FPX & kad, dan resit terus ke emel anda.",
   hero_cta: "Bayar Fidyah Sekarang",
+  hero_image_url: "",
   about_title: "Apa itu Fidyah?",
   about_body:
     "Fidyah ialah bayaran denda yang wajib ditunaikan oleh golongan tertentu yang meninggalkan puasa Ramadan dan tidak mampu menggantikannya (qada'). Ia dibayar dalam bentuk makanan asasi — secupak beras bagi setiap hari yang ditinggalkan — atau nilai wangnya. Bagi mereka yang melewatkan qada' sehingga masuk Ramadan berikutnya, fidyah akan berganda mengikut bilangan tahun.",
