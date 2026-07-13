@@ -37,6 +37,7 @@ const PAGE_SIZE = 20;
 
 const filters: { key: string; label: string }[] = [
   { key: "all", label: "Semua" },
+  { key: "review", label: "Perlu Semak" },
   { key: "paid", label: "Berjaya" },
   { key: "pending", label: "Menunggu" },
   { key: "failed", label: "Gagal" },
@@ -66,7 +67,13 @@ export default async function SumbanganPage({
     .select("amount_sen")
     .eq("status", "paid");
 
-  if (status !== "all") {
+  if (status === "review") {
+    // Manual transfers with proof uploaded, awaiting admin confirmation.
+    listQuery = listQuery
+      .eq("status", "pending")
+      .eq("payment_method", "manual")
+      .not("proof_of_payment_path", "is", null);
+  } else if (status !== "all") {
     listQuery = listQuery.eq("status", status as DonationStatus);
   }
   if (term) {

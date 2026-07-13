@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/utils";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import type { Donation } from "@/lib/database.types";
 
 const BUCKET = "payment-proofs";
@@ -14,6 +15,18 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf
  * model as `/status?ref=`) — no separate auth for the public payer.
  */
 export async function POST(request: Request) {
+  const allowed = await checkRateLimit(
+    `fidyah-upload-proof:${clientIp(request)}`,
+    10,
+    600 // 10 attempts per 10 minutes
+  );
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Terlalu banyak percubaan. Sila cuba lagi sebentar lagi." },
+      { status: 429 }
+    );
+  }
+
   let form: FormData;
   try {
     form = await request.formData();

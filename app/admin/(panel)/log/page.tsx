@@ -21,6 +21,7 @@ export const dynamic = "force-dynamic";
 const ACTION_LABELS: Record<string, string> = {
   "donation.recheck_chip": "Semak semula status CHIP",
   "donation.confirm_manual_paid": "Sahkan pindahan manual dibayar",
+  "donation.auto_expire": "Luputkan sumbangan tertunda secara automatik",
   "donation.resend_receipt": "Hantar semula resit",
   "blog.publish": "Terbitkan artikel",
   "blog.save_draft": "Simpan draf artikel",

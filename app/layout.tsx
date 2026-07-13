@@ -22,18 +22,30 @@ export const metadata: Metadata = {
     template: "%s | Bayar Fidyah Online",
   },
   description:
-    "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel. Bayar dalam 3 minit — kadar RM2.00 sehari.",
+    "Bayar fidyah puasa Ramadan secara online di semua negeri di Malaysia — Selangor, Kedah, Johor, Pahang, Perak & lain-lain. Kiraan automatik, pembayaran selamat FPX, kad & QR, resit ke emel. Bayar dalam 3 minit — kadar RM2.00 sehari.",
   keywords: [
     "fidyah",
     "bayar fidyah",
+    "bayar fidyah online",
     "fidyah online",
     "fidyah puasa",
+    "bayaran fidyah",
     "kalkulator fidyah",
+    "kalkulator fidyah online",
     "fidyah Malaysia",
     "cara bayar fidyah",
+    "cara bayar fidyah online",
     "kadar fidyah Malaysia",
+    "kadar fidyah 2026",
     "hukum fidyah puasa",
     "qada fidyah",
+    "fidyah selangor",
+    "fidyah kedah",
+    "fidyah johor",
+    "fidyah pahang",
+    "fidyah perak",
+    "fidyah orang meninggal",
+    "cupak beras fidyah",
   ],
   authors: [{ name: "Bayar Fidyah Online" }],
   robots: {
@@ -53,7 +65,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
     description:
-      "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel. Bayar dalam 3 minit.",
+      "Bayar fidyah puasa Ramadan secara online — semua negeri di Malaysia. Kiraan automatik, pembayaran selamat FPX, kad & QR, resit ke emel. Bayar dalam 3 minit.",
     type: "website",
     locale: "ms_MY",
     url: siteUrl,
@@ -71,7 +83,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
     description:
-      "Bayar fidyah puasa Ramadan secara online di Malaysia. Kiraan automatik, pembayaran selamat FPX & kad, resit ke emel.",
+      "Bayar fidyah puasa Ramadan secara online — semua negeri di Malaysia. Kiraan automatik, pembayaran selamat FPX, kad & QR, resit ke emel.",
     images: ["/og-image.png"],
   },
 };

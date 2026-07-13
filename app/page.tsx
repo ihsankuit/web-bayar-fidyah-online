@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle2,
@@ -27,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FIDYAH_CATEGORIES, QADA_FIDYAH_SITUATIONS } from "@/lib/fidyah";
+import { FIDYAH_CATEGORIES, QADA_FIDYAH_SITUATIONS, NEGERI } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
 import { getGalleryItems } from "@/lib/gallery";
 import { formatMYR } from "@/lib/utils";
@@ -74,6 +75,19 @@ export default async function HomePage() {
     })),
   };
 
+  // JSON-LD: Organization schema with service area (all Malaysian states) —
+  // signals to search/answer engines that fidyah payment is available
+  // nationwide, not just where the office is physically located.
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Bayar Fidyah Online",
+    url: siteUrl,
+    description:
+      "Platform pembayaran fidyah puasa Ramadan dalam talian yang menyokong semua negeri di Malaysia.",
+    areaServed: NEGERI,
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <script
@@ -88,10 +102,31 @@ export default async function HomePage() {
           __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c"),
         }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <Navbar />
       <main className="flex-1">
         {/* Hero */}
         <section className="relative overflow-hidden">
+          {content.hero_image_url && (
+            <>
+              <div className="pointer-events-none absolute inset-0 -z-20">
+                <Image
+                  src={content.hero_image_url}
+                  alt=""
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-cover opacity-15"
+                />
+              </div>
+              <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background/50 via-background/60 to-background" />
+            </>
+          )}
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]" />
           <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
             <div className="space-y-6">
@@ -426,6 +461,30 @@ export default async function HomePage() {
             </div>
           </section>
         )}
+
+        {/* Liputan Negeri */}
+        <section id="negeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <div className="mx-auto max-w-4xl px-4 text-center">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Bayar Fidyah Online di Semua Negeri di Malaysia
+            </h2>
+            <p className="mt-3 text-pretty text-muted-foreground">
+              Tidak kira di mana anda berada, anda boleh bayar fidyah terus
+              dari telefon atau komputer tanpa perlu hadir ke pejabat agama —
+              kiraan automatik, resit rasmi terus ke emel.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
+              {NEGERI.map((n) => (
+                <span
+                  key={n}
+                  className="rounded-full border bg-card px-4 py-1.5 text-sm text-muted-foreground"
+                >
+                  Fidyah {n}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* FAQ */}
         <section id="faq" className="scroll-mt-20 py-16 lg:py-24">

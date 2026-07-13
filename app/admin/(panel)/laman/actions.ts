@@ -49,6 +49,7 @@ export async function saveLanding(
     hero_subtitle:
       (formData.get("hero_subtitle") as string) || DEFAULT_LANDING.hero_subtitle,
     hero_cta: (formData.get("hero_cta") as string) || DEFAULT_LANDING.hero_cta,
+    hero_image_url: (formData.get("hero_image_url") as string)?.trim() || "",
     about_title:
       (formData.get("about_title") as string) || DEFAULT_LANDING.about_title,
     about_body:
