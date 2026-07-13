@@ -85,3 +85,32 @@ export async function markDonationPaid(
   await emitDonationEvent("donation.paid", donation);
   return donation;
 }
+
+/**
+ * Permanently delete a donation record (admin action). Also removes its
+ * uploaded proof-of-payment file, if any, so nothing is left orphaned in
+ * storage. Returns the deleted donation, or null if it didn't exist.
+ */
+export async function deleteDonation(
+  donationId: string
+): Promise<Donation | null> {
+  const supabase = createAdminClient();
+
+  const { data: existing } = await supabase
+    .from("donations")
+    .select("*")
+    .eq("id", donationId)
+    .maybeSingle<Donation>();
+
+  if (!existing) return null;
+
+  if (existing.proof_of_payment_path) {
+    await supabase.storage
+      .from("payment-proofs")
+      .remove([existing.proof_of_payment_path]);
+  }
+
+  await supabase.from("donations").delete().eq("id", donationId);
+
+  return existing;
+}
