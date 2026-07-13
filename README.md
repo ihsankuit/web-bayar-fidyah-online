@@ -119,7 +119,13 @@ tekan "Tandakan Dibayar" untuk sahkan secara manual.
 1. Push repositori ini ke GitHub dan import ke Vercel (Next.js auto-dikesan).
 2. Di **Project Settings → Environment Variables**, masukkan semua nilai dari
    `.env.example` (termasuk `NEXT_PUBLIC_SITE_URL` = domain pengeluaran anda).
-3. Deploy.
+3. Set `CRON_SECRET` kepada rentetan rawak (contoh: `openssl rand -hex 32`).
+   Vercel Cron (dikonfigurasi dalam `vercel.json`) memanggil
+   `/api/cron/expire-pending` setiap jam dengan kunci ini untuk luputkan
+   sumbangan `pending` yang ditinggalkan — CHIP selepas 24 jam, pindahan
+   manual tanpa bukti selepas 7 hari. Rekod yang sudah ada bukti pembayaran
+   tidak sekali-kali diluputkan secara automatik.
+4. Deploy.
 
 ## 6. Cloudflare DNS
 
@@ -136,6 +142,7 @@ npm run dev     # pembangunan
 npm run build   # build pengeluaran
 npm run start   # jalankan build pengeluaran
 npm run lint    # ESLint
+npm run test    # ujian unit (Vitest) — kalkulator fidyah, tandatangan CHIP, dll.
 ```
 
 ## Nota keselamatan
@@ -147,6 +154,11 @@ npm run lint    # ESLint
 - Row Level Security dikuatkuasakan: orang awam hanya boleh membaca artikel
   yang diterbitkan dan tetapan laman; selebihnya memerlukan pentadbir yang
   disahkan.
+- Kawasan `/admin` ditanda `noindex, nofollow` dan disekat dalam
+  `robots.txt` — tiada pautan awam ke panel admin di mana-mana pun di laman
+  utama.
+- `/api/fidyah/create` dan `/api/fidyah/upload-proof` (endpoint awam) dihadkan
+  kadar (rate-limited) ikut alamat IP untuk elak spam/penyalahgunaan.
 
 ## Penafian
 

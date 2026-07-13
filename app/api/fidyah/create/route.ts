@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPurchase } from "@/lib/chip";
 import { calculateFidyah, getCategory } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -30,6 +31,18 @@ function makeReference(): string {
 }
 
 export async function POST(request: Request) {
+  const allowed = await checkRateLimit(
+    `fidyah-create:${clientIp(request)}`,
+    5,
+    600 // 5 attempts per 10 minutes
+  );
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Terlalu banyak percubaan. Sila cuba lagi sebentar lagi." },
+      { status: 429 }
+    );
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();

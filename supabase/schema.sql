@@ -294,3 +294,20 @@ alter table public.admin_activity_log enable row level security;
 drop policy if exists admin_activity_log_all on public.admin_activity_log;
 create policy admin_activity_log_all on public.admin_activity_log
   for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+--  Rate limiting for public endpoints (fidyah/create, fidyah/upload-proof).
+--  Accessed only via the service role from server routes — no RLS policies
+--  needed, RLS stays enabled with the default deny-all.
+--  Run this block if upgrading an existing database.
+-- =====================================================================
+create table if not exists public.rate_limit_hits (
+  id         bigint generated always as identity primary key,
+  key        text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists rate_limit_hits_key_created_idx
+  on public.rate_limit_hits (key, created_at desc);
+
+alter table public.rate_limit_hits enable row level security;
