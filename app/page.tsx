@@ -41,9 +41,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.c
 
 // Illustrations for the "Siapa Yang Wajib Membayar Fidyah?" category cards.
 // hamil_menyusu gets two images (hamil + menyusu) since the category covers
-// both; uzur_tua and sakit_kronik share one (both are about frailty/illness).
+// both.
 const CATEGORY_IMAGES: Partial<Record<FidyahCategoryId, string[]>> = {
-  uzur_tua: ["/kategori/uzur-sakit.webp"],
+  uzur_tua: ["/kategori/warga-emas.webp"],
   sakit_kronik: ["/kategori/uzur-sakit.webp"],
   hamil_menyusu: ["/kategori/hamil.webp", "/kategori/menyusu.webp"],
   lewat_qada: ["/kategori/lewat-qada.webp"],
