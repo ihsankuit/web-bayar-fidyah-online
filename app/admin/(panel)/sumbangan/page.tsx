@@ -24,6 +24,7 @@ import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { ProofViewer } from "@/components/admin/proof-viewer";
+import { DeleteDonationButton } from "@/components/admin/delete-donation-button";
 import {
   confirmManualPayment,
   recheckChipStatus,
@@ -285,6 +286,10 @@ export default async function SumbanganPage({
                             </Button>
                           </form>
                         )}
+                        <DeleteDonationButton
+                          id={d.id}
+                          reference={d.reference}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
