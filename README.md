@@ -135,6 +135,63 @@ tekan "Tandakan Dibayar" untuk sahkan secara manual.
 4. Pastikan `NEXT_PUBLIC_SITE_URL` sepadan dengan domain akhir supaya
    callback/redirect CHIP betul.
 
+## 7. Analytics & tracking (pilihan)
+
+Sokongan terbina untuk **Google Analytics 4**, **Facebook Pixel** dan
+**Facebook Conversions API (CAPI)**. Semua pilihan — jika env id tidak diset,
+tiada skrip dimuatkan.
+
+- **GA4 (pelayar)** — set `NEXT_PUBLIC_GA_ID`. `page_view` dijejak automatik
+  termasuk navigasi dalam laman.
+- **Facebook Pixel (pelayar)** — set `NEXT_PUBLIC_FB_PIXEL_ID`. `PageView`
+  dijejak automatik.
+- **Peristiwa Purchase** — apabila pembayaran berjaya (halaman `/status`), Pixel
+  `Purchase` dan GA4 `purchase` dicetuskan dengan `event_id` = rujukan fidyah.
+- **CAPI + GA4 Measurement Protocol (pelayan)** — halaman status memanggil
+  `/api/track/purchase`, yang menghantar peristiwa `Purchase` sisi-pelayan.
+  Set `FB_CAPI_ACCESS_TOKEN` (dan `GA_API_SECRET` untuk GA4 sisi-pelayan).
+  Nilai diambil dari pangkalan data (bukan pelayar) dan hanya untuk sumbangan
+  berstatus `paid`. `event_id`/`transaction_id` yang sama memastikan Facebook &
+  Google **menyahduplikasi** peristiwa pelayar vs pelayan.
+- Untuk uji CAPI, set `FB_TEST_EVENT_CODE` dari Events Manager.
+
+## 8. Automasi: Webhook & REST API (n8n)
+
+### Webhook keluar (laman → n8n)
+Set `N8N_WEBHOOK_URL` kepada URL Webhook node n8n anda. Laman akan **POST** JSON
+apabila:
+
+| Peristiwa | Bila |
+| --- | --- |
+| `donation.created` | Sumbangan baharu direkod (belum bayar) |
+| `donation.paid` | Pembayaran berjaya disahkan |
+
+Format badan:
+```json
+{ "event": "donation.paid", "data": { "reference": "FID-...", "amount": 14, "currency": "MYR", "status": "paid", "...": "..." }, "timestamp": "..." }
+```
+Jika `WEBHOOK_SIGNING_SECRET` diset, header `X-Signature: sha256=<hmac>`
+disertakan — sahkan di n8n terhadap badan mentah untuk pastikan keasliannya.
+
+### REST API masuk (n8n → laman)
+Set `API_KEY` untuk mengaktifkan. Semua permintaan perlukan
+`Authorization: Bearer <API_KEY>` (atau `X-API-Key: <API_KEY>`).
+
+| Endpoint | Keterangan |
+| --- | --- |
+| `GET /api/v1/donations` | Senarai sumbangan. Query: `status`, `limit` (≤200), `offset`, `from`, `to` |
+| `GET /api/v1/donations/{reference}` | Satu sumbangan ikut rujukan |
+| `GET /api/v1/stats` | Jumlah terkumpul, kiraan status, pecahan kategori |
+
+Contoh:
+```bash
+curl -H "Authorization: Bearer $API_KEY" \
+  "https://bayarfidyahonline.com/api/v1/donations?status=paid&limit=20"
+```
+
+> Jika `API_KEY` tidak diset, API dilumpuhkan (semua permintaan → 401).
+> Gunakan kunci rahsia yang kuat dan simpan sebagai env var di Vercel sahaja.
+
 ## Skrip
 
 ```bash

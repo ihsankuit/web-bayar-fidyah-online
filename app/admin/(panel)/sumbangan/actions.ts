@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { markDonationPaid, settleDonationByReference } from "@/lib/donations";
+import {
+  deleteDonation,
+  markDonationPaid,
+  settleDonationByReference,
+} from "@/lib/donations";
 import { getPurchase } from "@/lib/chip";
 import { sendReceiptEmail } from "@/lib/resend";
 import { logActivity } from "@/lib/activity-log";
@@ -86,5 +90,23 @@ export async function resendReceipt(formData: FormData) {
     reference: donation.reference,
     to: donation.payer_email,
   });
+  revalidateAll();
+}
+
+/** Permanently delete a donation record. */
+export async function deleteDonationAction(formData: FormData) {
+  await requireUser();
+  const id = formData.get("id") as string;
+  if (!id) return;
+
+  const donation = await deleteDonation(id);
+  if (donation) {
+    await logActivity("donation.delete", {
+      reference: donation.reference,
+      payer_name: donation.payer_name,
+      amount_sen: donation.amount_sen,
+      status: donation.status,
+    });
+  }
   revalidateAll();
 }

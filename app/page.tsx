@@ -4,9 +4,11 @@ import {
   ArrowRight,
   CheckCircle2,
   HeartHandshake,
+  Image as ImageIcon,
   Receipt,
   ShieldCheck,
   Sparkles,
+  Video,
   Wallet,
   XCircle,
 } from "lucide-react";
@@ -40,6 +42,8 @@ export default async function HomePage() {
     getLandingContent(),
     getGalleryItems(),
   ]);
+  const galleryImages = gallery.filter((g) => g.type === "image");
+  const galleryVideos = gallery.filter((g) => g.type === "video");
 
   // JSON-LD: WebSite schema
   const websiteJsonLd = {
@@ -434,9 +438,26 @@ export default async function HomePage() {
                   Koleksi gambar dan video aktiviti serta program kami.
                 </p>
               </div>
-              <div className="mt-12">
-                <Gallery items={gallery} />
-              </div>
+
+              {galleryImages.length > 0 && (
+                <div className="mt-12">
+                  <div className="mb-6 flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5 text-primary" />
+                    <h3 className="text-xl font-semibold">Gambar</h3>
+                  </div>
+                  <Gallery items={galleryImages} />
+                </div>
+              )}
+
+              {galleryVideos.length > 0 && (
+                <div className="mt-14">
+                  <div className="mb-6 flex items-center gap-2">
+                    <Video className="h-5 w-5 text-primary" />
+                    <h3 className="text-xl font-semibold">Video</h3>
+                  </div>
+                  <Gallery items={galleryVideos} />
+                </div>
+              )}
             </div>
           </section>
         )}
