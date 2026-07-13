@@ -121,10 +121,14 @@ tekan "Tandakan Dibayar" untuk sahkan secara manual.
    `.env.example` (termasuk `NEXT_PUBLIC_SITE_URL` = domain pengeluaran anda).
 3. Set `CRON_SECRET` kepada rentetan rawak (contoh: `openssl rand -hex 32`).
    Vercel Cron (dikonfigurasi dalam `vercel.json`) memanggil
-   `/api/cron/expire-pending` setiap jam dengan kunci ini untuk luputkan
-   sumbangan `pending` yang ditinggalkan — CHIP selepas 24 jam, pindahan
-   manual tanpa bukti selepas 7 hari. Rekod yang sudah ada bukti pembayaran
-   tidak sekali-kali diluputkan secara automatik.
+   `/api/cron/expire-pending` sekali sehari (jam 4 pagi waktu Malaysia) dengan
+   kunci ini untuk luputkan sumbangan `pending` yang ditinggalkan — CHIP
+   selepas 24 jam, pindahan manual tanpa bukti selepas 7 hari. Rekod yang
+   sudah ada bukti pembayaran tidak sekali-kali diluputkan secara automatik.
+   > Jadual dihadkan sekali sehari kerana pelan **Hobby (percuma)** Vercel
+   > tidak membenarkan cron job jalan lebih kerap — jika projek anda di pelan
+   > **Pro**, boleh tukar `vercel.json` kepada `"0 * * * *"` untuk semakan
+   > setiap jam.
 4. Deploy.
 
 ## 6. Cloudflare DNS
