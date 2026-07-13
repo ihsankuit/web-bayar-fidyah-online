@@ -32,9 +32,24 @@ export const DEFAULT_LANDING: LandingContent = {
         "Golongan warga emas yang uzur, pesakit kronik tanpa harapan sembuh, ibu hamil dan menyusu yang bimbang akan keselamatan, serta mereka yang melewatkan qada' puasa sehingga masuk Ramadan berikutnya.",
     },
     {
+      question: "Bagaimana cara bayar fidyah secara online?",
+      answer:
+        "Isi kalkulator di atas dengan bilangan hari dan kategori anda, lengkapkan maklumat diri, kemudian pilih kaedah bayaran (FPX, kad, QR atau pindahan bank). Keseluruhan proses mengambil masa kurang daripada 3 minit dan resit rasmi dihantar automatik ke emel anda.",
+    },
+    {
+      question: "Bila tempoh fidyah perlu dibayar?",
+      answer:
+        "Fidyah boleh dibayar bila-bila masa selepas puasa ditinggalkan, dan digalakkan diselesaikan secepat mungkin sebelum masuk Ramadan berikutnya. Jika dilewatkan sehingga Ramadan seterusnya tanpa keuzuran, kadar fidyah akan berganda mengikut bilangan tahun yang tertunggak.",
+    },
+    {
       question: "Bagaimana kadar fidyah dikira?",
       answer:
         "Kadar asas ialah nilai secupak beras bagi setiap hari yang ditinggalkan. Jumlah = bilangan hari × kadar sehari × gandaan (jika lewat qada'). Kalkulator di laman ini akan mengira secara automatik.",
+    },
+    {
+      question: "1 cupak beras bersamaan berapa gram atau berapa ringgit?",
+      answer:
+        "Secupak beras lazimnya bersamaan kira-kira 700 gram (0.7kg) makanan asasi. Nilai wangnya berbeza mengikut harga semasa dan penetapan pihak berkuasa agama negeri — di laman ini, kadar semasa ialah RM2.00 sehari, dikira automatik oleh kalkulator di atas.",
     },
     {
       question: "Adakah pembayaran ini selamat?",
@@ -47,9 +62,10 @@ export const DEFAULT_LANDING: LandingContent = {
         "Ya. Sebaik sahaja pembayaran berjaya, resit rasmi akan dihantar secara automatik ke alamat emel yang anda berikan.",
     },
     {
-      question: "Bolehkah saya membayar bagi pihak orang lain?",
+      question:
+        "Bolehkah saya membayar fidyah bagi pihak orang lain atau si mati (arwah)?",
       answer:
-        "Boleh. Anda boleh membayar fidyah bagi pihak ahli keluarga atau si mati. Nyatakan nama dan butiran pada borang pembayaran.",
+        "Boleh. Anda boleh membayar fidyah bagi pihak ahli keluarga, atau bagi pihak si mati (arwah) yang meninggalkan puasa dan tidak sempat mengqada' sebelum wafat — ini merupakan tanggungan hutang si mati yang wajib diselesaikan oleh waris. Nyatakan nama dan butiran berkaitan pada borang pembayaran.",
     },
     {
       question: "Berapakah kadar fidyah di Malaysia?",
@@ -67,9 +83,9 @@ export const DEFAULT_LANDING: LandingContent = {
         "Bagi mereka yang melewatkan qada' puasa sehingga masuk Ramadan berikutnya, kedua-dua qada' dan fidyah wajib ditunaikan. Qada' ialah menggantikan puasa yang ditinggalkan, manakala fidyah ialah denda makanan asasi bagi setiap hari yang dilewatkan.",
     },
     {
-      question: "Bolehkah waris membayar fidyah bagi pihak si mati?",
+      question: "Adakah fidyah sama seperti zakat?",
       answer:
-        "Boleh. Waris dibenarkan membayar fidyah bagi pihak si mati yang meninggalkan puasa dan tidak sempat mengqada'. Ini adalah tanggungan hutang si mati yang perlu diselesaikan oleh waris.",
+        "Tidak. Fidyah dan zakat adalah dua kewajipan berbeza — fidyah ialah denda kerana meninggalkan puasa wajib, manakala zakat (seperti zakat fitrah atau zakat harta) adalah ibadah berasingan dengan syarat dan kadarnya sendiri. Platform ini khusus untuk pembayaran fidyah puasa sahaja.",
     },
   ],
   footer_note:
