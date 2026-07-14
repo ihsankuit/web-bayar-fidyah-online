@@ -340,3 +340,12 @@ alter table public.integration_settings
   add column if not exists fb_pixel_id          text,
   add column if not exists fb_capi_access_token text,
   add column if not exists fb_test_event_code   text;
+
+-- Google Ads conversion tracking (managed from Admin > Integrasi).
+alter table public.integration_settings
+  add column if not exists google_ads_id               text,
+  add column if not exists google_ads_conversion_label  text;
+
+-- Google Tag Manager container (managed from Admin > Integrasi).
+alter table public.integration_settings
+  add column if not exists gtm_id text;

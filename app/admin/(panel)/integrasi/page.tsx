@@ -28,6 +28,9 @@ export default async function IntegrasiPage() {
         pixelId={tracking.pixelId}
         capiToken={tracking.capiToken}
         testEventCode={tracking.testEventCode}
+        googleAdsId={tracking.googleAdsId}
+        googleAdsConversionLabel={tracking.googleAdsConversionLabel}
+        gtmId={tracking.gtmId}
       />
 
       <IntegrationsManager
