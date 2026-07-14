@@ -33,6 +33,13 @@ export interface Donation {
   utm_campaign: string | null;
   utm_term: string | null;
   utm_content: string | null;
+  /** Conversion attribution captured from the payer's browser at submission time. */
+  ga_client_id: string | null;
+  fbp: string | null;
+  fbc: string | null;
+  client_ip: string | null;
+  user_agent: string | null;
+  landing_url: string | null;
 }
 
 export interface BlogPost {
