@@ -7,9 +7,13 @@ import { useEffect, useRef } from "react";
  *  - Facebook Pixel "Purchase" (browser) with eventID = reference
  *  - GA4 gtag "purchase" (browser) with transaction_id = reference
  *  - Google Ads gtag "conversion" (browser), if a conversion id/label is set
- *  - a plain `purchase` dataLayer push for Google Tag Manager triggers
- *  - a POST to /api/track/purchase for the server-side CAPI + GA4 MP events,
- *    which share the same ids so the platforms deduplicate.
+ *  - a plain `purchase` dataLayer push for Google Tag Manager triggers,
+ *    carrying `event_id: reference` too — a GTM Server-Side container's own
+ *    Facebook CAPI tag needs this to match the browser Pixel's eventID,
+ *    otherwise Meta counts the browser and server hits as two purchases.
+ *  - a POST to /api/track/purchase for our own built-in server-side CAPI +
+ *    GA4 MP events, which already share the same `reference` id so they
+ *    deduplicate against the Pixel event above.
  * Uses sessionStorage so a page refresh does not re-fire the browser events.
  */
 export function PurchaseTracker({
@@ -54,6 +58,7 @@ export function PurchaseTracker({
       window.dataLayer.push({
         event: "purchase",
         transaction_id: reference,
+        event_id: reference,
         value,
         currency,
       });
