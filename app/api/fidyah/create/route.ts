@@ -7,6 +7,8 @@ import { calculateFidyah, getCategory } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { emitDonationEvent } from "@/lib/webhooks";
+import { parseCookieHeader } from "@/lib/tracking/cookies";
+import { parseGaClientId } from "@/lib/tracking/google";
 import type { Donation } from "@/lib/database.types";
 
 const schema = z.object({
@@ -104,6 +106,11 @@ export async function POST(request: Request) {
     );
   }
 
+  // Capture conversion attribution from the payer's own browser now, while
+  // it's actually here — a manual bank transfer is only confirmed later by
+  // an admin, with no browser around to fire the pixel at that point.
+  const cookies = parseCookieHeader(request.headers.get("cookie"));
+
   // 1. Record the pending donation.
   const { data: donation, error: insertError } = await supabase
     .from("donations")
@@ -126,6 +133,12 @@ export async function POST(request: Request) {
       utm_campaign: input.utm_campaign || null,
       utm_term: input.utm_term || null,
       utm_content: input.utm_content || null,
+      ga_client_id: parseGaClientId(cookies["_ga"]),
+      fbp: cookies["_fbp"] || null,
+      fbc: cookies["_fbc"] || null,
+      client_ip: clientIp(request),
+      user_agent: request.headers.get("user-agent") || null,
+      landing_url: request.headers.get("referer") || null,
     })
     .select()
     .single();
