@@ -70,6 +70,9 @@ export async function saveTracking(
       fb_pixel_id: get("fb_pixel_id"),
       fb_capi_access_token: get("fb_capi_access_token"),
       fb_test_event_code: get("fb_test_event_code"),
+      google_ads_id: get("google_ads_id"),
+      google_ads_conversion_label: get("google_ads_conversion_label"),
+      gtm_id: get("gtm_id"),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "id" }

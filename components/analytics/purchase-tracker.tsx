@@ -6,6 +6,8 @@ import { useEffect, useRef } from "react";
  * Fires the conversion on the payment status page for a paid donation:
  *  - Facebook Pixel "Purchase" (browser) with eventID = reference
  *  - GA4 gtag "purchase" (browser) with transaction_id = reference
+ *  - Google Ads gtag "conversion" (browser), if a conversion id/label is set
+ *  - a plain `purchase` dataLayer push for Google Tag Manager triggers
  *  - a POST to /api/track/purchase for the server-side CAPI + GA4 MP events,
  *    which share the same ids so the platforms deduplicate.
  * Uses sessionStorage so a page refresh does not re-fire the browser events.
@@ -14,10 +16,14 @@ export function PurchaseTracker({
   reference,
   value,
   currency = "MYR",
+  googleAdsId,
+  googleAdsConversionLabel,
 }: {
   reference: string;
   value: number;
   currency?: string;
+  googleAdsId?: string;
+  googleAdsConversionLabel?: string;
 }) {
   const done = useRef(false);
 
@@ -32,6 +38,21 @@ export function PurchaseTracker({
     if (!alreadyTracked) {
       window.fbq?.("track", "Purchase", { value, currency }, { eventID: reference });
       window.gtag?.("event", "purchase", {
+        transaction_id: reference,
+        value,
+        currency,
+      });
+      if (googleAdsId && googleAdsConversionLabel) {
+        window.gtag?.("event", "conversion", {
+          send_to: `${googleAdsId}/${googleAdsConversionLabel}`,
+          transaction_id: reference,
+          value,
+          currency,
+        });
+      }
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "purchase",
         transaction_id: reference,
         value,
         currency,
@@ -51,7 +72,7 @@ export function PurchaseTracker({
       body: JSON.stringify({ reference }),
       keepalive: true,
     }).catch(() => {});
-  }, [reference, value, currency]);
+  }, [reference, value, currency, googleAdsId, googleAdsConversionLabel]);
 
   return null;
 }

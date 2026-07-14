@@ -14,6 +14,9 @@ export interface TrackingSettings {
   pixelId: string;
   capiToken: string;
   testEventCode: string;
+  googleAdsId: string;
+  googleAdsConversionLabel: string;
+  gtmId: string;
 }
 
 export async function getTrackingSettings(): Promise<TrackingSettings> {
@@ -23,6 +26,10 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
     pixelId: process.env.NEXT_PUBLIC_FB_PIXEL_ID ?? "",
     capiToken: process.env.FB_CAPI_ACCESS_TOKEN ?? "",
     testEventCode: process.env.FB_TEST_EVENT_CODE ?? "",
+    googleAdsId: process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "",
+    googleAdsConversionLabel:
+      process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL ?? "",
+    gtmId: process.env.NEXT_PUBLIC_GTM_ID ?? "",
   };
 
   try {
@@ -30,7 +37,7 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
     const { data } = await supabase
       .from("integration_settings")
       .select(
-        "ga_measurement_id, ga_api_secret, fb_pixel_id, fb_capi_access_token, fb_test_event_code"
+        "ga_measurement_id, ga_api_secret, fb_pixel_id, fb_capi_access_token, fb_test_event_code, google_ads_id, google_ads_conversion_label, gtm_id"
       )
       .eq("id", 1)
       .maybeSingle();
@@ -42,6 +49,10 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
         pixelId: data.fb_pixel_id || fallback.pixelId,
         capiToken: data.fb_capi_access_token || fallback.capiToken,
         testEventCode: data.fb_test_event_code || fallback.testEventCode,
+        googleAdsId: data.google_ads_id || fallback.googleAdsId,
+        googleAdsConversionLabel:
+          data.google_ads_conversion_label || fallback.googleAdsConversionLabel,
+        gtmId: data.gtm_id || fallback.gtmId,
       };
     }
   } catch {
