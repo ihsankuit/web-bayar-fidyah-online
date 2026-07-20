@@ -11,6 +11,9 @@ import { useEffect, useRef } from "react";
  *    carrying `event_id: reference` too — a GTM Server-Side container's own
  *    Facebook CAPI tag needs this to match the browser Pixel's eventID,
  *    otherwise Meta counts the browser and server hits as two purchases.
+ *    Also carries `name`/`email`/`phone`/`ip` (raw, unhashed) for GTM tags
+ *    that need customer-matching data — hashing, if the destination
+ *    requires it, is the tag's job.
  *  - a POST to /api/track/purchase for our own built-in server-side CAPI +
  *    GA4 MP events, which already share the same `reference` id so they
  *    deduplicate against the Pixel event above.
@@ -22,12 +25,20 @@ export function PurchaseTracker({
   currency = "MYR",
   googleAdsId,
   googleAdsConversionLabel,
+  name,
+  email,
+  phone,
+  ip,
 }: {
   reference: string;
   value: number;
   currency?: string;
   googleAdsId?: string;
   googleAdsConversionLabel?: string;
+  name?: string;
+  email?: string;
+  phone?: string | null;
+  ip?: string | null;
 }) {
   const done = useRef(false);
 
@@ -61,6 +72,10 @@ export function PurchaseTracker({
         event_id: reference,
         value,
         currency,
+        name,
+        email,
+        phone: phone || undefined,
+        ip: ip || undefined,
       });
       try {
         sessionStorage.setItem(key, "1");
@@ -77,7 +92,17 @@ export function PurchaseTracker({
       body: JSON.stringify({ reference }),
       keepalive: true,
     }).catch(() => {});
-  }, [reference, value, currency, googleAdsId, googleAdsConversionLabel]);
+  }, [
+    reference,
+    value,
+    currency,
+    googleAdsId,
+    googleAdsConversionLabel,
+    name,
+    email,
+    phone,
+    ip,
+  ]);
 
   return null;
 }

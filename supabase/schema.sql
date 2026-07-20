@@ -120,6 +120,17 @@ alter table public.donations add column if not exists user_agent   text;
 alter table public.donations add column if not exists landing_url  text;
 
 -- ---------------------------------------------------------------------
+--  Upsell campaign accepted at checkout (combined into the same payment
+--  as the fidyah amount). The campaign's own config (title, description,
+--  amount, on/off) lives in `site_settings` under the key "upsell" —
+--  these columns just record what a given donation actually included.
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists upsell_accepted boolean not null default false;
+alter table public.donations add column if not exists upsell_title text;
+alter table public.donations add column if not exists upsell_amount_sen integer not null default 0;
+
+-- ---------------------------------------------------------------------
 --  Blog posts
 -- ---------------------------------------------------------------------
 create table if not exists public.blog_posts (

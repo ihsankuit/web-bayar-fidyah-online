@@ -34,6 +34,7 @@ import {
   type FidyahCategoryId,
 } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
+import { getUpsellSettings } from "@/lib/upsell";
 import { getGalleryItems } from "@/lib/gallery";
 import { formatMYR } from "@/lib/utils";
 
@@ -53,8 +54,9 @@ const CATEGORY_IMAGES: Partial<Record<FidyahCategoryId, string[]>> = {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [content, gallery] = await Promise.all([
+  const [content, upsell, gallery] = await Promise.all([
     getLandingContent(),
+    getUpsellSettings(),
     getGalleryItems(),
   ]);
   const galleryImages = gallery.filter((g) => g.type === "image");
@@ -186,6 +188,7 @@ export default async function HomePage() {
               <FidyahForm
                 rateSen={content.fidyah_rate_sen}
                 manualTransferAvailable={Boolean(content.bank_account_number)}
+                upsell={upsell}
               />
             </div>
           </div>

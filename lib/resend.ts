@@ -41,6 +41,14 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
         ${row("Bilangan hari", String(donation.days))}
         ${row("Gandaan", `× ${donation.multiplier}`)}
         ${row("Kadar sehari", formatMYR(donation.rate_sen))}
+        ${
+          donation.upsell_accepted && donation.upsell_title
+            ? row(
+                escapeHtml(donation.upsell_title),
+                formatMYR(donation.upsell_amount_sen)
+              )
+            : ""
+        }
         ${row("Jumlah dibayar", `<strong>${formatMYR(donation.amount_sen)}</strong>`)}
         ${row("Tarikh", donation.paid_at ? formatDate(donation.paid_at) : formatDate(donation.created_at))}
       </table>
