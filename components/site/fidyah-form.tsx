@@ -23,10 +23,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { calculateFidyah, FIDYAH_CATEGORIES, NEGERI } from "@/lib/fidyah";
 import { formatMYR } from "@/lib/utils";
 import { getStoredUtm } from "@/lib/utm";
-import type { PaymentMethod } from "@/lib/database.types";
+import type { PaymentMethod, UpsellSettings } from "@/lib/database.types";
 
 interface ManualTransferData {
   reference: string;
@@ -37,9 +45,11 @@ interface ManualTransferData {
 export function FidyahForm({
   rateSen,
   manualTransferAvailable = false,
+  upsell,
 }: {
   rateSen: number;
   manualTransferAvailable?: boolean;
+  upsell?: UpsellSettings;
 }) {
   const [days, setDays] = useState(1);
   const [multiplier, setMultiplier] = useState(1);
@@ -51,6 +61,7 @@ export function FidyahForm({
   const [negeri, setNegeri] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showUpsell, setShowUpsell] = useState(false);
   const [manualTransfer, setManualTransfer] = useState<ManualTransferData | null>(
     null
   );
@@ -60,13 +71,22 @@ export function FidyahForm({
     [days, multiplier, rateSen]
   );
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Sila masukkan nama anda.");
     if (!email.trim()) return toast.error("Sila masukkan alamat emel anda.");
     if (result.totalSen < 100)
       return toast.error("Jumlah minimum pembayaran ialah RM1.00.");
 
+    if (upsell?.enabled) {
+      setShowUpsell(true);
+      return;
+    }
+    submitDonation(false);
+  }
+
+  async function submitDonation(upsellAccepted: boolean) {
+    setShowUpsell(false);
     setSubmitting(true);
     try {
       const utm = getStoredUtm();
@@ -83,6 +103,7 @@ export function FidyahForm({
           multiplier: result.multiplier,
           message,
           method,
+          upsellAccepted,
           ...(utm ?? {}),
         }),
       });
@@ -117,6 +138,7 @@ export function FidyahForm({
   }
 
   return (
+    <>
     <Card className="border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader>
         <CardTitle className="text-2xl">Kalkulator & Bayaran Fidyah</CardTitle>
@@ -126,7 +148,7 @@ export function FidyahForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleFormSubmit} className="space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="category">Kategori</Label>
@@ -287,6 +309,53 @@ export function FidyahForm({
         </form>
       </CardContent>
     </Card>
+
+    {upsell?.enabled && (
+      <Dialog open={showUpsell} onOpenChange={setShowUpsell}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{upsell.title}</DialogTitle>
+            <DialogDescription>{upsell.description}</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Fidyah</span>
+              <span>{formatMYR(result.totalSen)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Kempen tambahan</span>
+              <span>{formatMYR(upsell.amount_sen)}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2 font-medium">
+              <span>Jumlah jika sertai</span>
+              <span className="text-primary">
+                {formatMYR(result.totalSen + upsell.amount_sen)}
+              </span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={() => submitDonation(false)}
+            >
+              {submitting && <Loader2 className="animate-spin" />}
+              {upsell.skip_label}
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting}
+              onClick={() => submitDonation(true)}
+            >
+              {submitting && <Loader2 className="animate-spin" />}
+              {upsell.accept_label}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 }
 

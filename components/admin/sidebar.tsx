@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   FileText,
   GalleryHorizontalEnd,
+  Gift,
   History,
   Image as ImageIcon,
   LayoutDashboard,
@@ -28,6 +29,7 @@ const nav = [
   { href: "/admin/galeri", label: "Galeri", icon: GalleryHorizontalEnd },
   { href: "/admin/media", label: "Media", icon: ImageIcon },
   { href: "/admin/laman", label: "Laman Utama", icon: PanelsTopLeft },
+  { href: "/admin/kempen", label: "Kempen Naik Taraf", icon: Gift },
   { href: "/admin/integrasi", label: "Integrasi", icon: Plug },
   { href: "/admin/log", label: "Log Aktiviti", icon: History },
   { href: "/admin/keselamatan", label: "Keselamatan", icon: ShieldCheck },

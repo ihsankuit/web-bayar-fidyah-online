@@ -40,6 +40,10 @@ export interface Donation {
   client_ip: string | null;
   user_agent: string | null;
   landing_url: string | null;
+  /** Upsell campaign accepted at checkout (combined into the same payment). */
+  upsell_accepted: boolean;
+  upsell_title: string | null;
+  upsell_amount_sen: number;
 }
 
 export interface BlogPost {
@@ -116,4 +120,14 @@ export interface LandingContent {
   bank_name: string;
   bank_account_name: string;
   bank_account_number: string;
+}
+
+/** Upsell campaign offered at checkout, stored under the `upsell` settings key. */
+export interface UpsellSettings {
+  enabled: boolean;
+  title: string;
+  description: string;
+  amount_sen: number;
+  accept_label: string;
+  skip_label: string;
 }
