@@ -52,6 +52,10 @@ export default async function StatusPage({
           value={donation.amount_sen / 100}
           googleAdsId={tracking?.googleAdsId}
           googleAdsConversionLabel={tracking?.googleAdsConversionLabel}
+          name={donation.payer_name}
+          email={donation.payer_email}
+          phone={donation.payer_phone}
+          ip={donation.client_ip}
         />
       )}
       <Navbar />
