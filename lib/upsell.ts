@@ -6,6 +6,7 @@ export const DEFAULT_UPSELL: UpsellSettings = {
   title: "",
   description: "",
   amount_sen: 1000,
+  poster_image_url: "",
   accept_label: "Ya, Saya Nak Sertai",
   skip_label: "Teruskan Bayar Fidyah Sahaja",
 };

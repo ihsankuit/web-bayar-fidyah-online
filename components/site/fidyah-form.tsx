@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Loader2, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,6 +63,9 @@ export function FidyahForm({
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
+  const [upsellAmount, setUpsellAmount] = useState(() =>
+    upsell ? upsell.amount_sen / 100 : 10
+  );
   const [manualTransfer, setManualTransfer] = useState<ManualTransferData | null>(
     null
   );
@@ -104,6 +108,9 @@ export function FidyahForm({
           message,
           method,
           upsellAccepted,
+          upsellAmountSen: upsellAccepted
+            ? Math.round(Math.max(1, upsellAmount) * 100)
+            : undefined,
           ...(utm ?? {}),
         }),
       });
@@ -313,10 +320,32 @@ export function FidyahForm({
     {upsell?.enabled && (
       <Dialog open={showUpsell} onOpenChange={setShowUpsell}>
         <DialogContent>
+          {upsell.poster_image_url && (
+            <div className="relative -mx-6 -mt-6 h-40 w-[calc(100%+3rem)] overflow-hidden rounded-t-lg sm:h-48">
+              <Image
+                src={upsell.poster_image_url}
+                alt={upsell.title}
+                fill
+                sizes="(min-width: 640px) 32rem, 100vw"
+                className="object-cover"
+              />
+            </div>
+          )}
           <DialogHeader>
             <DialogTitle>{upsell.title}</DialogTitle>
             <DialogDescription>{upsell.description}</DialogDescription>
           </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="upsell_amount">Jumlah kempen (RM)</Label>
+            <Input
+              id="upsell_amount"
+              type="number"
+              min="1"
+              step="0.01"
+              value={upsellAmount}
+              onChange={(e) => setUpsellAmount(Number(e.target.value) || 0)}
+            />
+          </div>
           <div className="rounded-lg border bg-muted/40 p-4 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Fidyah</span>
@@ -324,12 +353,14 @@ export function FidyahForm({
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Kempen tambahan</span>
-              <span>{formatMYR(upsell.amount_sen)}</span>
+              <span>{formatMYR(Math.round(Math.max(1, upsellAmount) * 100))}</span>
             </div>
             <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2 font-medium">
               <span>Jumlah jika sertai</span>
               <span className="text-primary">
-                {formatMYR(result.totalSen + upsell.amount_sen)}
+                {formatMYR(
+                  result.totalSen + Math.round(Math.max(1, upsellAmount) * 100)
+                )}
               </span>
             </div>
           </div>

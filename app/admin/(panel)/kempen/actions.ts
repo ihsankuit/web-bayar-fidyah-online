@@ -38,6 +38,7 @@ export async function saveUpsell(
       (formData.get("description") as string)?.trim() ||
       DEFAULT_UPSELL.description,
     amount_sen: Math.round(amountRinggit * 100),
+    poster_image_url: (formData.get("poster_image_url") as string)?.trim() || "",
     accept_label:
       (formData.get("accept_label") as string)?.trim() ||
       DEFAULT_UPSELL.accept_label,
