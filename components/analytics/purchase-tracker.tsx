@@ -4,6 +4,12 @@ import { useEffect, useRef } from "react";
 
 /**
  * Fires the conversion on the payment status page for a paid donation:
+ *  - `gtag('set', 'user_data', ...)` with email/phone before the events below
+ *    — Google's documented way to pass customer data for Enhanced
+ *    Conversions: gtag.js hashes it (SHA-256) client-side before sending, so
+ *    it never appears as a raw GA4 event parameter (Google's terms forbid
+ *    PII there) while still reaching Google Ads Enhanced Conversions and,
+ *    via the server container, a Facebook CAPI tag's User Data mapping.
  *  - Facebook Pixel "Purchase" (browser) with eventID = reference
  *  - GA4 gtag "purchase" (browser) with transaction_id = reference
  *  - Google Ads gtag "conversion" (browser), if a conversion id/label is set
@@ -53,6 +59,12 @@ export function PurchaseTracker({
       typeof window !== "undefined" && sessionStorage.getItem(key);
 
     if (!alreadyTracked) {
+      if (email || phone) {
+        window.gtag?.("set", "user_data", {
+          email: email || undefined,
+          phone_number: phone || undefined,
+        });
+      }
       window.fbq?.("track", "Purchase", { value, currency }, { eventID: reference });
       window.gtag?.("event", "purchase", {
         transaction_id: reference,
