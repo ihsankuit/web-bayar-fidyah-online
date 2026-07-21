@@ -11,9 +11,9 @@ import { useEffect, useRef } from "react";
  *    carrying `event_id: reference` too — a GTM Server-Side container's own
  *    Facebook CAPI tag needs this to match the browser Pixel's eventID,
  *    otherwise Meta counts the browser and server hits as two purchases.
- *    Also carries `name`/`email`/`phone`/`ip` (raw, unhashed) for GTM tags
- *    that need customer-matching data — hashing, if the destination
- *    requires it, is the tag's job.
+ *    Also carries `name`/`email`/`phone`/`ip`/`negeri` (raw, unhashed) for
+ *    GTM tags that need customer-matching or geo data — hashing, if the
+ *    destination requires it, is the tag's job.
  *  - a POST to /api/track/purchase for our own built-in server-side CAPI +
  *    GA4 MP events, which already share the same `reference` id so they
  *    deduplicate against the Pixel event above.
@@ -29,6 +29,7 @@ export function PurchaseTracker({
   email,
   phone,
   ip,
+  negeri,
 }: {
   reference: string;
   value: number;
@@ -39,6 +40,7 @@ export function PurchaseTracker({
   email?: string;
   phone?: string | null;
   ip?: string | null;
+  negeri?: string | null;
 }) {
   const done = useRef(false);
 
@@ -76,6 +78,7 @@ export function PurchaseTracker({
         email,
         phone: phone || undefined,
         ip: ip || undefined,
+        negeri: negeri || undefined,
       });
       try {
         sessionStorage.setItem(key, "1");
@@ -102,6 +105,7 @@ export function PurchaseTracker({
     email,
     phone,
     ip,
+    negeri,
   ]);
 
   return null;

@@ -56,6 +56,7 @@ export default async function StatusPage({
           email={donation.payer_email}
           phone={donation.payer_phone}
           ip={donation.client_ip}
+          negeri={donation.negeri}
         />
       )}
       <Navbar />
