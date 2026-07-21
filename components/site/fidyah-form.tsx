@@ -128,6 +128,7 @@ export function FidyahForm({
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         event: "begin_checkout",
+        event_id: data.reference,
         transaction_id: data.reference,
         value: checkoutValue,
         currency: "MYR",
