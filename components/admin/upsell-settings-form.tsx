@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -68,7 +69,7 @@ export function UpsellSettingsForm({ upsell }: { upsell: UpsellSettings }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Jumlah tambahan (RM)</Label>
+              <Label htmlFor="amount">Jumlah cadangan (RM)</Label>
               <Input
                 id="amount"
                 name="amount"
@@ -77,6 +78,10 @@ export function UpsellSettingsForm({ upsell }: { upsell: UpsellSettings }) {
                 min="1"
                 defaultValue={(upsell.amount_sen / 100).toFixed(2)}
               />
+              <p className="text-xs text-muted-foreground">
+                Dipaparkan sebagai nilai lalai — pembayar boleh ubah jumlah
+                ini dalam popup.
+              </p>
             </div>
           </div>
 
@@ -88,6 +93,24 @@ export function UpsellSettingsForm({ upsell }: { upsell: UpsellSettings }) {
               defaultValue={upsell.description}
               placeholder="Terangkan kempen ini secara ringkas kepada pembayar."
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="poster_image_url">URL poster kempen (pilihan)</Label>
+            <Input
+              id="poster_image_url"
+              name="poster_image_url"
+              defaultValue={upsell.poster_image_url}
+              placeholder="https://... (muat naik di Media, salin URL)"
+            />
+            <p className="text-xs text-muted-foreground">
+              Dipaparkan di bahagian atas popup. Kosongkan untuk tiada
+              poster. Muat naik gambar di{" "}
+              <Link href="/admin/media" className="underline">
+                Media
+              </Link>{" "}
+              dahulu, kemudian salin URL fail tersebut ke sini.
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

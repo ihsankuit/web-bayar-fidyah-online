@@ -23,6 +23,7 @@ const schema = z.object({
   message: z.string().trim().max(500).optional().default(""),
   method: z.enum(["chip", "manual"]).optional().default("chip"),
   upsellAccepted: z.boolean().optional().default(false),
+  upsellAmountSen: z.number().int().min(100).max(100_000_00).optional(),
   utm_source: z.string().trim().max(100).optional().default(""),
   utm_medium: z.string().trim().max(100).optional().default(""),
   utm_campaign: z.string().trim().max(100).optional().default(""),
@@ -83,11 +84,15 @@ export async function POST(request: Request) {
     );
   }
 
-  // Re-derive the upsell amount server-side — never trust a client-supplied
-  // total. Only applies if the campaign is actually enabled right now.
+  // The upsell amount is payer-adjustable (like a tip), but only applies if
+  // the campaign is actually enabled right now — never trust that alone.
+  // The schema already bounds upsellAmountSen to [RM1, RM100,000]; fall back
+  // to the campaign's own default if the payer didn't supply one.
   const upsell = await getUpsellSettings();
-  const upsellApplied = input.upsellAccepted && upsell.enabled && upsell.amount_sen > 0;
-  const upsellAmountSen = upsellApplied ? upsell.amount_sen : 0;
+  const upsellApplied = input.upsellAccepted && upsell.enabled;
+  const upsellAmountSen = upsellApplied
+    ? input.upsellAmountSen ?? upsell.amount_sen
+    : 0;
   const totalSen = calc.totalSen + upsellAmountSen;
 
   if (input.method === "manual" && !content.bank_account_number) {

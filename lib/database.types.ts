@@ -127,7 +127,10 @@ export interface UpsellSettings {
   enabled: boolean;
   title: string;
   description: string;
+  /** Default/suggested amount — the payer can adjust it in the popup. */
   amount_sen: number;
+  /** Poster image shown in the popup (uploaded via Admin > Media, URL pasted here). */
+  poster_image_url: string;
   accept_label: string;
   skip_label: string;
 }
