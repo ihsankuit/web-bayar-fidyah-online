@@ -117,6 +117,23 @@ export function FidyahForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Ralat tidak dijangka.");
 
+      // Checkout initiated: the donation row exists and we're about to hand
+      // the payer over to CHIP (or show the bank-transfer card). Fire it here
+      // — the actual CHIP payment page is on chip-in.asia, a domain our GTM
+      // can't run on, so this is the last point we control. Uses sendBeacon
+      // under the hood (gtag/fbq), which survives the redirect that follows.
+      const checkoutValue =
+        result.totalSen / 100 +
+        (upsellAccepted ? Math.max(1, upsellAmount) : 0);
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "begin_checkout",
+        transaction_id: data.reference,
+        value: checkoutValue,
+        currency: "MYR",
+        payment_method: method,
+      });
+
       if (data.method === "manual") {
         setManualTransfer({
           reference: data.reference,
