@@ -321,7 +321,7 @@ export function FidyahForm({
       <Dialog open={showUpsell} onOpenChange={setShowUpsell}>
         <DialogContent>
           {upsell.poster_image_url && (
-            <div className="relative -mx-6 -mt-6 h-40 w-[calc(100%+3rem)] overflow-hidden rounded-t-lg sm:h-48">
+            <div className="relative -mx-6 -mt-6 aspect-square w-[calc(100%+3rem)] overflow-hidden rounded-t-lg">
               <Image
                 src={upsell.poster_image_url}
                 alt={upsell.title}
