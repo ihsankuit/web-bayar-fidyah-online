@@ -337,9 +337,9 @@ export function FidyahForm({
 
     {upsell?.enabled && (
       <Dialog open={showUpsell} onOpenChange={setShowUpsell}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] w-[calc(100%-1.5rem)] overflow-y-auto overflow-x-hidden sm:w-full">
           {upsell.poster_image_url && (
-            <div className="relative -mx-6 -mt-6 aspect-square w-[calc(100%+3rem)] overflow-hidden rounded-t-lg">
+            <div className="relative -mx-6 -mt-6 aspect-square max-h-[42vh] w-[calc(100%+3rem)] overflow-hidden rounded-t-lg sm:max-h-none">
               <Image
                 src={upsell.poster_image_url}
                 alt={upsell.title}
@@ -358,8 +358,10 @@ export function FidyahForm({
             <Input
               id="upsell_amount"
               type="number"
+              inputMode="decimal"
               min="1"
               step="0.01"
+              className="text-base"
               value={upsellAmount}
               onChange={(e) => setUpsellAmount(Number(e.target.value) || 0)}
             />
