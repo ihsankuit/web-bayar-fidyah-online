@@ -339,13 +339,15 @@ export function FidyahForm({
       <Dialog open={showUpsell} onOpenChange={setShowUpsell}>
         <DialogContent className="max-h-[90dvh] w-[calc(100%-1.5rem)] overflow-y-auto overflow-x-hidden sm:w-full">
           {upsell.poster_image_url && (
-            <div className="relative -mx-6 -mt-6 aspect-square max-h-[42vh] w-[calc(100%+3rem)] overflow-hidden rounded-t-lg sm:max-h-none">
+            <div className="-mx-6 -mt-6 overflow-hidden rounded-t-lg bg-muted">
               <Image
                 src={upsell.poster_image_url}
                 alt={upsell.title}
-                fill
+                width={0}
+                height={0}
                 sizes="(min-width: 640px) 32rem, 100vw"
-                className="object-cover"
+                style={{ width: "100%", height: "auto" }}
+                className="mx-auto max-h-[55vh] object-contain"
               />
             </div>
           )}
