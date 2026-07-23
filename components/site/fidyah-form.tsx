@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Loader2, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -251,6 +252,14 @@ export function FidyahForm({
                   <p className="mt-0.5 text-xs font-normal text-muted-foreground">
                     Pembayaran segera melalui CHIP
                   </p>
+                  <Image
+                    src="/pay-with-chip-long.svg"
+                    alt="Pay with CHIP"
+                    width={623}
+                    height={100}
+                    className="mt-2 h-5 w-auto"
+                    unoptimized
+                  />
                 </button>
                 <button
                   type="button"
