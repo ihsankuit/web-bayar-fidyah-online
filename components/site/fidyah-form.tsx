@@ -298,6 +298,14 @@ export function FidyahForm({
                   <p className="mt-0.5 text-xs font-normal text-muted-foreground">
                     Pembayaran segera melalui CHIP
                   </p>
+                  <Image
+                    src="/pay-with-chip.svg"
+                    alt="Pay with CHIP"
+                    width={128}
+                    height={18}
+                    className="mt-2 h-4 w-auto"
+                    unoptimized
+                  />
                 </button>
                 <button
                   type="button"
