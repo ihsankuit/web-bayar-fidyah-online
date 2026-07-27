@@ -47,6 +47,8 @@ export function Logo({
     <img
       src="/logo-ihsanku.svg"
       alt="ihsanku"
+      width={4465}
+      height={1457}
       className={cn(
         "w-auto",
         size === "sm" ? "h-7" : size === "lg" ? "h-12" : "h-9",
