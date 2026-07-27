@@ -136,7 +136,6 @@ export default async function HomePage() {
                   src={content.hero_image_url}
                   alt=""
                   fill
-                  priority
                   sizes="100vw"
                   className="object-cover opacity-15"
                 />
