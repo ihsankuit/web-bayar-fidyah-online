@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAuthorized, unauthorized, serializeDonation } from "@/lib/api";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import type { Donation, DonationStatus } from "@/lib/database.types";
 
 /**
@@ -10,6 +11,9 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
  */
 export async function GET(request: Request) {
   if (!(await isAuthorized(request))) return unauthorized();
+  if (!(await checkRateLimit(`api-v1-donations:${clientIp(request)}`, 120, 60))) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
 
   const url = new URL(request.url);
   const status = url.searchParams.get("status") as DonationStatus | null;

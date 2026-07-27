@@ -19,9 +19,11 @@ export async function isAuthorized(request: Request): Promise<boolean> {
   const provided = bearer ?? request.headers.get("x-api-key");
   if (!provided) return false;
 
-  const a = Buffer.from(provided);
-  const b = Buffer.from(key);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  // Hash both to a fixed 32-byte digest before comparing so the compare is
+  // constant-time and never leaks the key length via a length check.
+  const a = crypto.createHash("sha256").update(provided).digest();
+  const b = crypto.createHash("sha256").update(key).digest();
+  return crypto.timingSafeEqual(a, b);
 }
 
 export function unauthorized() {
