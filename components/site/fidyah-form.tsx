@@ -299,11 +299,11 @@ export function FidyahForm({
                     Pembayaran segera melalui CHIP
                   </p>
                   <Image
-                    src="/pay-with-chip.svg"
+                    src="/pay-with-chip-long.svg"
                     alt="Pay with CHIP"
-                    width={128}
-                    height={18}
-                    className="mt-2 h-4 w-auto"
+                    width={160}
+                    height={32}
+                    className="mt-2 h-auto w-full max-w-[150px]"
                     unoptimized
                   />
                 </button>
@@ -334,18 +334,6 @@ export function FidyahForm({
             {submitting && <Loader2 className="animate-spin" />}
             Bayar {formatMYR(result.totalSen)} Sekarang
           </Button>
-          {method !== "manual" && (
-            <div className="flex justify-center pt-1">
-              <Image
-                src="/pay-with-chip-long.svg"
-                alt="Pay with CHIP"
-                width={240}
-                height={48}
-                className="h-9 w-auto"
-                unoptimized
-              />
-            </div>
-          )}
           <p className="text-center text-xs text-muted-foreground">
             {method === "manual"
               ? "Anda akan diminta pindahkan bayaran secara manual dan muat naik bukti pembayaran."
