@@ -27,6 +27,20 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.supabase.in" },
     ],
   },
+  async headers() {
+    return [
+      {
+        // Advertise the REST API docs to crawlers/agents per RFC 8288.
+        source: "/",
+        headers: [
+          {
+            key: "Link",
+            value: '</docs/api-reference.md>; rel="service-doc"',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
