@@ -147,8 +147,12 @@ export default async function SumbanganPage({
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <form action="/admin/sumbangan" method="get" className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <form
+            action="/admin/sumbangan"
+            method="get"
+            className="flex flex-wrap gap-2"
+          >
             {status !== "all" && (
               <input type="hidden" name="status" value={status} />
             )}
@@ -157,7 +161,7 @@ export default async function SumbanganPage({
               name="q"
               defaultValue={q}
               placeholder="Cari nama, emel atau rujukan..."
-              className="w-64"
+              className="w-full sm:w-64"
             />
             <Button type="submit" variant="outline" size="sm">
               Cari
@@ -189,22 +193,22 @@ export default async function SumbanganPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Rujukan</TableHead>
+                  <TableHead className="hidden lg:table-cell">Rujukan</TableHead>
                   <TableHead>Pembayar</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Hari</TableHead>
+                  <TableHead className="hidden lg:table-cell">Kategori</TableHead>
+                  <TableHead className="hidden lg:table-cell">Hari</TableHead>
                   <TableHead className="text-right">Jumlah</TableHead>
-                  <TableHead>Kaedah</TableHead>
-                  <TableHead>Sumber</TableHead>
+                  <TableHead className="hidden lg:table-cell">Kaedah</TableHead>
+                  <TableHead className="hidden lg:table-cell">Sumber</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Tarikh</TableHead>
+                  <TableHead className="hidden sm:table-cell">Tarikh</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((d) => (
                   <TableRow key={d.id}>
-                    <TableCell className="font-mono text-xs">
+                    <TableCell className="hidden font-mono text-xs lg:table-cell">
                       {d.reference}
                     </TableCell>
                     <TableCell>
@@ -214,10 +218,10 @@ export default async function SumbanganPage({
                         {d.negeri ? ` · ${d.negeri}` : ""}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden text-sm lg:table-cell">
                       {getCategory(d.category)?.title ?? d.category}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden text-sm lg:table-cell">
                       {d.days} × {d.multiplier}
                     </TableCell>
                     <TableCell className="text-right font-medium">
@@ -228,10 +232,10 @@ export default async function SumbanganPage({
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden text-sm lg:table-cell">
                       {d.payment_method === "manual" ? "Pindahan Manual" : "CHIP"}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden text-sm lg:table-cell">
                       {d.utm_source ? (
                         <div>
                           <div className="font-medium">
@@ -253,7 +257,7 @@ export default async function SumbanganPage({
                     <TableCell>
                       <StatusBadge status={d.status} />
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                       {formatDate(d.created_at)}
                     </TableCell>
                     <TableCell>

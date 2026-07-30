@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendWebhook } from "@/lib/webhooks";
-import { checkMurpatiSession } from "@/lib/murpati";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -105,45 +104,6 @@ export async function revokeApiKey(): Promise<void> {
     { onConflict: "id" }
   );
   revalidatePath("/admin/integrasi");
-}
-
-/** Save Murpati (WhatsApp blast) device credentials. */
-export async function saveMurpati(
-  _prev: IntegrationState,
-  formData: FormData
-): Promise<IntegrationState> {
-  const supabase = await requireUser();
-
-  const murpati_api_key =
-    (formData.get("murpati_api_key") as string)?.trim() || null;
-  const murpati_session_id =
-    (formData.get("murpati_session_id") as string)?.trim() || null;
-
-  const { error } = await supabase.from("integration_settings").upsert(
-    {
-      id: 1,
-      murpati_api_key,
-      murpati_session_id,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "id" }
-  );
-
-  if (error) return { error: error.message };
-
-  revalidatePath("/admin/integrasi");
-  revalidatePath("/admin/whatsapp");
-  return { ok: true, message: "Tetapan Murpati disimpan." };
-}
-
-/** Check the configured Murpati device's connection status. */
-export async function testMurpatiConnection(): Promise<IntegrationState> {
-  await requireUser();
-  const result = await checkMurpatiSession();
-  if (!result.ok) {
-    return { error: result.error ?? "Gagal sambung ke Murpati." };
-  }
-  return { ok: true, message: "Peranti WhatsApp bersambung." };
 }
 
 /** Send a test event to the configured webhook so the user can verify n8n. */

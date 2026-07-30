@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/site/logo";
+import { MobileNav } from "@/components/site/mobile-nav";
 
 const links = [
   { href: "/#kira", label: "Kalkulator" },
@@ -31,9 +32,12 @@ export function Navbar() {
           ))}
         </nav>
 
-        <Button asChild size="sm">
-          <Link href="/#kira">Bayar Sekarang</Link>
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button asChild size="sm">
+            <Link href="/#kira">Bayar Sekarang</Link>
+          </Button>
+          <MobileNav links={links} />
+        </div>
       </div>
     </header>
   );
