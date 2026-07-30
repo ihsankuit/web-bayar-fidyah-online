@@ -120,6 +120,16 @@ export interface LandingContent {
   bank_name: string;
   bank_account_name: string;
   bank_account_number: string;
+  /**
+   * Per-category overrides for the "Siapa Yang Wajib Membayar Fidyah?"
+   * cards, keyed by FidyahCategoryId (see lib/fidyah.ts). Any field left
+   * unset falls back to the hardcoded default (title/description) or the
+   * shipped illustration (image_url).
+   */
+  category_content: Record<
+    string,
+    { title?: string; description?: string; image_url?: string }
+  >;
 }
 
 /** Upsell campaign offered at checkout, stored under the `upsell` settings key. */

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_LANDING } from "@/lib/content";
+import { FIDYAH_CATEGORIES } from "@/lib/fidyah";
 import type { LandingContent } from "@/lib/database.types";
 
 async function requireUser() {
@@ -43,6 +44,25 @@ export async function saveLanding(
     return { error: "Format JSON untuk statistik atau FAQ tidak sah." };
   }
 
+  const category_content: LandingContent["category_content"] = {};
+  for (const c of FIDYAH_CATEGORIES) {
+    if (c.id === "lain") continue;
+    const title = (formData.get(`category_${c.id}_title`) as string)?.trim();
+    const description = (
+      formData.get(`category_${c.id}_description`) as string
+    )?.trim();
+    const image_url = (
+      formData.get(`category_${c.id}_image_url`) as string
+    )?.trim();
+    if (title || description || image_url) {
+      category_content[c.id] = {
+        ...(title && { title }),
+        ...(description && { description }),
+        ...(image_url && { image_url }),
+      };
+    }
+  }
+
   const value: LandingContent = {
     hero_badge: (formData.get("hero_badge") as string) || DEFAULT_LANDING.hero_badge,
     hero_title: (formData.get("hero_title") as string) || DEFAULT_LANDING.hero_title,
@@ -77,6 +97,7 @@ export async function saveLanding(
       (formData.get("bank_account_name") as string)?.trim() || "",
     bank_account_number:
       (formData.get("bank_account_number") as string)?.trim() || "",
+    category_content,
   };
 
   const { error } = await supabase

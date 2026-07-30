@@ -73,6 +73,20 @@ export function getCategory(id: string): FidyahCategory | undefined {
   return FIDYAH_CATEGORIES.find((c) => c.id === id);
 }
 
+/**
+ * Default illustrations for the "Siapa Yang Wajib Membayar Fidyah?" cards on
+ * the landing page. Admins can override these per-category (single image)
+ * from Dashboard > Laman Utama; until they do, these ship as-is.
+ * hamil_menyusu gets two images side by side (pregnant + breastfeeding).
+ */
+export const DEFAULT_CATEGORY_IMAGES: Partial<Record<FidyahCategoryId, string[]>> = {
+  uzur_tua: ["/kategori/warga-emas.webp"],
+  sakit_kronik: ["/kategori/uzur-sakit.webp"],
+  hamil_menyusu: ["/kategori/hamil.webp", "/kategori/menyusu.webp"],
+  lewat_qada: ["/kategori/lewat-qada.webp"],
+  meninggal_dunia: ["/kategori/meninggal-dunia.webp"],
+};
+
 export interface QadaFidyahSituation {
   situation: string;
   kenaQada: boolean;
