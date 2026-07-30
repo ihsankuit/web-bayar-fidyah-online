@@ -167,6 +167,22 @@ export default async function BlogPostPage({
           <div className="mt-10">
             <Markdown>{post.content}</Markdown>
           </div>
+
+          {/* CTA Box */}
+          <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
+            <p className="text-lg font-semibold text-foreground">
+              Tunaikan Fidyah Anda Hari Ini
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Mudah, pantas, dan selamat. Bayar fidyah online dalam masa 5 minit.
+            </p>
+            <Link
+              href="/"
+              className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Bayar Fidyah Sekarang
+            </Link>
+          </div>
         </article>
       </main>
       <Footer />
