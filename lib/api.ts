@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import type { Donation } from "@/lib/database.types";
+import type { BlogPost, Donation } from "@/lib/database.types";
 import { getIntegrationSettings } from "@/lib/integrations";
 
 /**
@@ -51,5 +51,22 @@ export function serializeDonation(d: Donation) {
     message: d.message,
     paid_at: d.paid_at,
     created_at: d.created_at,
+  };
+}
+
+/** Shape a blog post row for API responses. */
+export function serializeBlogPost(p: BlogPost) {
+  return {
+    id: p.id,
+    slug: p.slug,
+    title: p.title,
+    excerpt: p.excerpt,
+    content: p.content,
+    cover_image: p.cover_image,
+    status: p.status,
+    author: p.author,
+    published_at: p.published_at,
+    created_at: p.created_at,
+    updated_at: p.updated_at,
   };
 }
