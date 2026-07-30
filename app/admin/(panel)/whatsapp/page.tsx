@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Paperclip } from "lucide-react";
 
 import {
   Card,
@@ -97,8 +98,13 @@ export default async function WhatsAppPage() {
               <TableBody>
                 {blasts.map((b) => (
                   <TableRow key={b.id}>
-                    <TableCell className="max-w-xs truncate text-sm" title={b.message}>
-                      {b.message}
+                    <TableCell className="max-w-xs text-sm" title={b.message}>
+                      <div className="flex items-center gap-1.5">
+                        {b.media_url && (
+                          <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        )}
+                        <span className="truncate">{b.message}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {b.date_from} – {b.date_to}

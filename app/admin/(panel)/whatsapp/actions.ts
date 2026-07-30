@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logActivity } from "@/lib/activity-log";
-import { sendWhatsAppMessage, normalizePhone } from "@/lib/murpati";
+import {
+  sendWhatsAppMessage,
+  sendWhatsAppMedia,
+  normalizePhone,
+} from "@/lib/murpati";
 import type { Donation, WhatsappBlastRecipient } from "@/lib/database.types";
 
 const MAX_RECIPIENTS = 500;
@@ -109,12 +113,16 @@ export async function startBlast(
   const dateFrom = (formData.get("date_from") as string) ?? "";
   const dateTo = (formData.get("date_to") as string) ?? "";
   const message = (formData.get("message") as string)?.trim() ?? "";
+  const mediaUrl = (formData.get("media_url") as string)?.trim() || null;
 
   const rangeError = validateRange(dateFrom, dateTo);
   if (rangeError) return { error: rangeError };
   if (!message) return { error: "Sila tulis mesej." };
   if (message.length > 3000) {
     return { error: "Mesej terlalu panjang (maksimum 3000 aksara)." };
+  }
+  if (mediaUrl && !/^https:\/\//i.test(mediaUrl)) {
+    return { error: "Lampiran tidak sah." };
   }
 
   const { recipients } = await matchingRecipients(dateFrom, dateTo);
@@ -136,6 +144,7 @@ export async function startBlast(
     .from("whatsapp_blasts")
     .insert({
       message,
+      media_url: mediaUrl,
       date_from: dateFrom,
       date_to: dateTo,
       total_recipients: recipients.length,
@@ -205,20 +214,23 @@ export async function processBlastBatch(blastId: string): Promise<BatchResult> {
 
   const { data: blastRow } = await admin
     .from("whatsapp_blasts")
-    .select("message")
+    .select("message, media_url")
     .eq("id", blastId)
     .maybeSingle();
 
   if (!blastRow) return { error: "Blast tidak ditemui.", processed: 0, sent: 0, failed: 0, remaining: 0, done: true };
 
   const template = blastRow.message as string;
+  const mediaUrl = blastRow.media_url as string | null;
 
   let sent = 0;
   let failed = 0;
 
   for (const r of pending) {
     const personalized = template.replaceAll("{{nama}}", r.payer_name);
-    const result = await sendWhatsAppMessage(r.phone, personalized);
+    const result = mediaUrl
+      ? await sendWhatsAppMedia(r.phone, mediaUrl, personalized)
+      : await sendWhatsAppMessage(r.phone, personalized);
 
     if (result.ok) {
       sent++;

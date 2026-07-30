@@ -397,6 +397,7 @@ alter table public.integration_settings
 create table if not exists public.whatsapp_blasts (
   id               uuid primary key default gen_random_uuid(),
   message          text not null,
+  media_url        text,
   date_from        date,
   date_to          date,
   status_filter    text not null default 'paid',
@@ -409,6 +410,10 @@ create table if not exists public.whatsapp_blasts (
   created_at       timestamptz not null default now(),
   completed_at     timestamptz
 );
+
+-- Attach an image/PDF (sent via Murpati's send-media endpoint, caption = message).
+-- Run this if upgrading an existing database.
+alter table public.whatsapp_blasts add column if not exists media_url text;
 
 alter table public.whatsapp_blasts enable row level security;
 

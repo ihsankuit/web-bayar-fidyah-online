@@ -94,6 +94,41 @@ export async function sendWhatsAppMessage(
   }
 }
 
+/** Send an image/PDF/etc via Murpati, with the message as caption. Never throws. */
+export async function sendWhatsAppMedia(
+  to: string,
+  mediaUrl: string,
+  caption: string
+): Promise<MurpatiResult> {
+  const { apiKey, sessionId } = await getMurpatiSettings();
+  if (!apiKey || !sessionId) {
+    return { ok: false, error: "Murpati belum dikonfigurasi." };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/messages/send-media`, {
+      method: "POST",
+      headers: {
+        "X-API-Key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ session_id: sessionId, to, media_url: mediaUrl, caption }),
+      cache: "no-store",
+    });
+
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || body?.success === false) {
+      return { ok: false, error: body?.error || `HTTP ${res.status}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Ralat rangkaian",
+    };
+  }
+}
+
 /** Check the configured device's connection status (Integrasi "test" button). */
 export async function checkMurpatiSession(): Promise<MurpatiResult> {
   const { apiKey, sessionId } = await getMurpatiSettings();

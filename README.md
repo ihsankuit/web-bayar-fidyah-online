@@ -197,6 +197,10 @@ curl -H "Authorization: Bearer $API_KEY" \
 > Jika `API_KEY` tidak diset, API dilumpuhkan (semua permintaan → 401).
 > Gunakan kunci rahsia yang kuat dan simpan sebagai env var di Vercel sahaja.
 
+Rujukan penuh (semua field, kod ralat, contoh respons): **[docs/api-reference.md](docs/api-reference.md)**.
+Untuk agen AI/LLM yang perlu panggil API ini secara automatik, guna fail
+skill sedia-pakai: **[docs/bayar-fidyah-online-skill/SKILL.md](docs/bayar-fidyah-online-skill/SKILL.md)**.
+
 ## 9. Blast WhatsApp (Murpati)
 
 Hantar kemas kini (contoh: status agihan fidyah) kepada pembayar melalui
@@ -210,7 +214,9 @@ WhatsApp, mengikut julat tarikh pembayaran — dari **Dashboard → WhatsApp**.
    butang "Uji Sambungan" untuk sahkan peranti bersambung.
 4. Di **Dashboard → WhatsApp**, pilih julat tarikh (berdasarkan tarikh
    pembayaran **berjaya**), tulis mesej (guna `{{nama}}` untuk gantikan nama
-   pembayar), pratonton senarai penerima, kemudian hantar.
+   pembayar, atau butang emoji 😀 untuk sisip emoji), lampirkan gambar/PDF
+   (pilihan — dihantar sebagai lampiran dengan mesej sebagai kapsyen),
+   pratonton senarai penerima, kemudian hantar.
 
 Nota:
 - Penerima disaring kepada pembayaran **berjaya** sahaja dengan no. telefon
