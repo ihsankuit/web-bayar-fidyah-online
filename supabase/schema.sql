@@ -373,11 +373,6 @@ alter table public.integration_settings
   add column if not exists fb_capi_access_token text,
   add column if not exists fb_test_event_code   text;
 
--- WhatsApp blast (Murpati) device credentials.
-alter table public.integration_settings
-  add column if not exists murpati_api_key    text,
-  add column if not exists murpati_session_id text;
-
 -- Google Ads conversion tracking (managed from Admin > Integrasi).
 alter table public.integration_settings
   add column if not exists google_ads_id               text,
@@ -386,75 +381,3 @@ alter table public.integration_settings
 -- Google Tag Manager container (managed from Admin > Integrasi).
 alter table public.integration_settings
   add column if not exists gtm_id text;
-
--- =====================================================================
---  WhatsApp blast (Murpati) — admin picks paid donations within a date
---  range and sends them a WhatsApp update (e.g. agihan fidyah status).
---  Murpati has no bulk-send endpoint, so recipients are processed in small
---  batches driven from the admin UI; rows here track per-recipient progress
---  so an interrupted blast can be resumed instead of re-sending everyone.
--- =====================================================================
-create table if not exists public.whatsapp_blasts (
-  id               uuid primary key default gen_random_uuid(),
-  name             text,
-  message          text not null,
-  media_url        text,
-  date_from        date,
-  date_to          date,
-  status_filter    text not null default 'paid',
-  delay_mode       text not null default 'medium'
-                     check (delay_mode in ('yolo', 'medium', 'careful', 'custom')),
-  delay_min_ms     integer not null default 15000,
-  delay_max_ms     integer not null default 60000,
-  total_recipients integer not null default 0,
-  sent_count       integer not null default 0,
-  failed_count     integer not null default 0,
-  status           text not null default 'processing'
-                     check (status in ('processing', 'completed')),
-  created_by       text,
-  created_at       timestamptz not null default now(),
-  completed_at     timestamptz
-);
-
--- Attach an image/PDF (sent via Murpati's send-media endpoint, caption = message).
--- Run this if upgrading an existing database.
-alter table public.whatsapp_blasts add column if not exists media_url text;
-
--- Campaign name + configurable send-pacing (replaces a hardcoded 500ms
--- delay between sends — faster paces risk WhatsApp anti-spam throttling on
--- large blasts, slower ones take longer but are safer).
--- Run this block if upgrading an existing database.
-alter table public.whatsapp_blasts add column if not exists name text;
-alter table public.whatsapp_blasts add column if not exists delay_mode text not null default 'medium';
-alter table public.whatsapp_blasts add column if not exists delay_min_ms integer not null default 15000;
-alter table public.whatsapp_blasts add column if not exists delay_max_ms integer not null default 60000;
-alter table public.whatsapp_blasts drop constraint if exists whatsapp_blasts_delay_mode_check;
-alter table public.whatsapp_blasts add constraint whatsapp_blasts_delay_mode_check
-  check (delay_mode in ('yolo', 'medium', 'careful', 'custom'));
-
-alter table public.whatsapp_blasts enable row level security;
-
-drop policy if exists whatsapp_blasts_admin_all on public.whatsapp_blasts;
-create policy whatsapp_blasts_admin_all on public.whatsapp_blasts
-  for all to authenticated using (true) with check (true);
-
-create table if not exists public.whatsapp_blast_recipients (
-  id          uuid primary key default gen_random_uuid(),
-  blast_id    uuid not null references public.whatsapp_blasts(id) on delete cascade,
-  donation_id uuid references public.donations(id) on delete set null,
-  payer_name  text not null,
-  phone       text not null,
-  status      text not null default 'pending'
-                check (status in ('pending', 'sent', 'failed')),
-  error       text,
-  sent_at     timestamptz
-);
-
-create index if not exists whatsapp_blast_recipients_blast_status_idx
-  on public.whatsapp_blast_recipients (blast_id, status);
-
-alter table public.whatsapp_blast_recipients enable row level security;
-
-drop policy if exists whatsapp_blast_recipients_admin_all on public.whatsapp_blast_recipients;
-create policy whatsapp_blast_recipients_admin_all on public.whatsapp_blast_recipients
-  for all to authenticated using (true) with check (true);

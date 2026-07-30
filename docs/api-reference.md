@@ -414,8 +414,6 @@ listed here only so you don't mistake them for public integration points:
   public payment form itself (IP rate-limited, no API key).
 - `POST /api/track/purchase` — server-side GA4/Facebook CAPI conversion
   tracking, called by the `/status` page.
-- The WhatsApp blast feature (Dashboard → WhatsApp) is admin-panel-only and
-  has no public API surface.
 
 ---
 
