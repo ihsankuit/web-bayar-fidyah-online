@@ -33,7 +33,13 @@ create table if not exists public.donations (
   utm_medium     text,
   utm_campaign   text,
   utm_term       text,
-  utm_content    text
+  utm_content    text,
+  ga_client_id   text,
+  fbp            text,
+  fbc            text,
+  client_ip      text,
+  user_agent     text,
+  landing_url    text
 );
 
 create index if not exists donations_status_idx on public.donations (status);
@@ -97,6 +103,32 @@ alter table public.donations add column if not exists utm_term text;
 alter table public.donations add column if not exists utm_content text;
 
 create index if not exists donations_utm_source_idx on public.donations (utm_source);
+
+-- ---------------------------------------------------------------------
+--  Conversion attribution, captured from the payer's own browser at
+--  submission time. Used to fire GA4/Facebook server-side conversion
+--  events reliably when a donation is later confirmed paid — including
+--  the manual bank transfer flow, where the payer isn't present when an
+--  admin approves it, so there's no browser around to fire the pixel.
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists ga_client_id text;
+alter table public.donations add column if not exists fbp          text;
+alter table public.donations add column if not exists fbc          text;
+alter table public.donations add column if not exists client_ip    text;
+alter table public.donations add column if not exists user_agent   text;
+alter table public.donations add column if not exists landing_url  text;
+
+-- ---------------------------------------------------------------------
+--  Upsell campaign accepted at checkout (combined into the same payment
+--  as the fidyah amount). The campaign's own config (title, description,
+--  amount, on/off) lives in `site_settings` under the key "upsell" —
+--  these columns just record what a given donation actually included.
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists upsell_accepted boolean not null default false;
+alter table public.donations add column if not exists upsell_title text;
+alter table public.donations add column if not exists upsell_amount_sen integer not null default 0;
 
 -- ---------------------------------------------------------------------
 --  Blog posts
@@ -345,6 +377,15 @@ alter table public.integration_settings
 alter table public.integration_settings
   add column if not exists murpati_api_key    text,
   add column if not exists murpati_session_id text;
+
+-- Google Ads conversion tracking (managed from Admin > Integrasi).
+alter table public.integration_settings
+  add column if not exists google_ads_id               text,
+  add column if not exists google_ads_conversion_label  text;
+
+-- Google Tag Manager container (managed from Admin > Integrasi).
+alter table public.integration_settings
+  add column if not exists gtm_id text;
 
 -- =====================================================================
 --  WhatsApp blast (Murpati) — admin picks paid donations within a date

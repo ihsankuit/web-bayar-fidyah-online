@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendFacebookPurchase } from "@/lib/tracking/facebook";
 import { sendGa4Purchase, parseGaClientId } from "@/lib/tracking/google";
+import { parseCookieHeader } from "@/lib/tracking/cookies";
+import { checkRateLimit, clientIp as getClientIp } from "@/lib/rate-limit";
 import type { Donation } from "@/lib/database.types";
 
 const schema = z.object({ reference: z.string().trim().min(1).max(40) });
@@ -16,6 +18,10 @@ const schema = z.object({ reference: z.string().trim().min(1).max(40) });
  * reference so it deduplicates against the browser Pixel/gtag event.
  */
 export async function POST(request: Request) {
+  if (!(await checkRateLimit(`track-purchase:${getClientIp(request)}`, 20, 60))) {
+    return NextResponse.json({ error: "rate limited" }, { status: 429 });
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -47,13 +53,7 @@ export async function POST(request: Request) {
   }
 
   const value = donation.amount_sen / 100;
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const cookies = Object.fromEntries(
-    cookieHeader.split(";").map((c) => {
-      const [k, ...v] = c.trim().split("=");
-      return [k, decodeURIComponent(v.join("="))];
-    })
-  );
+  const cookies = parseCookieHeader(request.headers.get("cookie"));
 
   const clientIp =
     request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??

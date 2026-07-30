@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAuthorized, unauthorized, serializeDonation } from "@/lib/api";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import type { Donation } from "@/lib/database.types";
 
 /**
@@ -12,6 +13,9 @@ export async function GET(
   { params }: { params: Promise<{ reference: string }> }
 ) {
   if (!(await isAuthorized(request))) return unauthorized();
+  if (!(await checkRateLimit(`api-v1-donation:${clientIp(request)}`, 120, 60))) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
 
   const { reference } = await params;
 

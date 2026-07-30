@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { UtmCapture } from "@/components/site/utm-capture";
 import { TrackingScripts } from "@/components/analytics/tracking-scripts";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+import { ScrollTracker } from "@/components/analytics/scroll-tracker";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -96,6 +97,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <PageViewTracker />
         </Suspense>
+        <ScrollTracker />
         {children}
         <Toaster richColors position="top-center" />
       </body>

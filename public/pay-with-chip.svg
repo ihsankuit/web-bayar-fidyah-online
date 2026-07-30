@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 180" role="img" aria-label="Pay with CHIP">
+  <defs>
+    <linearGradient id="chipbg" x1="0" y1="0" x2="1280" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5B54E8"/>
+      <stop offset="0.55" stop-color="#7A5BE0"/>
+      <stop offset="1" stop-color="#B06AD6"/>
+    </linearGradient>
+  </defs>
+  <path d="M40 0 H1200 a40 40 0 0 1 40 40 v70 a70 70 0 0 1 -70 70 H40 a40 40 0 0 1 -40 -40 V40 a40 40 0 0 1 40 -40 Z" fill="url(#chipbg)"/>
+  <text x="70" y="118" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="86" letter-spacing="2" fill="#fff">PAY WITH</text>
+  <!-- chip / EMV card icon -->
+  <g transform="translate(612 46)" fill="none" stroke="#fff" stroke-width="8">
+    <rect x="0" y="0" width="140" height="94" rx="18"/>
+    <line x1="0" y1="47" x2="140" y2="47"/>
+    <path d="M70 6 C40 20 40 74 70 88" />
+    <path d="M70 6 C100 20 100 74 70 88" />
+  </g>
+  <text x="792" y="120" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="96" letter-spacing="1" fill="#fff">CHIP</text>
+  <text x="1150" y="66" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="30" fill="#fff">®</text>
+</svg>

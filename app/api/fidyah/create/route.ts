@@ -5,8 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPurchase } from "@/lib/chip";
 import { calculateFidyah, getCategory } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
+import { getUpsellSettings } from "@/lib/upsell";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { emitDonationEvent } from "@/lib/webhooks";
+import { parseCookieHeader } from "@/lib/tracking/cookies";
+import { parseGaClientId } from "@/lib/tracking/google";
 import type { Donation } from "@/lib/database.types";
 
 const schema = z.object({
@@ -19,6 +22,8 @@ const schema = z.object({
   multiplier: z.number().int().min(1).max(20),
   message: z.string().trim().max(500).optional().default(""),
   method: z.enum(["chip", "manual"]).optional().default("chip"),
+  upsellAccepted: z.boolean().optional().default(false),
+  upsellAmountSen: z.number().int().min(100).max(100_000_00).optional(),
   utm_source: z.string().trim().max(100).optional().default(""),
   utm_medium: z.string().trim().max(100).optional().default(""),
   utm_campaign: z.string().trim().max(100).optional().default(""),
@@ -79,6 +84,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // The upsell amount is payer-adjustable (like a tip), but only applies if
+  // the campaign is actually enabled right now — never trust that alone.
+  // The schema already bounds upsellAmountSen to [RM1, RM100,000]; fall back
+  // to the campaign's own default if the payer didn't supply one.
+  const upsell = await getUpsellSettings();
+  const upsellApplied = input.upsellAccepted && upsell.enabled;
+  const upsellAmountSen = upsellApplied
+    ? input.upsellAmountSen ?? upsell.amount_sen
+    : 0;
+  const totalSen = calc.totalSen + upsellAmountSen;
+
   if (input.method === "manual" && !content.bank_account_number) {
     return NextResponse.json(
       {
@@ -104,6 +120,11 @@ export async function POST(request: Request) {
     );
   }
 
+  // Capture conversion attribution from the payer's own browser now, while
+  // it's actually here — a manual bank transfer is only confirmed later by
+  // an admin, with no browser around to fire the pixel at that point.
+  const cookies = parseCookieHeader(request.headers.get("cookie"));
+
   // 1. Record the pending donation.
   const { data: donation, error: insertError } = await supabase
     .from("donations")
@@ -118,14 +139,23 @@ export async function POST(request: Request) {
       days: calc.days,
       multiplier: calc.multiplier,
       rate_sen: calc.rateSen,
-      amount_sen: calc.totalSen,
+      amount_sen: totalSen,
       message: input.message || null,
       status: "pending",
+      upsell_accepted: upsellApplied,
+      upsell_title: upsellApplied ? upsell.title : null,
+      upsell_amount_sen: upsellAmountSen,
       utm_source: input.utm_source || null,
       utm_medium: input.utm_medium || null,
       utm_campaign: input.utm_campaign || null,
       utm_term: input.utm_term || null,
       utm_content: input.utm_content || null,
+      ga_client_id: parseGaClientId(cookies["_ga"]),
+      fbp: cookies["_fbp"] || null,
+      fbc: cookies["_fbc"] || null,
+      client_ip: clientIp(request),
+      user_agent: request.headers.get("user-agent") || null,
+      landing_url: request.headers.get("referer") || null,
     })
     .select()
     .single();
@@ -147,7 +177,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       method: "manual",
       reference,
-      amountSen: calc.totalSen,
+      amountSen: totalSen,
       bank: {
         name: content.bank_name,
         accountName: content.bank_account_name,
@@ -165,6 +195,9 @@ export async function POST(request: Request) {
       phone: input.phone,
       amountSen: calc.totalSen,
       description: `Fidyah ${calc.days} hari — ${reference}`,
+      extraLineItem: upsellApplied
+        ? { description: upsell.title || "Kempen Tambahan", amountSen: upsellAmountSen }
+        : undefined,
       successCallbackUrl: `${siteUrl}/api/chip/callback`,
       successRedirectUrl: `${siteUrl}/api/chip/redirect?ref=${encodedRef}&result=success`,
       failureRedirectUrl: `${siteUrl}/api/chip/redirect?ref=${encodedRef}&result=failure`,

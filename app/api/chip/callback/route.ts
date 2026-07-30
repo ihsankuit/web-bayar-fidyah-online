@@ -47,8 +47,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing reference" }, { status: 400 });
   }
 
-  const paid = payload.status === "paid";
-  await settleDonationByReference(reference, paid, null);
+  // CHIP posts on every state change. Only act on definitive states: settle as
+  // paid on "paid", and as failed only on terminal-failure states. Ignore
+  // intermediate states (created/pending/…) so a still-pending donation is
+  // never flipped to "failed" by an interim callback.
+  const status = payload.status ?? "";
+  const TERMINAL_FAILURE = new Set([
+    "error",
+    "expired",
+    "cancelled",
+    "blocked",
+    "overdue",
+  ]);
+  if (status === "paid") {
+    await settleDonationByReference(reference, true, null);
+  } else if (TERMINAL_FAILURE.has(status)) {
+    await settleDonationByReference(reference, false, null);
+  }
 
   return NextResponse.json({ ok: true });
 }

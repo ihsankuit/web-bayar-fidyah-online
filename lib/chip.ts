@@ -19,6 +19,8 @@ interface CreatePurchaseParams {
   phone?: string;
   amountSen: number;
   description: string;
+  /** Extra line item (e.g. an accepted upsell), combined into the same purchase. */
+  extraLineItem?: { description: string; amountSen: number };
   successCallbackUrl: string;
   successRedirectUrl: string;
   failureRedirectUrl: string;
@@ -62,6 +64,15 @@ export async function createPurchase(
           price: params.amountSen,
           quantity: 1,
         },
+        ...(params.extraLineItem
+          ? [
+              {
+                name: params.extraLineItem.description,
+                price: params.extraLineItem.amountSen,
+                quantity: 1,
+              },
+            ]
+          : []),
       ],
     },
     reference: params.reference,

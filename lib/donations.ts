@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendReceiptEmail } from "@/lib/resend";
 import { emitDonationEvent } from "@/lib/webhooks";
+import { sendServerConversion } from "@/lib/tracking/conversions";
 import type { Donation } from "@/lib/database.types";
 
 /**
@@ -57,7 +58,11 @@ export async function settleDonationByReference(
 /**
  * Manually confirm a donation as paid (admin action) — used for the manual
  * bank transfer flow, which has no gateway webhook. Idempotent: a no-op if
- * already paid. Sends the receipt on the first confirmation.
+ * already paid. Sends the receipt, fires the GA4/Facebook server-side
+ * conversion (using attribution captured from the payer's browser at
+ * submission time — there's no browser present now, since this fires
+ * whenever an admin gets around to reviewing the proof, possibly days
+ * later), and emits the webhook, all on the first confirmation.
  */
 export async function markDonationPaid(
   donationId: string
@@ -82,6 +87,7 @@ export async function markDonationPaid(
 
   const donation = updated ?? existing;
   await sendReceiptEmail(donation);
+  await sendServerConversion(donation);
   await emitDonationEvent("donation.paid", donation);
   return donation;
 }

@@ -33,6 +33,17 @@ export interface Donation {
   utm_campaign: string | null;
   utm_term: string | null;
   utm_content: string | null;
+  /** Conversion attribution captured from the payer's browser at submission time. */
+  ga_client_id: string | null;
+  fbp: string | null;
+  fbc: string | null;
+  client_ip: string | null;
+  user_agent: string | null;
+  landing_url: string | null;
+  /** Upsell campaign accepted at checkout (combined into the same payment). */
+  upsell_accepted: boolean;
+  upsell_title: string | null;
+  upsell_amount_sen: number;
 }
 
 export interface BlogPost {
@@ -138,4 +149,17 @@ export interface LandingContent {
   bank_name: string;
   bank_account_name: string;
   bank_account_number: string;
+}
+
+/** Upsell campaign offered at checkout, stored under the `upsell` settings key. */
+export interface UpsellSettings {
+  enabled: boolean;
+  title: string;
+  description: string;
+  /** Default/suggested amount — the payer can adjust it in the popup. */
+  amount_sen: number;
+  /** Poster image shown in the popup (uploaded via Admin > Media, URL pasted here). */
+  poster_image_url: string;
+  accept_label: string;
+  skip_label: string;
 }

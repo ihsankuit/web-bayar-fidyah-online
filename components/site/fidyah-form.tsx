@@ -24,10 +24,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { calculateFidyah, FIDYAH_CATEGORIES, NEGERI } from "@/lib/fidyah";
 import { formatMYR } from "@/lib/utils";
 import { getStoredUtm } from "@/lib/utm";
-import type { PaymentMethod } from "@/lib/database.types";
+import type { PaymentMethod, UpsellSettings } from "@/lib/database.types";
 
 interface ManualTransferData {
   reference: string;
@@ -38,9 +46,11 @@ interface ManualTransferData {
 export function FidyahForm({
   rateSen,
   manualTransferAvailable = false,
+  upsell,
 }: {
   rateSen: number;
   manualTransferAvailable?: boolean;
+  upsell?: UpsellSettings;
 }) {
   const [days, setDays] = useState(1);
   const [multiplier, setMultiplier] = useState(1);
@@ -52,6 +62,10 @@ export function FidyahForm({
   const [negeri, setNegeri] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showUpsell, setShowUpsell] = useState(false);
+  const [upsellAmount, setUpsellAmount] = useState(() =>
+    upsell ? upsell.amount_sen / 100 : 10
+  );
   const [manualTransfer, setManualTransfer] = useState<ManualTransferData | null>(
     null
   );
@@ -61,13 +75,22 @@ export function FidyahForm({
     [days, multiplier, rateSen]
   );
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Sila masukkan nama anda.");
     if (!email.trim()) return toast.error("Sila masukkan alamat emel anda.");
     if (result.totalSen < 100)
       return toast.error("Jumlah minimum pembayaran ialah RM1.00.");
 
+    if (upsell?.enabled) {
+      setShowUpsell(true);
+      return;
+    }
+    submitDonation(false);
+  }
+
+  async function submitDonation(upsellAccepted: boolean) {
+    setShowUpsell(false);
     setSubmitting(true);
     try {
       const utm = getStoredUtm();
@@ -84,11 +107,33 @@ export function FidyahForm({
           multiplier: result.multiplier,
           message,
           method,
+          upsellAccepted,
+          upsellAmountSen: upsellAccepted
+            ? Math.round(Math.max(1, upsellAmount) * 100)
+            : undefined,
           ...(utm ?? {}),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Ralat tidak dijangka.");
+
+      // Checkout initiated: the donation row exists and we're about to hand
+      // the payer over to CHIP (or show the bank-transfer card). Fire it here
+      // — the actual CHIP payment page is on chip-in.asia, a domain our GTM
+      // can't run on, so this is the last point we control. Uses sendBeacon
+      // under the hood (gtag/fbq), which survives the redirect that follows.
+      const checkoutValue =
+        result.totalSen / 100 +
+        (upsellAccepted ? Math.max(1, upsellAmount) : 0);
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "begin_checkout",
+        event_id: data.reference,
+        transaction_id: data.reference,
+        value: checkoutValue,
+        currency: "MYR",
+        payment_method: method,
+      });
 
       if (data.method === "manual") {
         setManualTransfer({
@@ -118,6 +163,7 @@ export function FidyahForm({
   }
 
   return (
+    <>
     <Card className="border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader>
         <CardTitle className="text-2xl">Kalkulator & Bayaran Fidyah</CardTitle>
@@ -127,7 +173,7 @@ export function FidyahForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleFormSubmit} className="space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="category">Kategori</Label>
@@ -296,6 +342,81 @@ export function FidyahForm({
         </form>
       </CardContent>
     </Card>
+
+    {upsell?.enabled && (
+      <Dialog open={showUpsell} onOpenChange={setShowUpsell}>
+        <DialogContent className="max-h-[90dvh] w-[calc(100%-1.5rem)] overflow-y-auto overflow-x-hidden sm:w-full">
+          {upsell.poster_image_url && (
+            <div className="-mx-6 -mt-6 overflow-hidden rounded-t-lg bg-muted">
+              <Image
+                src={upsell.poster_image_url}
+                alt={upsell.title}
+                width={0}
+                height={0}
+                sizes="(min-width: 640px) 32rem, 100vw"
+                style={{ width: "100%", height: "auto" }}
+                className="mx-auto max-h-[55vh] object-contain"
+              />
+            </div>
+          )}
+          <DialogHeader>
+            <DialogTitle>{upsell.title}</DialogTitle>
+            <DialogDescription>{upsell.description}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="upsell_amount">Jumlah kempen (RM)</Label>
+            <Input
+              id="upsell_amount"
+              type="number"
+              inputMode="decimal"
+              min="1"
+              step="0.01"
+              className="text-base"
+              value={upsellAmount}
+              onChange={(e) => setUpsellAmount(Number(e.target.value) || 0)}
+            />
+          </div>
+          <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Fidyah</span>
+              <span>{formatMYR(result.totalSen)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Kempen tambahan</span>
+              <span>{formatMYR(Math.round(Math.max(1, upsellAmount) * 100))}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2 font-medium">
+              <span>Jumlah jika sertai</span>
+              <span className="text-primary">
+                {formatMYR(
+                  result.totalSen + Math.round(Math.max(1, upsellAmount) * 100)
+                )}
+              </span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={() => submitDonation(false)}
+            >
+              {submitting && <Loader2 className="animate-spin" />}
+              {upsell.skip_label}
+            </Button>
+            <Button
+              type="button"
+              disabled={submitting}
+              onClick={() => submitDonation(true)}
+            >
+              {submitting && <Loader2 className="animate-spin" />}
+              {upsell.accept_label}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 }
 

@@ -222,6 +222,11 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatMYR(d.amount_sen)}
+                      {d.upsell_accepted && (
+                        <div className="text-xs font-normal text-muted-foreground">
+                          + {formatMYR(d.upsell_amount_sen)} kempen
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       {d.payment_method === "manual" ? "Pindahan Manual" : "CHIP"}

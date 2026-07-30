@@ -48,6 +48,8 @@ export async function sendWebhook(
       headers,
       body,
       cache: "no-store",
+      // Never let a slow/hanging receiver stall the payment settlement flow.
+      signal: AbortSignal.timeout(5000),
     });
   } catch (err) {
     console.error(`[webhook] failed to deliver ${event}:`, err);

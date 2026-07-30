@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Donation } from "@/lib/database.types";
 import { formatMYR } from "@/lib/utils";
 import { PurchaseTracker } from "@/components/analytics/purchase-tracker";
+import { getTrackingSettings } from "@/lib/tracking/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -41,12 +42,21 @@ export default async function StatusPage({
   const failed = effectiveStatus === "failed";
   const pending = donation ? effectiveStatus === "pending" : false;
 
+  const tracking = paid && donation ? await getTrackingSettings() : null;
+
   return (
     <div className="flex min-h-screen flex-col">
       {paid && donation && (
         <PurchaseTracker
           reference={donation.reference}
           value={donation.amount_sen / 100}
+          googleAdsId={tracking?.googleAdsId}
+          googleAdsConversionLabel={tracking?.googleAdsConversionLabel}
+          name={donation.payer_name}
+          email={donation.payer_email}
+          phone={donation.payer_phone}
+          ip={donation.client_ip}
+          negeri={donation.negeri}
         />
       )}
       <Navbar />
