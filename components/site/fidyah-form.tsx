@@ -334,6 +334,18 @@ export function FidyahForm({
             {submitting && <Loader2 className="animate-spin" />}
             Bayar {formatMYR(result.totalSen)} Sekarang
           </Button>
+          {method !== "manual" && (
+            <div className="flex justify-center pt-1">
+              <Image
+                src="/pay-with-chip-long.svg"
+                alt="Pay with CHIP"
+                width={240}
+                height={48}
+                className="h-9 w-auto"
+                unoptimized
+              />
+            </div>
+          )}
           <p className="text-center text-xs text-muted-foreground">
             {method === "manual"
               ? "Anda akan diminta pindahkan bayaran secara manual dan muat naik bukti pembayaran."
