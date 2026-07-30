@@ -1,15 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IntegrationsManager } from "@/components/admin/integrations-manager";
 import { TrackingSettingsForm } from "@/components/admin/tracking-settings-form";
+import { MurpatiSettingsForm } from "@/components/admin/murpati-settings-form";
 import { getIntegrationSettings } from "@/lib/integrations";
 import { getTrackingSettings } from "@/lib/tracking/settings";
+import { getMurpatiSettings } from "@/lib/murpati";
 
 export const dynamic = "force-dynamic";
 
 export default async function IntegrasiPage() {
-  const [settings, tracking] = await Promise.all([
+  const [settings, tracking, murpati] = await Promise.all([
     getIntegrationSettings(),
     getTrackingSettings(),
+    getMurpatiSettings(),
   ]);
 
   return (
@@ -37,6 +40,11 @@ export default async function IntegrasiPage() {
         webhookUrl={settings.n8n_webhook_url}
         signingSecret={settings.webhook_signing_secret}
         apiKey={settings.api_key}
+      />
+
+      <MurpatiSettingsForm
+        apiKey={murpati.apiKey}
+        sessionId={murpati.sessionId}
       />
 
       <Card>

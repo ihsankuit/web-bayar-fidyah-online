@@ -301,9 +301,9 @@ export function FidyahForm({
                   <Image
                     src="/pay-with-chip-long.svg"
                     alt="Pay with CHIP"
-                    width={160}
-                    height={32}
-                    className="mt-2 h-auto w-full max-w-[150px]"
+                    width={623}
+                    height={100}
+                    className="mt-2 h-5 w-auto"
                     unoptimized
                   />
                 </button>

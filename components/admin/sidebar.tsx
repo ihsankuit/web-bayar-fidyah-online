@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   PanelsTopLeft,
   Plug,
   ShieldCheck,
@@ -25,6 +26,7 @@ import { Logo } from "@/components/site/logo";
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/sumbangan", label: "Sumbangan", icon: Wallet },
+  { href: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/galeri", label: "Galeri", icon: GalleryHorizontalEnd },
   { href: "/admin/media", label: "Media", icon: ImageIcon },
