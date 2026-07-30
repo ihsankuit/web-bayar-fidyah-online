@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
-import { getMurpatiSettings } from "@/lib/murpati";
+import { getMurpatiSettings, getMurpatiSessionInfo } from "@/lib/murpati";
 import { formatDate } from "@/lib/utils";
 import type { WhatsappBlast } from "@/lib/database.types";
 import { WhatsAppBlastForm } from "@/components/admin/whatsapp-blast-form";
@@ -31,6 +31,9 @@ export default async function WhatsAppPage() {
   ]);
 
   const configured = Boolean(murpati.apiKey && murpati.sessionId);
+  const session = configured
+    ? await getMurpatiSessionInfo()
+    : { connected: false };
 
   const { data } = await supabase
     .from("whatsapp_blasts")
@@ -67,7 +70,7 @@ export default async function WhatsAppPage() {
           <CardTitle className="text-base">Blast Baharu</CardTitle>
         </CardHeader>
         <CardContent>
-          <WhatsAppBlastForm disabled={!configured} />
+          <WhatsAppBlastForm disabled={!configured} session={session} />
         </CardContent>
       </Card>
 
@@ -99,11 +102,18 @@ export default async function WhatsAppPage() {
                 {blasts.map((b) => (
                   <TableRow key={b.id}>
                     <TableCell className="max-w-xs text-sm" title={b.message}>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-start gap-1.5">
                         {b.media_url && (
-                          <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                          <Paperclip className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         )}
-                        <span className="truncate">{b.message}</span>
+                        <div className="min-w-0">
+                          {b.name && (
+                            <div className="truncate font-medium">{b.name}</div>
+                          )}
+                          <div className="truncate text-muted-foreground">
+                            {b.message}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden text-sm text-muted-foreground md:table-cell">

@@ -396,11 +396,16 @@ alter table public.integration_settings
 -- =====================================================================
 create table if not exists public.whatsapp_blasts (
   id               uuid primary key default gen_random_uuid(),
+  name             text,
   message          text not null,
   media_url        text,
   date_from        date,
   date_to          date,
   status_filter    text not null default 'paid',
+  delay_mode       text not null default 'medium'
+                     check (delay_mode in ('yolo', 'medium', 'careful', 'custom')),
+  delay_min_ms     integer not null default 15000,
+  delay_max_ms     integer not null default 60000,
   total_recipients integer not null default 0,
   sent_count       integer not null default 0,
   failed_count     integer not null default 0,
@@ -414,6 +419,18 @@ create table if not exists public.whatsapp_blasts (
 -- Attach an image/PDF (sent via Murpati's send-media endpoint, caption = message).
 -- Run this if upgrading an existing database.
 alter table public.whatsapp_blasts add column if not exists media_url text;
+
+-- Campaign name + configurable send-pacing (replaces a hardcoded 500ms
+-- delay between sends — faster paces risk WhatsApp anti-spam throttling on
+-- large blasts, slower ones take longer but are safer).
+-- Run this block if upgrading an existing database.
+alter table public.whatsapp_blasts add column if not exists name text;
+alter table public.whatsapp_blasts add column if not exists delay_mode text not null default 'medium';
+alter table public.whatsapp_blasts add column if not exists delay_min_ms integer not null default 15000;
+alter table public.whatsapp_blasts add column if not exists delay_max_ms integer not null default 60000;
+alter table public.whatsapp_blasts drop constraint if exists whatsapp_blasts_delay_mode_check;
+alter table public.whatsapp_blasts add constraint whatsapp_blasts_delay_mode_check
+  check (delay_mode in ('yolo', 'medium', 'careful', 'custom'));
 
 alter table public.whatsapp_blasts enable row level security;
 

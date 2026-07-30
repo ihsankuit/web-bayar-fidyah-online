@@ -9,11 +9,25 @@ import {
   sendWhatsAppMedia,
   normalizePhone,
 } from "@/lib/murpati";
-import type { Donation, WhatsappBlastRecipient } from "@/lib/database.types";
+import type {
+  Donation,
+  WhatsappBlastDelayMode,
+  WhatsappBlastRecipient,
+} from "@/lib/database.types";
 
 const MAX_RECIPIENTS = 500;
 const BATCH_SIZE = 5;
-const SEND_DELAY_MS = 500;
+
+/** Send-pacing presets (ms). Faster paces risk WhatsApp anti-spam throttling
+ * on large blasts; slower ones take longer but are safer. "custom" uses
+ * whatever bounds the admin supplied (validated/clamped in startBlast). */
+const DELAY_PRESETS: Record<Exclude<WhatsappBlastDelayMode, "custom">, [number, number]> = {
+  yolo: [1_000, 15_000],
+  medium: [15_000, 60_000],
+  careful: [60_000, 180_000],
+};
+const MIN_CUSTOM_DELAY_MS = 500;
+const MAX_CUSTOM_DELAY_MS = 10 * 60_000;
 
 async function requireUser() {
   const supabase = await createClient();
@@ -114,6 +128,13 @@ export async function startBlast(
   const dateTo = (formData.get("date_to") as string) ?? "";
   const message = (formData.get("message") as string)?.trim() ?? "";
   const mediaUrl = (formData.get("media_url") as string)?.trim() || null;
+  const name = (formData.get("name") as string)?.trim() || null;
+  const delayModeInput = (formData.get("delay_mode") as string) ?? "medium";
+  const delayMode: WhatsappBlastDelayMode = (
+    ["yolo", "medium", "careful", "custom"] as const
+  ).includes(delayModeInput as WhatsappBlastDelayMode)
+    ? (delayModeInput as WhatsappBlastDelayMode)
+    : "medium";
 
   const rangeError = validateRange(dateFrom, dateTo);
   if (rangeError) return { error: rangeError };
@@ -123,6 +144,17 @@ export async function startBlast(
   }
   if (mediaUrl && !/^https:\/\//i.test(mediaUrl)) {
     return { error: "Lampiran tidak sah." };
+  }
+
+  let delayMinMs: number;
+  let delayMaxMs: number;
+  if (delayMode === "custom") {
+    delayMinMs = Number(formData.get("delay_min_ms")) || MIN_CUSTOM_DELAY_MS;
+    delayMaxMs = Number(formData.get("delay_max_ms")) || delayMinMs;
+    delayMinMs = Math.min(Math.max(delayMinMs, MIN_CUSTOM_DELAY_MS), MAX_CUSTOM_DELAY_MS);
+    delayMaxMs = Math.min(Math.max(delayMaxMs, delayMinMs), MAX_CUSTOM_DELAY_MS);
+  } else {
+    [delayMinMs, delayMaxMs] = DELAY_PRESETS[delayMode];
   }
 
   const { recipients } = await matchingRecipients(dateFrom, dateTo);
@@ -143,10 +175,14 @@ export async function startBlast(
   const { data: blast, error: blastError } = await admin
     .from("whatsapp_blasts")
     .insert({
+      name,
       message,
       media_url: mediaUrl,
       date_from: dateFrom,
       date_to: dateTo,
+      delay_mode: delayMode,
+      delay_min_ms: delayMinMs,
+      delay_max_ms: delayMaxMs,
       total_recipients: recipients.length,
       created_by: user.email ?? "unknown",
     })
@@ -214,7 +250,7 @@ export async function processBlastBatch(blastId: string): Promise<BatchResult> {
 
   const { data: blastRow } = await admin
     .from("whatsapp_blasts")
-    .select("message, media_url")
+    .select("message, media_url, delay_min_ms, delay_max_ms")
     .eq("id", blastId)
     .maybeSingle();
 
@@ -222,6 +258,8 @@ export async function processBlastBatch(blastId: string): Promise<BatchResult> {
 
   const template = blastRow.message as string;
   const mediaUrl = blastRow.media_url as string | null;
+  const delayMinMs = (blastRow.delay_min_ms as number) ?? 15_000;
+  const delayMaxMs = (blastRow.delay_max_ms as number) ?? 60_000;
 
   let sent = 0;
   let failed = 0;
@@ -246,8 +284,10 @@ export async function processBlastBatch(blastId: string): Promise<BatchResult> {
         .eq("id", r.id);
     }
 
-    // Small delay between sends — avoid tripping WhatsApp/Murpati anti-spam throttling.
-    await new Promise((resolve) => setTimeout(resolve, SEND_DELAY_MS));
+    // Randomized delay within the blast's configured pace — avoids both a
+    // predictable send cadence and tripping WhatsApp/Murpati anti-spam limits.
+    const delay = delayMinMs + Math.random() * (delayMaxMs - delayMinMs);
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
   const [{ count: sentCount }, { count: failedCount }, { count: remaining }] =
@@ -289,4 +329,35 @@ export async function processBlastBatch(blastId: string): Promise<BatchResult> {
     remaining: remaining ?? 0,
     done,
   };
+}
+
+export interface TestMessageState {
+  error?: string;
+  ok?: boolean;
+}
+
+/** Send the composed message to a single number, e.g. the admin's own, so
+ * they can check formatting/attachment before committing to a real blast. */
+export async function sendTestMessage(
+  formData: FormData
+): Promise<TestMessageState> {
+  await requireUser();
+
+  const phoneInput = (formData.get("phone") as string)?.trim() ?? "";
+  const message = (formData.get("message") as string)?.trim() ?? "";
+  const mediaUrl = (formData.get("media_url") as string)?.trim() || null;
+
+  const phone = normalizePhone(phoneInput);
+  if (!phone) return { error: "Nombor telefon tidak sah." };
+  if (!message) return { error: "Sila tulis mesej." };
+
+  const personalized = message.replaceAll("{{nama}}", "Ujian");
+  const result = mediaUrl
+    ? await sendWhatsAppMedia(phone, mediaUrl, personalized)
+    : await sendWhatsAppMessage(phone, personalized);
+
+  if (!result.ok) {
+    return { error: result.error ?? "Gagal menghantar mesej ujian." };
+  }
+  return { ok: true };
 }

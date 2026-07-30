@@ -11,9 +11,17 @@ import { Label } from "@/components/ui/label";
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
-export function BlastAttachmentPicker({ disabled }: { disabled: boolean }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [name, setName] = useState<string | null>(null);
+export function BlastAttachmentPicker({
+  disabled,
+  url,
+  name,
+  onChange,
+}: {
+  disabled: boolean;
+  url: string | null;
+  name: string | null;
+  onChange: (url: string | null, name: string | null) => void;
+}) {
   const [pending, setPending] = useState(false);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -25,7 +33,6 @@ export function BlastAttachmentPicker({ disabled }: { disabled: boolean }) {
       return;
     }
 
-    setName(file.name);
     setPending(true);
     const fd = new FormData();
     fd.set("file", file);
@@ -33,17 +40,11 @@ export function BlastAttachmentPicker({ disabled }: { disabled: boolean }) {
     setPending(false);
 
     if (result.ok && result.url) {
-      setUrl(result.url);
+      onChange(result.url, file.name);
       toast.success("Lampiran dimuat naik.");
     } else {
       toast.error(result.error ?? "Gagal memuat naik lampiran.");
-      setName(null);
     }
-  }
-
-  function remove() {
-    setUrl(null);
-    setName(null);
   }
 
   const isImage = url ? /\.(png|jpe?g|gif|webp)$/i.test(url) : false;
@@ -51,7 +52,6 @@ export function BlastAttachmentPicker({ disabled }: { disabled: boolean }) {
   return (
     <div className="space-y-2">
       <Label>Lampiran (pilihan)</Label>
-      <input type="hidden" name="media_url" value={url ?? ""} />
 
       {url ? (
         <div className="flex items-center gap-2 rounded-lg border p-2 text-sm">
@@ -66,7 +66,7 @@ export function BlastAttachmentPicker({ disabled }: { disabled: boolean }) {
             variant="ghost"
             size="icon"
             className="ml-auto"
-            onClick={remove}
+            onClick={() => onChange(null, null)}
             aria-label="Buang lampiran"
           >
             <X className="h-4 w-4" />

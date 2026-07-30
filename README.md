@@ -217,19 +217,27 @@ WhatsApp, mengikut julat tarikh pembayaran — dari **Dashboard → WhatsApp**.
 3. Di **Dashboard → Integrasi**, isi **API Key** dan **Session ID** peranti
    (atau set `MURPATI_API_KEY` / `MURPATI_SESSION_ID` sebagai env var). Guna
    butang "Uji Sambungan" untuk sahkan peranti bersambung.
-4. Di **Dashboard → WhatsApp**, pilih julat tarikh (berdasarkan tarikh
-   pembayaran **berjaya**), tulis mesej (guna `{{nama}}` untuk gantikan nama
-   pembayar, atau butang emoji 😀 untuk sisip emoji), lampirkan gambar/PDF
-   (pilihan — dihantar sebagai lampiran dengan mesej sebagai kapsyen),
-   pratonton senarai penerima, kemudian hantar.
+4. Di **Dashboard → WhatsApp**, ikut wizard 3 langkah:
+   - **Tulis Mesej** — guna `{{nama}}` untuk gantikan nama pembayar, butang
+     emoji 😀 untuk sisip emoji, lampirkan gambar/PDF (pilihan — dihantar
+     sebagai lampiran dengan mesej sebagai kapsyen), lihat pratonton mesej
+     secara langsung.
+   - **Konfigur Penerima** — nama kempen (pilihan, untuk kenal pasti dalam
+     Sejarah Blast), **Kelajuan Hantar** (YOLO/Sederhana/Berhati-hati/Custom
+     — lihat nota jeda di bawah), julat tarikh pembayaran, "Kira Penerima"
+     untuk pratonton jumlah & anggaran masa, dan "Hantar Ujian" untuk uji
+     mesej ke nombor sendiri dahulu.
+   - **Hantar** — bar kemajuan langsung sehingga selesai.
 
 Nota:
 - Penerima disaring kepada pembayaran **berjaya** sahaja dengan no. telefon
   sah, dan disah-unikkan mengikut no. telefon (elak hantar berulang jika
   seorang pembayar membayar beberapa kali dalam julat yang sama).
 - Murpati tidak menyediakan penghantaran pukal — sistem menghantar satu-satu
-  dengan jeda kecil antara mesej, dan had **500 penerima setiap blast**
-  (kecilkan julat tarikh jika melebihi).
+  dengan jeda berdasarkan **Kelajuan Hantar** yang dipilih (YOLO 1–15 saat,
+  Sederhana 15–60 saat, Berhati-hati 1–3 minit, atau Custom), dan had **500
+  penerima setiap blast** (kecilkan julat tarikh jika melebihi). Jeda lebih
+  pantas berisiko disekat WhatsApp bagi senarai besar.
 - Setiap blast direkodkan di **Sejarah Blast** dengan status
   berjaya/gagal per-penerima; blast yang terganggu (contoh: tab ditutup) boleh
   disambung semula tanpa hantar semula kepada penerima yang sudah berjaya.

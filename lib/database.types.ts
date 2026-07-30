@@ -81,13 +81,19 @@ export interface ActivityLogEntry {
 export type WhatsappBlastStatus = "processing" | "completed";
 export type WhatsappBlastRecipientStatus = "pending" | "sent" | "failed";
 
+export type WhatsappBlastDelayMode = "yolo" | "medium" | "careful" | "custom";
+
 export interface WhatsappBlast {
   id: string;
+  name: string | null;
   message: string;
   media_url: string | null;
   date_from: string | null;
   date_to: string | null;
   status_filter: string;
+  delay_mode: WhatsappBlastDelayMode;
+  delay_min_ms: number;
+  delay_max_ms: number;
   total_recipients: number;
   sent_count: number;
   failed_count: number;

@@ -129,11 +129,20 @@ export async function sendWhatsAppMedia(
   }
 }
 
-/** Check the configured device's connection status (Integrasi "test" button). */
-export async function checkMurpatiSession(): Promise<MurpatiResult> {
+export interface MurpatiSessionInfo {
+  connected: boolean;
+  status?: string;
+  phoneNumber?: string;
+  deviceName?: string;
+  error?: string;
+}
+
+/** Live status of the configured device — used for the WhatsApp page's
+ * "Active Session" summary and the Integrasi "test" button. */
+export async function getMurpatiSessionInfo(): Promise<MurpatiSessionInfo> {
   const { apiKey, sessionId } = await getMurpatiSettings();
   if (!apiKey || !sessionId) {
-    return { ok: false, error: "Murpati belum dikonfigurasi." };
+    return { connected: false, error: "Murpati belum dikonfigurasi." };
   }
 
   try {
@@ -143,16 +152,30 @@ export async function checkMurpatiSession(): Promise<MurpatiResult> {
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok || body?.success === false) {
-      return { ok: false, error: body?.error || `HTTP ${res.status}` };
+      return { connected: false, error: body?.error || `HTTP ${res.status}` };
     }
-    if (body.status !== "connected") {
-      return { ok: false, error: `Peranti belum bersambung (status: ${body.status}).` };
-    }
-    return { ok: true };
+    return {
+      connected: body.status === "connected",
+      status: body.status,
+      phoneNumber: body.phone_number,
+      deviceName: body.device_name,
+    };
   } catch (err) {
     return {
-      ok: false,
+      connected: false,
       error: err instanceof Error ? err.message : "Ralat rangkaian",
     };
   }
+}
+
+/** Check the configured device's connection status (Integrasi "test" button). */
+export async function checkMurpatiSession(): Promise<MurpatiResult> {
+  const info = await getMurpatiSessionInfo();
+  if (!info.connected) {
+    return {
+      ok: false,
+      error: info.error ?? `Peranti belum bersambung (status: ${info.status}).`,
+    };
+  }
+  return { ok: true };
 }
