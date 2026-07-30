@@ -23,6 +23,7 @@ Dibina dengan **Next.js 16 (App Router)** + **TypeScript** + **Tailwind CSS v4**
 | **Media** | Muat naik imej ke Supabase Storage, salin URL. |
 | **Edit laman** | Edit teks hero, tentang, kadar fidyah, statistik & FAQ tanpa sentuh kod. |
 | **Auth** | Log masuk pentadbir melalui Supabase Auth; kawasan `/admin` dilindungi. |
+| **Blast WhatsApp** | Hantar kemas kini (contoh: agihan fidyah) kepada pembayar ikut julat tarikh, melalui Murpati. |
 
 ## Susun atur teknikal
 
@@ -196,6 +197,32 @@ curl -H "Authorization: Bearer $API_KEY" \
 > Jika `API_KEY` tidak diset, API dilumpuhkan (semua permintaan → 401).
 > Gunakan kunci rahsia yang kuat dan simpan sebagai env var di Vercel sahaja.
 
+## 9. Blast WhatsApp (Murpati)
+
+Hantar kemas kini (contoh: status agihan fidyah) kepada pembayar melalui
+WhatsApp, mengikut julat tarikh pembayaran — dari **Dashboard → WhatsApp**.
+
+1. Perlukan langganan [Murpati](https://murpati.com) Pro/Max, dengan satu
+   peranti WhatsApp disambungkan di **murpati.com/devices**.
+2. Jana API key di **murpati.com/settings** (tab API Keys).
+3. Di **Dashboard → Integrasi**, isi **API Key** dan **Session ID** peranti
+   (atau set `MURPATI_API_KEY` / `MURPATI_SESSION_ID` sebagai env var). Guna
+   butang "Uji Sambungan" untuk sahkan peranti bersambung.
+4. Di **Dashboard → WhatsApp**, pilih julat tarikh (berdasarkan tarikh
+   pembayaran **berjaya**), tulis mesej (guna `{{nama}}` untuk gantikan nama
+   pembayar), pratonton senarai penerima, kemudian hantar.
+
+Nota:
+- Penerima disaring kepada pembayaran **berjaya** sahaja dengan no. telefon
+  sah, dan disah-unikkan mengikut no. telefon (elak hantar berulang jika
+  seorang pembayar membayar beberapa kali dalam julat yang sama).
+- Murpati tidak menyediakan penghantaran pukal — sistem menghantar satu-satu
+  dengan jeda kecil antara mesej, dan had **500 penerima setiap blast**
+  (kecilkan julat tarikh jika melebihi).
+- Setiap blast direkodkan di **Sejarah Blast** dengan status
+  berjaya/gagal per-penerima; blast yang terganggu (contoh: tab ditutup) boleh
+  disambung semula tanpa hantar semula kepada penerima yang sudah berjaya.
+
 ## Skrip
 
 ```bash
@@ -210,6 +237,9 @@ npm run test    # ujian unit (Vitest) — kalkulator fidyah, tandatangan CHIP, d
 
 - `SUPABASE_SERVICE_ROLE_KEY` hanya digunakan dalam route handler/webhook server
   dan **tidak pernah** didedahkan ke pelayar.
+- API key Murpati (blast WhatsApp) disimpan dalam jadual admin-sahaja dan
+  hanya digunakan dari Server Action sisi-pelayan — tidak pernah didedahkan
+  ke pelayar.
 - Semua callback CHIP disahkan menggunakan tandatangan RSA-SHA256 X-Signature
   terhadap kunci awam syarikat.
 - Row Level Security dikuatkuasakan: orang awam hanya boleh membaca artikel

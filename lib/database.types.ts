@@ -67,6 +67,35 @@ export interface ActivityLogEntry {
   created_at: string;
 }
 
+export type WhatsappBlastStatus = "processing" | "completed";
+export type WhatsappBlastRecipientStatus = "pending" | "sent" | "failed";
+
+export interface WhatsappBlast {
+  id: string;
+  message: string;
+  date_from: string | null;
+  date_to: string | null;
+  status_filter: string;
+  total_recipients: number;
+  sent_count: number;
+  failed_count: number;
+  status: WhatsappBlastStatus;
+  created_by: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface WhatsappBlastRecipient {
+  id: string;
+  blast_id: string;
+  donation_id: string | null;
+  payer_name: string;
+  phone: string;
+  status: WhatsappBlastRecipientStatus;
+  error: string | null;
+  sent_at: string | null;
+}
+
 export type GalleryType = "image" | "video";
 
 export interface GalleryItem {

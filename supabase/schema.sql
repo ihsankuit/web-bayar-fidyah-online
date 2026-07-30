@@ -340,3 +340,58 @@ alter table public.integration_settings
   add column if not exists fb_pixel_id          text,
   add column if not exists fb_capi_access_token text,
   add column if not exists fb_test_event_code   text;
+
+-- WhatsApp blast (Murpati) device credentials.
+alter table public.integration_settings
+  add column if not exists murpati_api_key    text,
+  add column if not exists murpati_session_id text;
+
+-- =====================================================================
+--  WhatsApp blast (Murpati) — admin picks paid donations within a date
+--  range and sends them a WhatsApp update (e.g. agihan fidyah status).
+--  Murpati has no bulk-send endpoint, so recipients are processed in small
+--  batches driven from the admin UI; rows here track per-recipient progress
+--  so an interrupted blast can be resumed instead of re-sending everyone.
+-- =====================================================================
+create table if not exists public.whatsapp_blasts (
+  id               uuid primary key default gen_random_uuid(),
+  message          text not null,
+  date_from        date,
+  date_to          date,
+  status_filter    text not null default 'paid',
+  total_recipients integer not null default 0,
+  sent_count       integer not null default 0,
+  failed_count     integer not null default 0,
+  status           text not null default 'processing'
+                     check (status in ('processing', 'completed')),
+  created_by       text,
+  created_at       timestamptz not null default now(),
+  completed_at     timestamptz
+);
+
+alter table public.whatsapp_blasts enable row level security;
+
+drop policy if exists whatsapp_blasts_admin_all on public.whatsapp_blasts;
+create policy whatsapp_blasts_admin_all on public.whatsapp_blasts
+  for all to authenticated using (true) with check (true);
+
+create table if not exists public.whatsapp_blast_recipients (
+  id          uuid primary key default gen_random_uuid(),
+  blast_id    uuid not null references public.whatsapp_blasts(id) on delete cascade,
+  donation_id uuid references public.donations(id) on delete set null,
+  payer_name  text not null,
+  phone       text not null,
+  status      text not null default 'pending'
+                check (status in ('pending', 'sent', 'failed')),
+  error       text,
+  sent_at     timestamptz
+);
+
+create index if not exists whatsapp_blast_recipients_blast_status_idx
+  on public.whatsapp_blast_recipients (blast_id, status);
+
+alter table public.whatsapp_blast_recipients enable row level security;
+
+drop policy if exists whatsapp_blast_recipients_admin_all on public.whatsapp_blast_recipients;
+create policy whatsapp_blast_recipients_admin_all on public.whatsapp_blast_recipients
+  for all to authenticated using (true) with check (true);
