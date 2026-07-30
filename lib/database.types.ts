@@ -84,6 +84,7 @@ export type WhatsappBlastRecipientStatus = "pending" | "sent" | "failed";
 export interface WhatsappBlast {
   id: string;
   message: string;
+  media_url: string | null;
   date_from: string | null;
   date_to: string | null;
   status_filter: string;

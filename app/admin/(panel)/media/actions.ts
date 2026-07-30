@@ -20,6 +20,7 @@ async function requireUser() {
 export interface MediaState {
   error?: string;
   ok?: boolean;
+  url?: string;
 }
 
 export async function uploadMedia(
@@ -61,7 +62,7 @@ export async function uploadMedia(
   if (insertError) return { error: insertError.message };
 
   revalidatePath("/admin/media");
-  return { ok: true };
+  return { ok: true, url: publicUrl };
 }
 
 export async function deleteMedia(formData: FormData) {

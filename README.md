@@ -210,7 +210,9 @@ WhatsApp, mengikut julat tarikh pembayaran — dari **Dashboard → WhatsApp**.
    butang "Uji Sambungan" untuk sahkan peranti bersambung.
 4. Di **Dashboard → WhatsApp**, pilih julat tarikh (berdasarkan tarikh
    pembayaran **berjaya**), tulis mesej (guna `{{nama}}` untuk gantikan nama
-   pembayar), pratonton senarai penerima, kemudian hantar.
+   pembayar, atau butang emoji 😀 untuk sisip emoji), lampirkan gambar/PDF
+   (pilihan — dihantar sebagai lampiran dengan mesej sebagai kapsyen),
+   pratonton senarai penerima, kemudian hantar.
 
 Nota:
 - Penerima disaring kepada pembayaran **berjaya** sahaja dengan no. telefon

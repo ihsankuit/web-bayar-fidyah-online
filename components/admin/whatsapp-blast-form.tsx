@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { Loader2, Send } from "lucide-react";
@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BlastProgress } from "@/components/admin/blast-progress";
+import { EmojiPicker } from "@/components/admin/emoji-picker";
+import { BlastAttachmentPicker } from "@/components/admin/blast-attachment-picker";
 
 function PreviewButton() {
   const { pending } = useFormStatus();
@@ -30,6 +32,7 @@ function PreviewButton() {
 
 export function WhatsAppBlastForm({ disabled }: { disabled: boolean }) {
   const router = useRouter();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [previewState, previewAction] = useActionState<PreviewResult, FormData>(
     previewRecipients,
@@ -92,14 +95,18 @@ export function WhatsAppBlastForm({ disabled }: { disabled: boolean }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="message">Mesej</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="message">Mesej</Label>
+          <EmojiPicker textareaRef={textareaRef} />
+        </div>
         <Textarea
+          ref={textareaRef}
           id="message"
           name="message"
           rows={5}
           disabled={disabled}
           placeholder={
-            "Assalamualaikum {{nama}},\n\nAgihan fidyah bagi sumbangan anda telah selesai disalurkan. Jazakallahu khairan atas sumbangan anda."
+            "Assalamualaikum {{nama}},\n\nAgihan fidyah bagi sumbangan anda telah selesai disalurkan. Jazakallahu khairan atas sumbangan anda. 🤲"
           }
           required
         />
@@ -108,6 +115,8 @@ export function WhatsAppBlastForm({ disabled }: { disabled: boolean }) {
           untuk gantikan dengan nama pembayar secara automatik.
         </p>
       </div>
+
+      <BlastAttachmentPicker disabled={disabled} />
 
       <div className="flex flex-wrap gap-2">
         <PreviewButton />
