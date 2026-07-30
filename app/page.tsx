@@ -172,11 +172,13 @@ export default async function HomePage() {
                 </Button>
               </div>
 
-              <dl className="grid grid-cols-3 gap-4 pt-4">
+              <dl className="grid grid-cols-3 gap-2 pt-4 sm:gap-4">
                 {content.stats.map((s) => (
                   <div key={s.label}>
-                    <dt className="text-sm text-muted-foreground">{s.label}</dt>
-                    <dd className="text-2xl font-bold text-primary">
+                    <dt className="text-xs text-muted-foreground sm:text-sm">
+                      {s.label}
+                    </dt>
+                    <dd className="text-lg font-bold text-primary sm:text-2xl">
                       {s.value}
                     </dd>
                   </div>

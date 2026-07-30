@@ -25,10 +25,10 @@ export default async function PanelLayout({
   if (await needsMfaChallenge(supabase)) redirect("/admin/mfa");
 
   return (
-    <div className="flex min-h-screen bg-muted/20">
+    <div className="flex min-h-screen flex-col bg-muted/20 lg:flex-row">
       <Sidebar email={user.email ?? "Pentadbir"} />
       <main className="flex-1 overflow-x-hidden">
-        <div className="mx-auto max-w-6xl p-6 lg:p-8">{children}</div>
+        <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );

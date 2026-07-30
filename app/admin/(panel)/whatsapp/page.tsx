@@ -85,13 +85,13 @@ export default async function WhatsAppPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Mesej</TableHead>
-                  <TableHead>Julat Tarikh</TableHead>
+                  <TableHead className="hidden md:table-cell">Julat Tarikh</TableHead>
                   <TableHead className="text-right">Penerima</TableHead>
                   <TableHead className="text-right">Berjaya</TableHead>
-                  <TableHead className="text-right">Gagal</TableHead>
+                  <TableHead className="hidden text-right sm:table-cell">Gagal</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Dihantar Oleh</TableHead>
-                  <TableHead>Tarikh</TableHead>
+                  <TableHead className="hidden lg:table-cell">Dihantar Oleh</TableHead>
+                  <TableHead className="hidden sm:table-cell">Tarikh</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -106,23 +106,23 @@ export default async function WhatsAppPage() {
                         <span className="truncate">{b.message}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
                       {b.date_from} – {b.date_to}
                     </TableCell>
                     <TableCell className="text-right">{b.total_recipients}</TableCell>
                     <TableCell className="text-right text-emerald-600">
                       {b.sent_count}
                     </TableCell>
-                    <TableCell className="text-right text-destructive">
+                    <TableCell className="hidden text-right text-destructive sm:table-cell">
                       {b.failed_count}
                     </TableCell>
                     <TableCell className="text-sm">
                       {b.status === "completed" ? "Selesai" : "Diproses"}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
                       {b.created_by}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                       {formatDate(b.created_at)}
                     </TableCell>
                     <TableCell>
