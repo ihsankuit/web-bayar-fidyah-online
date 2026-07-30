@@ -179,6 +179,103 @@ accurate as the dataset grows.
 
 ---
 
+### `GET /blog`
+
+List blog posts (any status — this endpoint is authenticated, unlike the
+public `/blog` page which only shows published posts).
+
+**Query params** (all optional): `status` (`draft` | `published`), `limit`
+(default 50, max 200), `offset`.
+
+```bash
+curl -H "Authorization: Bearer $API_KEY" \
+  "https://bayarfidyahonline.com/api/v1/blog?status=draft"
+```
+
+**Response `200`**
+
+```json
+{
+  "data": [
+    {
+      "id": "b1e6...",
+      "slug": "kepentingan-membayar-fidyah",
+      "title": "Kepentingan Membayar Fidyah",
+      "excerpt": "Ringkasan ringkas...",
+      "content": "# Markdown content...",
+      "cover_image": "https://.../cover.jpg",
+      "status": "published",
+      "author": "Admin",
+      "published_at": "2026-06-01T00:00:00.000Z",
+      "created_at": "2026-05-30T10:00:00.000Z",
+      "updated_at": "2026-06-01T00:00:00.000Z"
+    }
+  ],
+  "count": 42,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+### `POST /blog`
+
+Create a post.
+
+**Body** (JSON):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `title` | string | **Required** |
+| `slug` | string | Optional — derived from `title` if omitted |
+| `excerpt` | string \| null | Optional |
+| `content` | string | Optional — Markdown, defaults to `""` |
+| `cover_image` | string \| null | Optional — URL |
+| `author` | string \| null | Optional |
+| `status` | `"draft"` \| `"published"` | Optional, defaults to `"draft"` |
+| `published_at` | ISO 8601 | Optional. Only used when `status: "published"`; defaults to now if omitted (lets you schedule a future date) |
+
+```bash
+curl -X POST -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
+  -d '{"title": "Kepentingan Membayar Fidyah", "content": "# Isi kandungan...", "status": "published"}' \
+  "https://bayarfidyahonline.com/api/v1/blog"
+```
+
+**Response `201`**: `{ "data": { ...same shape as a list row... } }`
+
+**`409`** if the (auto-derived or given) slug already exists —
+`{ "error": "Slug \"...\" already exists" }`.
+
+### `PATCH /blog/{slug}`
+
+Partial update — send only the fields you want to change. Accepts the same
+fields as `POST`, plus `slug` (to rename). Setting `status: "draft"` clears
+`published_at`; setting `status: "published"` with no `published_at` and no
+prior publish date publishes immediately.
+
+```bash
+curl -X PATCH -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
+  -d '{"status": "published"}' \
+  "https://bayarfidyahonline.com/api/v1/blog/kepentingan-membayar-fidyah"
+```
+
+**Response `200`**: `{ "data": { ...updated row... } }`. `404` if the slug
+doesn't exist, `409` on a slug rename collision.
+
+### `DELETE /blog/{slug}`
+
+```bash
+curl -X DELETE -H "Authorization: Bearer $API_KEY" \
+  "https://bayarfidyahonline.com/api/v1/blog/kepentingan-membayar-fidyah"
+```
+
+**Response `200`**: `{ "data": { "slug": "...", "deleted": true } }`. `404`
+if not found.
+
+> All blog writes revalidate the public `/blog` pages immediately and are
+> recorded in the admin activity log (actor `"api"`).
+
+---
+
 ## 2. Outbound webhooks (push)
 
 Configure a webhook URL at **Dashboard → Integrasi → Webhook Keluar
@@ -325,4 +422,5 @@ listed here only so you don't mistake them for public integration points:
 ## 5. Changelog
 
 - **v1** (current) — `GET /donations`, `GET /donations/{reference}`,
-  `GET /stats`, `donation.created`/`donation.paid` webhooks.
+  `GET /stats`, `GET/POST /blog`, `GET/PATCH/DELETE /blog/{slug}`,
+  `donation.created`/`donation.paid` webhooks.

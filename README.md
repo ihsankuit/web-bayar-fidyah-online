@@ -187,6 +187,11 @@ Set `API_KEY` untuk mengaktifkan. Semua permintaan perlukan
 | `GET /api/v1/donations` | Senarai sumbangan. Query: `status`, `limit` (≤200), `offset`, `from`, `to` |
 | `GET /api/v1/donations/{reference}` | Satu sumbangan ikut rujukan |
 | `GET /api/v1/stats` | Jumlah terkumpul, kiraan status, pecahan kategori |
+| `GET /api/v1/blog` | Senarai artikel blog (semua status). Query: `status`, `limit` (≤200), `offset` |
+| `POST /api/v1/blog` | Cipta artikel blog baharu |
+| `GET /api/v1/blog/{slug}` | Satu artikel blog |
+| `PATCH /api/v1/blog/{slug}` | Kemaskini/terbitkan artikel (sebahagian — hanya field yang dihantar) |
+| `DELETE /api/v1/blog/{slug}` | Padam artikel |
 
 Contoh:
 ```bash

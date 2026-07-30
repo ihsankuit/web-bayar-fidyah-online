@@ -1,6 +1,6 @@
 ---
 name: bayar-fidyah-online
-description: Use this skill when the user wants to interact with their Bayar Fidyah Online donation platform (bayarfidyahonline.com) via its REST API. Tasks include listing or filtering donations, looking up a donation by reference, pulling aggregate stats (totals, counts, category breakdown), and explaining or verifying incoming webhook events (donation.created, donation.paid) sent by the platform. Requires an API key issued from Dashboard > Integrasi in the admin panel.
+description: Use this skill when the user wants to interact with their Bayar Fidyah Online donation platform (bayarfidyahonline.com) via its REST API. Tasks include listing or filtering donations, looking up a donation by reference, pulling aggregate stats (totals, counts, category breakdown), explaining or verifying incoming webhook events (donation.created, donation.paid), and reading/writing blog posts (list, create, update, publish, delete) on the platform's blog. Requires an API key issued from Dashboard > Integrasi in the admin panel.
 ---
 
 # Bayar Fidyah Online API
@@ -13,6 +13,7 @@ Invoke when the user asks you to:
 - Report aggregate stats — total collected, paid/pending/failed counts, unique payers, breakdown by category
 - Build a report, dashboard, or scheduled digest from donation data
 - Verify or explain an incoming webhook payload from Bayar Fidyah Online (`donation.created` / `donation.paid`)
+- Write blog content for the platform — draft, create, edit, publish, schedule, or delete a blog post
 
 Also invoke if the user mentions **Bayar Fidyah Online**, **bayarfidyahonline.com**, or pastes an API key/reference in the format `FID-XXXXXXXX`.
 
@@ -122,6 +123,39 @@ Aggregate totals — no query params.
 
 `by_category` only lists categories with at least one **paid** donation — an empty or missing category key means zero paid donations there, not an error. `total_collected`/`by_category[*].amount` are computed only from `status: "paid"` rows.
 
+---
+
+### `GET /blog`
+
+List blog posts, any status. Query params: `status` (`draft`|`published`), `limit` (default 50, max 200), `offset`.
+
+### `POST /blog`
+
+Create a post. Body:
+```json
+{
+  "title": "Kepentingan Membayar Fidyah",
+  "slug": "kepentingan-membayar-fidyah",
+  "excerpt": "Ringkasan ringkas...",
+  "content": "# Markdown content...",
+  "cover_image": "https://.../cover.jpg",
+  "author": "Admin",
+  "status": "published",
+  "published_at": "2026-06-01T00:00:00Z"
+}
+```
+Only `title` is required — `slug` auto-derives from it if omitted, `status` defaults to `"draft"`, `content` defaults to `""`. Returns `201` with the created post, or `409` if the slug already exists.
+
+### `PATCH /blog/{slug}`
+
+Partial update — send only the fields to change (same field set as `POST`, plus `slug` to rename). Setting `status: "published"` with no prior publish date and no `published_at` publishes immediately; setting `status: "draft"` clears `published_at`. Returns `404` if the slug doesn't exist, `409` on a rename collision.
+
+### `DELETE /blog/{slug}`
+
+Deletes the post. Returns `404` if not found, else `{ "data": { "slug": "...", "deleted": true } }`.
+
+All blog writes go live on the public `/blog` pages immediately (no cache delay) and are recorded in the platform's admin activity log.
+
 ## Rate limits
 
 Per client IP, sliding window:
@@ -172,6 +206,9 @@ All error responses are `{"error": "<message>"}`.
 - Use `amount_sen` (integer) for any summing/math; only use `amount` for display.
 - Time-bound queries with `from`/`to` when the user asks about a specific period, rather than fetching everything and filtering client-side.
 - Treat webhook `data` payloads as open-ended (they include the full internal row) — read only the fields you need, don't assume a closed schema.
+- Before creating a blog post, check `GET /blog` for an existing post with a similar title/slug if the user is unsure whether it exists — avoids duplicate posts under near-identical slugs.
+- Default new posts to `status: "draft"` unless the user explicitly says to publish — publishing goes live on the public site immediately.
+- Confirm with the user before `DELETE`ing a post — it's not recoverable through the API.
 
 **DON'T**
 - Don't call `POST /api/chip/callback`, `POST /api/fidyah/create`, `POST /api/fidyah/upload-proof`, or `POST /api/track/purchase` — these are internal endpoints for the payment flow and CHIP's own webhook, not part of this public API, and are protected differently (or not meant for third-party calls at all).
@@ -237,6 +274,13 @@ Report `status`, `amount`, `paid_at` (or note it's still `pending`/`failed`).
 1. Check `event` is one of `donation.created` / `donation.paid`.
 2. If they have the signing secret and raw body, verify `X-Signature` per the snippet above before trusting `data`.
 3. Summarize `data` in plain language (payer, amount, category, status) rather than dumping raw JSON back at them.
+
+### Recipe 5: "Write a blog post about X"
+
+1. Draft `title` and `content` (Markdown) from what the user asked for.
+2. `POST /blog` with `status: "draft"` unless they explicitly asked to publish now.
+3. Share the returned `slug` and a short summary; ask if they want it published, or edited further via `PATCH /blog/{slug}`.
+4. If they later say "publish it", `PATCH /blog/{slug}` with `{"status": "published"}` — don't recreate the post.
 
 ## When something goes wrong
 
