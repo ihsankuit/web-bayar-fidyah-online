@@ -11,6 +11,7 @@ import {
   type LandingState,
 } from "@/app/admin/(panel)/laman/actions";
 import type { LandingContent } from "@/lib/database.types";
+import { FIDYAH_CATEGORIES, DEFAULT_CATEGORY_IMAGES } from "@/lib/fidyah";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -136,6 +137,68 @@ export function LandingEditor({ content }: { content: LandingContent }) {
             name="hadith_source"
             defaultValue={content.hadith_source}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Siapa Yang Wajib Membayar Fidyah?</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Kad kategori di laman utama. Kosongkan mana-mana medan untuk
+            kekalkan nilai lalai.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {FIDYAH_CATEGORIES.filter((c) => c.id !== "lain").map((c) => {
+            const override = content.category_content?.[c.id];
+            const defaultImage = DEFAULT_CATEGORY_IMAGES[c.id]?.[0] ?? "";
+            return (
+              <div
+                key={c.id}
+                className="space-y-3 rounded-lg border p-4"
+              >
+                <p className="text-sm font-medium">{c.title}</p>
+                <div className="space-y-2">
+                  <Label htmlFor={`category_${c.id}_title`}>Tajuk</Label>
+                  <Input
+                    id={`category_${c.id}_title`}
+                    name={`category_${c.id}_title`}
+                    defaultValue={override?.title ?? ""}
+                    placeholder={c.title}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`category_${c.id}_description`}>
+                    Penerangan
+                  </Label>
+                  <Textarea
+                    id={`category_${c.id}_description`}
+                    name={`category_${c.id}_description`}
+                    defaultValue={override?.description ?? ""}
+                    placeholder={c.description}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`category_${c.id}_image_url`}>
+                    URL gambar (pilihan)
+                  </Label>
+                  <Input
+                    id={`category_${c.id}_image_url`}
+                    name={`category_${c.id}_image_url`}
+                    defaultValue={override?.image_url ?? ""}
+                    placeholder={defaultImage || "https://..."}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Muat naik di{" "}
+                    <Link href="/admin/media" className="underline">
+                      Media
+                    </Link>{" "}
+                    dahulu, kemudian salin URL fail tersebut ke sini.
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 

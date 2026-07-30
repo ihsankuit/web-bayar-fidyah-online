@@ -31,7 +31,7 @@ import {
   FIDYAH_CATEGORIES,
   QADA_FIDYAH_SITUATIONS,
   NEGERI,
-  type FidyahCategoryId,
+  DEFAULT_CATEGORY_IMAGES,
 } from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
 import { getUpsellSettings } from "@/lib/upsell";
@@ -39,17 +39,6 @@ import { getGalleryItems } from "@/lib/gallery";
 import { formatMYR } from "@/lib/utils";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
-
-// Illustrations for the "Siapa Yang Wajib Membayar Fidyah?" category cards.
-// hamil_menyusu gets two images (hamil + menyusu) since the category covers
-// both.
-const CATEGORY_IMAGES: Partial<Record<FidyahCategoryId, string[]>> = {
-  uzur_tua: ["/kategori/warga-emas.webp"],
-  sakit_kronik: ["/kategori/uzur-sakit.webp"],
-  hamil_menyusu: ["/kategori/hamil.webp", "/kategori/menyusu.webp"],
-  lewat_qada: ["/kategori/lewat-qada.webp"],
-  meninggal_dunia: ["/kategori/meninggal-dunia.webp"],
-};
 
 export const revalidate = 60;
 
@@ -274,7 +263,12 @@ export default async function HomePage() {
             </div>
             <div className="mt-12 flex flex-wrap justify-center gap-6">
               {FIDYAH_CATEGORIES.filter((c) => c.id !== "lain").map((c) => {
-                const images = CATEGORY_IMAGES[c.id] ?? [];
+                const override = content.category_content?.[c.id];
+                const images = override?.image_url
+                  ? [override.image_url]
+                  : (DEFAULT_CATEGORY_IMAGES[c.id] ?? []);
+                const title = override?.title || c.title;
+                const description = override?.description || c.description;
                 return (
                   <Card
                     key={c.id}
@@ -296,9 +290,9 @@ export default async function HomePage() {
                       </div>
                     )}
                     <div className="space-y-2 p-6">
-                      <h3 className="font-semibold">{c.title}</h3>
+                      <h3 className="font-semibold">{title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {c.description}
+                        {description}
                       </p>
                     </div>
                   </Card>
