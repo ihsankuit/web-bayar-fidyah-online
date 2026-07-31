@@ -13,6 +13,11 @@ const CHIP_BASE_URL = (
   process.env.CHIP_BASE_URL ?? "https://gate.chip-in.asia/api/v1"
 ).replace(/\/+$/, "");
 
+// Never let a slow/hanging CHIP response tie up a serverless function until
+// the platform's own hard timeout kills it — fail fast with a clear error
+// instead, well within Vercel Hobby's 10s function limit.
+const CHIP_TIMEOUT_MS = 8_000;
+
 interface CreatePurchaseParams {
   email: string;
   name: string;
@@ -90,6 +95,7 @@ export async function createPurchase(
     },
     body: JSON.stringify(body),
     cache: "no-store",
+    signal: AbortSignal.timeout(CHIP_TIMEOUT_MS),
   });
 
   if (!res.ok) {
@@ -104,6 +110,7 @@ export async function getPurchase(id: string): Promise<ChipPurchase> {
   const res = await fetch(`${CHIP_BASE_URL}/purchases/${id}/`, {
     headers: { Authorization: authHeader() },
     cache: "no-store",
+    signal: AbortSignal.timeout(CHIP_TIMEOUT_MS),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -123,6 +130,7 @@ export async function getPublicKey(forceRefresh = false): Promise<string> {
   const res = await fetch(`${CHIP_BASE_URL}/public_key/`, {
     headers: { Authorization: authHeader() },
     cache: "no-store",
+    signal: AbortSignal.timeout(CHIP_TIMEOUT_MS),
   });
   if (!res.ok) {
     const text = await res.text();

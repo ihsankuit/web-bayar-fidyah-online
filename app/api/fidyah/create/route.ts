@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -40,8 +40,11 @@ function makeReference(): string {
 export async function POST(request: Request) {
   const allowed = await checkRateLimit(
     `fidyah-create:${clientIp(request)}`,
-    5,
-    600 // 5 attempts per 10 minutes
+    // 15 attempts per 10 minutes — generous enough that many payers sharing
+    // one IP (mosque/office wifi during a Ramadan rush) don't get falsely
+    // throttled, while still bounding abuse from a single source.
+    15,
+    600
   );
   if (!allowed) {
     return NextResponse.json(
@@ -168,8 +171,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // Notify automations that a new (pending) donation was created.
-  await emitDonationEvent("donation.created", donation as Donation);
+  // Notify automations that a new (pending) donation was created. Runs after
+  // the response is sent — a slow/unconfigured webhook receiver should never
+  // add latency to the payer's checkout request.
+  after(() => emitDonationEvent("donation.created", donation as Donation));
 
   // 2a. Manual bank transfer — hand back the account details and wait for
   // the payer to upload proof and an admin to confirm.
