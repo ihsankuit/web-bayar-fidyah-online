@@ -79,7 +79,7 @@ export default async function BlogIndexPage() {
             </p>
           ) : (
             <div className="mt-12 grid gap-6 sm:grid-cols-2">
-              {posts.map((post) => (
+              {posts.map((post, index) => (
                 <Link key={post.id} href={`/blog/${post.slug}`} className="group">
                   <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
                     {post.cover_image && (
@@ -90,6 +90,7 @@ export default async function BlogIndexPage() {
                           fill
                           className="object-cover transition-transform group-hover:scale-105"
                           sizes="(max-width: 640px) 100vw, 50vw"
+                          priority={index === 0}
                         />
                       </div>
                     )}
