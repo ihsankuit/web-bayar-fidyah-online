@@ -85,6 +85,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://gate.chip-in.asia" />
         <link rel="dns-prefetch" href="https://gate.chip-in.asia" />
+        {/* Warm up the tracking/analytics origins (loaded via GTM) so they
+            don't pay full connection setup on the critical path. */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://connect.facebook.net" />
+        <link rel="dns-prefetch" href="https://www.clarity.ms" />
+        <link rel="dns-prefetch" href="https://region1.google-analytics.com" />
       </head>
       <body className={`${jakarta.variable} font-sans antialiased`}>
         {children}

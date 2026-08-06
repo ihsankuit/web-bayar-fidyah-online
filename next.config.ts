@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    // Serve AVIF/WebP (smaller than PNG/JPEG) where the browser supports it.
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       host
         ? { protocol: "https", hostname: host }

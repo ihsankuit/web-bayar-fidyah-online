@@ -22,7 +22,15 @@ export async function TrackingScripts() {
   if (gtmId) {
     return (
       <>
-        <Script id="gtm-init" strategy="afterInteractive">
+        {/*
+          lazyOnload: GTM (and everything it pulls in — GA4, Ads, Pixel,
+          Clarity) is heavy third-party JS and was the main Total Blocking
+          Time contributor. Deferring it to browser idle keeps the main thread
+          free during load. No events are lost: the analytics trackers push to
+          `window.dataLayer` (initialised as `[]` on their own), so events
+          queue and GTM replays them once it loads.
+        */}
+        <Script id="gtm-init" strategy="lazyOnload">
           {`
             (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
             new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
