@@ -19,6 +19,10 @@
   /* Biru terang — bright, vivid blue */
   --primary: oklch(0.55 0.2 258);
   --primary-foreground: oklch(0.99 0.01 250);
+  /* Darker, on-brand blue for primary-hued text on light/tinted backgrounds
+     (e.g. bg-primary/10) — --primary itself is too light there to meet
+     WCAG contrast (flagged by Lighthouse). */
+  --primary-strong: oklch(0.38 0.18 258);
 
   --secondary: oklch(0.96 0.025 255);
   --secondary-foreground: oklch(0.35 0.08 260);
@@ -55,6 +59,7 @@
 
   --primary: oklch(0.66 0.19 258);
   --primary-foreground: oklch(0.16 0.03 262);
+  --primary-strong: oklch(0.82 0.14 258);
 
   --secondary: oklch(0.28 0.035 262);
   --secondary-foreground: oklch(0.96 0.012 250);
@@ -93,6 +98,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);

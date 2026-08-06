@@ -51,7 +51,7 @@ function FooterCol({
 }) {
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold">{title}</h4>
+      <h3 className="text-sm font-semibold">{title}</h3>
       <ul className="space-y-2">{children}</ul>
     </div>
   );
