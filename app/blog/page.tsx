@@ -134,7 +134,7 @@ export default async function BlogIndexPage({
                           alt={post.title}
                           fill
                           className="object-cover transition-transform group-hover:scale-105"
-                          sizes="(max-width: 640px) 100vw, 50vw"
+                          sizes="(max-width: 640px) 100vw, 500px"
                           priority={index === 0}
                         />
                       </div>
