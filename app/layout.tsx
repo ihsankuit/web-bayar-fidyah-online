@@ -83,8 +83,6 @@ export default function RootLayout({
   return (
     <html lang="ms" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://gate.chip-in.asia" />
-        <link rel="dns-prefetch" href="https://gate.chip-in.asia" />
         {/* Warm up the tracking/analytics origins (loaded via GTM) so they
             don't pay full connection setup on the critical path. */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />
