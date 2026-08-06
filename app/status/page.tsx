@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, XCircle, HelpCircle, Clock } from "lucide-react";
 
@@ -12,6 +13,20 @@ import { PurchaseTracker } from "@/components/analytics/purchase-tracker";
 import { getTrackingSettings } from "@/lib/tracking/settings";
 
 export const dynamic = "force-dynamic";
+
+// Per-payment result page (keyed by ?ref=), no unique search value and
+// near-identical across every donation — never indexed, same treatment as
+// an order confirmation page.
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+};
 
 export default async function StatusPage({
   searchParams,
