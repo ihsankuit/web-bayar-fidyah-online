@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { UtmCapture } from "@/components/site/utm-capture";
-import { TrackingScripts } from "@/components/analytics/tracking-scripts";
-import { PageViewTracker } from "@/components/analytics/page-view-tracker";
-import { ScrollTracker } from "@/components/analytics/scroll-tracker";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -92,12 +87,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://gate.chip-in.asia" />
       </head>
       <body className={`${jakarta.variable} font-sans antialiased`}>
-        <TrackingScripts />
-        <UtmCapture />
-        <Suspense fallback={null}>
-          <PageViewTracker />
-        </Suspense>
-        <ScrollTracker />
         {children}
         <Toaster richColors position="top-center" />
       </body>
