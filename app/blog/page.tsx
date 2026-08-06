@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock, Search } from "lucide-react";
 
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
@@ -22,7 +22,21 @@ export const revalidate = 60;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
-export default async function BlogIndexPage() {
+/** Estimate reading time in minutes from markdown content. */
+function estimateReadingTime(content: string): number {
+  const wordsPerMinute = 200;
+  const words = content.trim().split(/\s+/).length;
+  return Math.max(1, Math.ceil(words / wordsPerMinute));
+}
+
+export default async function BlogIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const query = q?.trim().toLowerCase() ?? "";
+
   let posts: BlogPost[] = [];
   try {
     const supabase = createClient();
@@ -36,6 +50,15 @@ export default async function BlogIndexPage() {
   } catch {
     posts = [];
   }
+
+  // Client-side filter if query provided
+  const filteredPosts = query
+    ? posts.filter(
+        (p) =>
+          p.title.toLowerCase().includes(query) ||
+          (p.excerpt ?? "").toLowerCase().includes(query)
+      )
+    : posts;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -73,13 +96,35 @@ export default async function BlogIndexPage() {
             </p>
           </div>
 
-          {posts.length === 0 ? (
+          {/* Search Box */}
+          <form className="mt-8 flex gap-2" action="/blog" method="GET">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                name="q"
+                defaultValue={query}
+                placeholder="Cari artikel..."
+                className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Cari
+            </button>
+          </form>
+
+          {filteredPosts.length === 0 ? (
             <p className="mt-12 text-muted-foreground">
-              Tiada artikel diterbitkan buat masa ini.
+              {query
+                ? `Tiada artikel dijumpai untuk "${q}".`
+                : "Tiada artikel diterbitkan buat masa ini."}
             </p>
           ) : (
             <div className="mt-12 grid gap-6 sm:grid-cols-2">
-              {posts.map((post, index) => (
+              {filteredPosts.map((post, index) => (
                 <Link key={post.id} href={`/blog/${post.slug}`} className="group">
                   <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
                     {post.cover_image && (
@@ -95,11 +140,15 @@ export default async function BlogIndexPage() {
                       </div>
                     )}
                     <CardContent className="space-y-2 p-6">
-                      {post.published_at && (
-                        <p className="text-xs text-muted-foreground">
-                          {formatDateOnly(post.published_at)}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        {post.published_at && (
+                          <span>{formatDateOnly(post.published_at)}</span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {estimateReadingTime(post.content)} minit
+                        </span>
+                      </div>
                       <h2 className="text-xl font-semibold group-hover:text-primary">
                         {post.title}
                       </h2>

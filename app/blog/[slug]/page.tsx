@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clock, Share2 } from "lucide-react";
 
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
@@ -30,6 +30,30 @@ async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
+async function getRelatedPosts(currentSlug: string): Promise<BlogPost[]> {
+  try {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("blog_posts")
+      .select("slug,title,excerpt,cover_image,published_at")
+      .eq("status", "published")
+      .lte("published_at", new Date().toISOString())
+      .neq("slug", currentSlug)
+      .order("published_at", { ascending: false })
+      .limit(3);
+    return (data as BlogPost[]) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Estimate reading time in minutes from markdown content. */
+function estimateReadingTime(content: string): number {
+  const wordsPerMinute = 200;
+  const words = content.trim().split(/\s+/).length;
+  return Math.max(1, Math.ceil(words / wordsPerMinute));
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -51,6 +75,12 @@ export async function generateMetadata({
       url: `${siteUrl}/blog/${post.slug}`,
       ...(post.cover_image ? { images: [post.cover_image] } : {}),
     },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      ...(post.cover_image ? { images: [post.cover_image] } : {}),
+    },
   };
 }
 
@@ -63,6 +93,8 @@ export default async function BlogPostPage({
   const post = await getPost(slug);
   if (!post) notFound();
 
+  const relatedPosts = await getRelatedPosts(slug);
+  const readingTime = estimateReadingTime(post.content);
   const postUrl = `${siteUrl}/blog/${post.slug}`;
 
   // JSON-LD: Article schema
@@ -138,10 +170,13 @@ export default async function BlogPostPage({
 
           <header className="mt-6 space-y-3">
             {post.published_at && (
-              <p className="text-sm text-muted-foreground">
-                {formatDateOnly(post.published_at)}
-                {post.author ? ` · ${post.author}` : ""}
-              </p>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <span>{formatDateOnly(post.published_at)}</span>
+                {post.author && <span>· {post.author}</span>}
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" /> {readingTime} minit baca
+                </span>
+              </div>
             )}
             <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">
               {post.title}
@@ -149,6 +184,9 @@ export default async function BlogPostPage({
             {post.excerpt && (
               <p className="text-lg text-muted-foreground">{post.excerpt}</p>
             )}
+
+            {/* Social Share Buttons */}
+            <ShareButtons url={postUrl} title={post.title} />
           </header>
 
           {post.cover_image && (
@@ -167,9 +205,100 @@ export default async function BlogPostPage({
           <div className="mt-10">
             <Markdown>{post.content}</Markdown>
           </div>
+
+          {/* CTA Box */}
+          <div className="mt-12 rounded-xl border border-primary/20 bg-primary/5 p-6 text-center">
+            <p className="text-lg font-semibold text-foreground">
+              Tunaikan Fidyah Anda Hari Ini
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Mudah, pantas, dan selamat. Bayar fidyah online dalam masa 5 minit.
+            </p>
+            <Link
+              href="/"
+              className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Bayar Fidyah Sekarang
+            </Link>
+          </div>
+
+          {/* Related Articles */}
+          {relatedPosts.length > 0 && (
+            <section className="mt-16">
+              <h2 className="text-2xl font-bold tracking-tight mb-6">
+                Artikel Berkaitan
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-3">
+                {relatedPosts.map((rp) => (
+                  <Link
+                    key={rp.id}
+                    href={`/blog/${rp.slug}`}
+                    className="group rounded-lg border border-border p-4 transition-shadow hover:shadow-md"
+                  >
+                    <h3 className="font-semibold text-sm leading-snug group-hover:text-primary">
+                      {rp.title}
+                    </h3>
+                    {rp.excerpt && (
+                      <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                        {rp.excerpt}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </article>
       </main>
       <Footer />
+    </div>
+  );
+}
+
+/** Social share buttons — client-side share API with fallbacks. */
+function ShareButtons({ url, title }: { url: string; title: string }) {
+  const encodedUrl = encodeURIComponent(url);
+  const encodedTitle = encodeURIComponent(title);
+
+  const links = [
+    {
+      label: "WhatsApp",
+      href: `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`,
+      color: "hover:bg-green-500/10 hover:text-green-600",
+    },
+    {
+      label: "Facebook",
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+      color: "hover:bg-blue-500/10 hover:text-blue-600",
+    },
+    {
+      label: "Telegram",
+      href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`,
+      color: "hover:bg-sky-500/10 hover:text-sky-600",
+    },
+    {
+      label: "X",
+      href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
+      color: "hover:bg-gray-500/10 hover:text-gray-700",
+    },
+  ];
+
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <Share2 className="h-3.5 w-3.5" /> Kongsi:
+      </span>
+      {links.map((l) => (
+        <a
+          key={l.label}
+          href={l.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors ${l.color}`}
+        >
+          {l.label}
+        </a>
+      ))}
     </div>
   );
 }
