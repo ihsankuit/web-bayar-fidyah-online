@@ -30,7 +30,7 @@ export function Markdown({ children }: { children: string }) {
           li: (props) => <li className="leading-7" {...props} />,
           a: (props) => (
             <a
-              className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
+              className="font-medium text-primary-strong underline underline-offset-4 hover:text-primary"
               {...props}
             />
           ),

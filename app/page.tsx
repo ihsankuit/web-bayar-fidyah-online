@@ -142,7 +142,7 @@ export default async function HomePage() {
             <div className="space-y-6">
               <Badge
                 variant="secondary"
-                className="gap-1.5 text-primary"
+                className="gap-1.5 text-primary-strong"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 {content.hero_badge}
@@ -372,7 +372,7 @@ export default async function HomePage() {
                 {/* Situasi 1 */}
                 <div className="p-8">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary-strong">
                       1
                     </span>
                     <h3 className="text-lg font-bold">Situasi 1</h3>
@@ -384,10 +384,10 @@ export default async function HomePage() {
                   <p className="mt-6 text-sm text-muted-foreground">
                     Formula Kiraan:
                   </p>
-                  <p className="mt-1 font-semibold text-primary">
+                  <p className="mt-1 font-semibold text-primary-strong">
                     [Bilangan Hari Tidak Berpuasa × Kadar Fidyah]
                   </p>
-                  <div className="mt-4 inline-flex rounded-lg bg-primary/10 px-4 py-2 font-bold text-primary">
+                  <div className="mt-4 inline-flex rounded-lg bg-primary/10 px-4 py-2 font-bold text-primary-strong">
                     7 hari × {formatMYR(content.fidyah_rate_sen)} ={" "}
                     {formatMYR(7 * content.fidyah_rate_sen)}
                   </div>
@@ -396,7 +396,7 @@ export default async function HomePage() {
                 {/* Situasi 2 */}
                 <div className="border-t p-8 md:border-l md:border-t-0">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary-strong">
                       2
                     </span>
                     <h3 className="text-lg font-bold">Situasi 2</h3>
@@ -410,11 +410,11 @@ export default async function HomePage() {
                   <p className="mt-6 text-sm text-muted-foreground">
                     Formula Kiraan:
                   </p>
-                  <p className="mt-1 font-semibold text-primary">
+                  <p className="mt-1 font-semibold text-primary-strong">
                     [(Bilangan Hari Tidak Berpuasa × Kadar Fidyah) × Bilangan
                     Tahun Yang Ditinggalkan]
                   </p>
-                  <div className="mt-4 inline-flex rounded-lg bg-primary/10 px-4 py-2 font-bold text-primary">
+                  <div className="mt-4 inline-flex rounded-lg bg-primary/10 px-4 py-2 font-bold text-primary-strong">
                     (7 hari × {formatMYR(content.fidyah_rate_sen)}) × 3 Tahun ={" "}
                     {formatMYR(7 * content.fidyah_rate_sen * 3)}
                   </div>

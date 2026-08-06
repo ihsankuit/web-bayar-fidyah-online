@@ -290,7 +290,7 @@ export function FidyahForm({
                   onClick={() => setMethod("chip")}
                   className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors ${
                     method === "chip"
-                      ? "border-primary bg-primary/5 text-primary"
+                      ? "border-primary bg-primary/5 text-primary-strong"
                       : "border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
@@ -312,7 +312,7 @@ export function FidyahForm({
                   onClick={() => setMethod("manual")}
                   className={`rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors ${
                     method === "manual"
-                      ? "border-primary bg-primary/5 text-primary"
+                      ? "border-primary bg-primary/5 text-primary-strong"
                       : "border-border text-muted-foreground hover:bg-accent"
                   }`}
                 >
@@ -387,7 +387,7 @@ export function FidyahForm({
             </div>
             <div className="mt-2 flex items-center justify-between border-t border-border/60 pt-2 font-medium">
               <span>Jumlah jika sertai</span>
-              <span className="text-primary">
+              <span className="text-primary-strong">
                 {formatMYR(
                   result.totalSen + Math.round(Math.max(1, upsellAmount) * 100)
                 )}
