@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendReceiptEmail } from "@/lib/resend";
 import { emitDonationEvent } from "@/lib/webhooks";
@@ -46,10 +47,12 @@ export async function settleDonationByReference(
 
   const donation = updated ?? existing;
 
-  // Send the receipt only on the first successful settlement.
+  // Send the receipt only on the first successful settlement. Deferred via
+  // after() so CHIP's callback (and the payer's redirect) get a fast
+  // response instead of waiting on Resend/the webhook receiver.
   if (paid && !alreadyPaid) {
-    await sendReceiptEmail(donation);
-    await emitDonationEvent("donation.paid", donation);
+    after(() => sendReceiptEmail(donation));
+    after(() => emitDonationEvent("donation.paid", donation));
   }
 
   return donation;
@@ -86,9 +89,9 @@ export async function markDonationPaid(
     .single<Donation>();
 
   const donation = updated ?? existing;
-  await sendReceiptEmail(donation);
-  await sendServerConversion(donation);
-  await emitDonationEvent("donation.paid", donation);
+  after(() => sendReceiptEmail(donation));
+  after(() => sendServerConversion(donation));
+  after(() => emitDonationEvent("donation.paid", donation));
   return donation;
 }
 
