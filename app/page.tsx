@@ -286,7 +286,7 @@ export default async function HomePage() {
                               alt={title}
                               fill
                               className="object-cover"
-                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 384px"
                             />
                           </div>
                         ))}
