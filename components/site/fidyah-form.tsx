@@ -193,13 +193,23 @@ export function FidyahForm({
 
             <div className="space-y-2">
               <Label>Bilangan hari ditinggalkan</Label>
-              <Stepper value={days} onChange={setDays} min={1} />
+              <Stepper
+                value={days}
+                onChange={setDays}
+                min={1}
+                label="Bilangan hari ditinggalkan"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Gandaan (jika lewat qada&apos;)</Label>
-            <Stepper value={multiplier} onChange={setMultiplier} min={1} />
+            <Stepper
+              value={multiplier}
+              onChange={setMultiplier}
+              min={1}
+              label="Gandaan tahun qada"
+            />
             <p className="text-xs text-muted-foreground">
               1 = dibayar dalam tempoh. Tambah gandaan bagi setiap tahun qada&apos;
               yang dilewatkan.
@@ -255,9 +265,9 @@ export function FidyahForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="negeri">Negeri (pilihan)</Label>
+              <Label htmlFor="negeri-select">Negeri (pilihan)</Label>
               <Select value={negeri} onValueChange={setNegeri}>
-                <SelectTrigger id="negeri">
+                <SelectTrigger id="negeri-select">
                   <SelectValue placeholder="Pilih negeri" />
                 </SelectTrigger>
                 <SelectContent>
@@ -530,10 +540,12 @@ function Stepper({
   value,
   onChange,
   min = 0,
+  label,
 }: {
   value: number;
   onChange: (v: number) => void;
   min?: number;
+  label: string;
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -541,6 +553,7 @@ function Stepper({
         type="button"
         variant="outline"
         size="icon"
+        aria-label={`Kurangkan ${label}`}
         onClick={() => onChange(Math.max(min, value - 1))}
       >
         <Minus />
@@ -549,6 +562,7 @@ function Stepper({
         type="number"
         min={min}
         value={value}
+        aria-label={label}
         onChange={(e) => onChange(Math.max(min, Number(e.target.value) || min))}
         className="text-center"
       />
@@ -556,6 +570,7 @@ function Stepper({
         type="button"
         variant="outline"
         size="icon"
+        aria-label={`Tambah ${label}`}
         onClick={() => onChange(value + 1)}
       >
         <Plus />
