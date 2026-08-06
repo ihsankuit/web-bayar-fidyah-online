@@ -36,17 +36,20 @@ import {
 import { getLandingContent } from "@/lib/settings";
 import { getUpsellSettings } from "@/lib/upsell";
 import { getGalleryItems } from "@/lib/gallery";
+import { getRecentSocialProof } from "@/lib/social-proof";
 import { formatMYR } from "@/lib/utils";
+import { SocialProofNotification } from "@/components/site/social-proof-notification";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [content, upsell, gallery] = await Promise.all([
+  const [content, upsell, gallery, socialProof] = await Promise.all([
     getLandingContent(),
     getUpsellSettings(),
     getGalleryItems(),
+    getRecentSocialProof(),
   ]);
   const galleryImages = gallery.filter((g) => g.type === "image");
   const galleryVideos = gallery.filter((g) => g.type === "video");
@@ -115,6 +118,7 @@ export default async function HomePage() {
         }}
       />
       <Navbar />
+      <SocialProofNotification items={socialProof} />
       <main className="flex-1">
         {/* Hero */}
         <section className="relative overflow-hidden">

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatMYR, slugify } from "./utils";
+import { formatMYR, slugify, formatRelativeTime } from "./utils";
 
 describe("formatMYR", () => {
   it("formats whole ringgit amounts", () => {
@@ -30,5 +30,23 @@ describe("slugify", () => {
 
   it("removes symbols that aren't letters, digits, or hyphens", () => {
     expect(slugify("Fidyah: RM2.00/hari!")).toBe("fidyah-rm200hari");
+  });
+});
+
+describe("formatRelativeTime", () => {
+  it("floors sub-minute differences to 'Baru sahaja'", () => {
+    expect(formatRelativeTime(new Date(Date.now() - 10_000))).toBe("Baru sahaja");
+  });
+
+  it("formats minutes", () => {
+    expect(formatRelativeTime(new Date(Date.now() - 5 * 60_000))).toBe("5 minit lalu");
+  });
+
+  it("formats hours", () => {
+    expect(formatRelativeTime(new Date(Date.now() - 3 * 3_600_000))).toBe("3 jam lalu");
+  });
+
+  it("formats days", () => {
+    expect(formatRelativeTime(new Date(Date.now() - 2 * 86_400_000))).toBe("2 hari lalu");
   });
 });
