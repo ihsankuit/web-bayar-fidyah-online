@@ -439,3 +439,24 @@ alter table public.fidyah_distribution_recipients enable row level security;
 drop policy if exists fidyah_distribution_recipients_admin_all on public.fidyah_distribution_recipients;
 create policy fidyah_distribution_recipients_admin_all on public.fidyah_distribution_recipients
   for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+--  Saved message templates for agihan updates. `message` may contain the
+--  {{nama}} variable tag, substituted per-recipient at send time.
+--  Run this block if upgrading an existing database.
+-- =====================================================================
+create table if not exists public.agihan_templates (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null,
+  message    text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists agihan_templates_created_at_idx
+  on public.agihan_templates (created_at desc);
+
+alter table public.agihan_templates enable row level security;
+
+drop policy if exists agihan_templates_admin_all on public.agihan_templates;
+create policy agihan_templates_admin_all on public.agihan_templates
+  for all to authenticated using (true) with check (true);

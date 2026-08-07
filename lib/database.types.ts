@@ -92,6 +92,17 @@ export interface FidyahDistribution {
   created_at: string;
 }
 
+/**
+ * A saved agihan message template. `message` may contain the {{nama}}
+ * variable tag, substituted with each recipient's name at send time.
+ */
+export interface AgihanTemplate {
+  id: string;
+  name: string;
+  message: string;
+  created_at: string;
+}
+
 export type FidyahDistributionRecipientStatus = "sent" | "failed";
 
 /** Per-recipient WhatsApp send result for a fidyah distribution update. */

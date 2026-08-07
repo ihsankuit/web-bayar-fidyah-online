@@ -35,16 +35,26 @@ interface RecipientResult extends Recipient {
   error: string | null;
 }
 
-/** Sends one message (text or media, depending on whether an image is set) to a recipient. */
+/** Substitutes the {{nama}} variable tag with the recipient's name. */
+function applyTemplateVariables(message: string, recipientName: string): string {
+  return message.replaceAll("{{nama}}", recipientName);
+}
+
+/**
+ * Sends one message (text or media, depending on whether an image is set) to
+ * a recipient. `message` is the raw template — {{nama}} is substituted with
+ * the recipient's own name before sending.
+ */
 async function sendToRecipient(
   settings: Awaited<ReturnType<typeof getMurpatiSettings>>,
   recipient: Recipient,
   message: string,
   imageUrl: string | null
 ): Promise<RecipientResult> {
+  const personalized = applyTemplateVariables(message, recipient.name);
   const result = imageUrl
-    ? await sendMurpatiMedia(settings, recipient.phone, imageUrl, message)
-    : await sendMurpatiText(settings, recipient.phone, message);
+    ? await sendMurpatiMedia(settings, recipient.phone, imageUrl, personalized)
+    : await sendMurpatiText(settings, recipient.phone, personalized);
 
   return {
     ...recipient,
@@ -284,4 +294,39 @@ export async function retryFailedRecipients(formData: FormData) {
 
   revalidatePath("/admin/agihan");
   revalidatePath(`/admin/agihan/${distributionId}`);
+}
+
+export interface TemplateState {
+  error?: string;
+  ok?: boolean;
+  message?: string;
+}
+
+/** Saves the current message (as typed, including any {{nama}} tags) as a reusable template. */
+export async function saveTemplate(
+  _prev: TemplateState,
+  formData: FormData
+): Promise<TemplateState> {
+  const { supabase } = await requireUser();
+  const name = ((formData.get("template_name") as string) || "").trim();
+  const message = ((formData.get("message") as string) || "").trim();
+
+  if (!name) return { error: "Sila masukkan nama templat." };
+  if (!message) return { error: "Tiada makluman untuk disimpan sebagai templat." };
+
+  const { error } = await supabase
+    .from("agihan_templates")
+    .insert({ name, message });
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/agihan");
+  return { ok: true, message: "Templat disimpan." };
+}
+
+/** Deletes a saved template. Called directly from the client, not via a <form>. */
+export async function deleteTemplate(id: string): Promise<void> {
+  const { supabase } = await requireUser();
+  if (!id) return;
+  await supabase.from("agihan_templates").delete().eq("id", id);
+  revalidatePath("/admin/agihan");
 }
