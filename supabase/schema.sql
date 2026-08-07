@@ -414,3 +414,28 @@ alter table public.fidyah_distributions enable row level security;
 drop policy if exists fidyah_distributions_admin_all on public.fidyah_distributions;
 create policy fidyah_distributions_admin_all on public.fidyah_distributions
   for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+--  Per-recipient delivery status for fidyah distribution updates.
+--  Murpati's API has no delivery/read-receipt webhook — this only records
+--  whether the send call itself succeeded or failed, so failed recipients
+--  can be retried individually. Run this block if upgrading.
+-- =====================================================================
+create table if not exists public.fidyah_distribution_recipients (
+  id              uuid primary key default gen_random_uuid(),
+  distribution_id uuid not null references public.fidyah_distributions(id) on delete cascade,
+  name            text not null,
+  phone           text not null,
+  status          text not null check (status in ('sent', 'failed')),
+  error           text,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists fidyah_distribution_recipients_distribution_idx
+  on public.fidyah_distribution_recipients (distribution_id);
+
+alter table public.fidyah_distribution_recipients enable row level security;
+
+drop policy if exists fidyah_distribution_recipients_admin_all on public.fidyah_distribution_recipients;
+create policy fidyah_distribution_recipients_admin_all on public.fidyah_distribution_recipients
+  for all to authenticated using (true) with check (true);

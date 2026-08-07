@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   Card,
   CardContent,
@@ -71,7 +73,10 @@ export default async function AgihanPage() {
                 {history.map((h) => (
                   <TableRow key={h.id}>
                     <TableCell className="max-w-xs">
-                      <div className="flex items-start gap-2">
+                      <Link
+                        href={`/admin/agihan/${h.id}`}
+                        className="flex items-start gap-2 hover:underline"
+                      >
                         {h.image_url && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -81,7 +86,7 @@ export default async function AgihanPage() {
                           />
                         )}
                         <p className="line-clamp-2 text-sm">{h.message}</p>
-                      </div>
+                      </Link>
                     </TableCell>
                     <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                       {formatDateOnly(h.date_from)} –{" "}

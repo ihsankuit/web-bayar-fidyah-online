@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import { logActivity } from "@/lib/activity-log";
+import type { FidyahDistributionRecipient } from "@/lib/database.types";
 import {
   getMurpatiSettings,
   isMurpatiSessionConnected,
@@ -27,6 +28,29 @@ async function requireUser() {
 interface Recipient {
   name: string;
   phone: string;
+}
+
+interface RecipientResult extends Recipient {
+  status: "sent" | "failed";
+  error: string | null;
+}
+
+/** Sends one message (text or media, depending on whether an image is set) to a recipient. */
+async function sendToRecipient(
+  settings: Awaited<ReturnType<typeof getMurpatiSettings>>,
+  recipient: Recipient,
+  message: string,
+  imageUrl: string | null
+): Promise<RecipientResult> {
+  const result = imageUrl
+    ? await sendMurpatiMedia(settings, recipient.phone, imageUrl, message)
+    : await sendMurpatiText(settings, recipient.phone, message);
+
+  return {
+    ...recipient,
+    status: result.ok ? "sent" : "failed",
+    error: result.ok ? null : result.error ?? "Ralat tidak diketahui",
+  };
 }
 
 /** Paid donors within [dateFrom, dateTo] (inclusive), deduped by phone number. */
@@ -155,26 +179,39 @@ export async function sendAgihanUpdate(
     imageUrl = publicUrl;
   }
 
-  let sent = 0;
-  let failed = 0;
+  const results: RecipientResult[] = [];
   for (const recipient of recipients) {
-    const result = imageUrl
-      ? await sendMurpatiMedia(settings, recipient.phone, imageUrl, message)
-      : await sendMurpatiText(settings, recipient.phone, message);
-    if (result.ok) sent++;
-    else failed++;
+    results.push(await sendToRecipient(settings, recipient, message, imageUrl));
   }
+  const sent = results.filter((r) => r.status === "sent").length;
+  const failed = results.length - sent;
 
-  await supabase.from("fidyah_distributions").insert({
-    message,
-    image_url: imageUrl,
-    date_from: dateFrom,
-    date_to: dateTo,
-    recipient_count: recipients.length,
-    sent_count: sent,
-    failed_count: failed,
-    created_by: email,
-  });
+  const { data: distribution, error: insertError } = await supabase
+    .from("fidyah_distributions")
+    .insert({
+      message,
+      image_url: imageUrl,
+      date_from: dateFrom,
+      date_to: dateTo,
+      recipient_count: recipients.length,
+      sent_count: sent,
+      failed_count: failed,
+      created_by: email,
+    })
+    .select("id")
+    .single();
+
+  if (insertError) return { error: insertError.message };
+
+  await supabase.from("fidyah_distribution_recipients").insert(
+    results.map((r) => ({
+      distribution_id: distribution.id,
+      name: r.name,
+      phone: r.phone,
+      status: r.status,
+      error: r.error,
+    }))
+  );
 
   await logActivity("agihan.send", {
     date_from: dateFrom,
@@ -187,4 +224,64 @@ export async function sendAgihanUpdate(
   revalidatePath("/admin/agihan");
 
   return { ok: true, sent, failed, total: recipients.length };
+}
+
+/** Re-sends the message to every recipient of a past distribution whose last attempt failed. */
+export async function retryFailedRecipients(formData: FormData) {
+  const { supabase } = await requireUser();
+  const distributionId = formData.get("distribution_id") as string;
+  if (!distributionId) return;
+
+  const { data: distribution } = await supabase
+    .from("fidyah_distributions")
+    .select("*")
+    .eq("id", distributionId)
+    .maybeSingle();
+  if (!distribution) return;
+
+  const { data: failedRows } = await supabase
+    .from("fidyah_distribution_recipients")
+    .select("*")
+    .eq("distribution_id", distributionId)
+    .eq("status", "failed");
+  const failedRecipients = (failedRows as FidyahDistributionRecipient[]) ?? [];
+  if (failedRecipients.length === 0) return;
+
+  const settings = await getMurpatiSettings();
+  if (!settings.apiKey || !settings.sessionId) return;
+
+  const connected = await isMurpatiSessionConnected(settings);
+  if (!connected) return;
+
+  let retried = 0;
+  for (const recipient of failedRecipients) {
+    const result = await sendToRecipient(
+      settings,
+      { name: recipient.name, phone: recipient.phone },
+      distribution.message,
+      distribution.image_url
+    );
+    await supabase
+      .from("fidyah_distribution_recipients")
+      .update({ status: result.status, error: result.error })
+      .eq("id", recipient.id);
+    if (result.status === "sent") retried++;
+  }
+
+  await supabase
+    .from("fidyah_distributions")
+    .update({
+      sent_count: distribution.sent_count + retried,
+      failed_count: distribution.failed_count - retried,
+    })
+    .eq("id", distributionId);
+
+  await logActivity("agihan.retry", {
+    distribution_id: distributionId,
+    retried,
+    still_failed: failedRecipients.length - retried,
+  });
+
+  revalidatePath("/admin/agihan");
+  revalidatePath(`/admin/agihan/${distributionId}`);
 }

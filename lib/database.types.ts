@@ -92,6 +92,19 @@ export interface FidyahDistribution {
   created_at: string;
 }
 
+export type FidyahDistributionRecipientStatus = "sent" | "failed";
+
+/** Per-recipient WhatsApp send result for a fidyah distribution update. */
+export interface FidyahDistributionRecipient {
+  id: string;
+  distribution_id: string;
+  name: string;
+  phone: string;
+  status: FidyahDistributionRecipientStatus;
+  error: string | null;
+  created_at: string;
+}
+
 export type GalleryType = "image" | "video";
 
 export interface GalleryItem {
