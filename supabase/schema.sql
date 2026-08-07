@@ -381,3 +381,61 @@ alter table public.integration_settings
 -- Google Tag Manager container (managed from Admin > Integrasi).
 alter table public.integration_settings
   add column if not exists gtm_id text;
+
+-- WhatsApp (Murpati) credentials, used to send fidyah distribution updates
+-- (managed from Admin > Integrasi).
+alter table public.integration_settings
+  add column if not exists murpati_api_key text,
+  add column if not exists murpati_session_id text;
+
+-- =====================================================================
+--  Fidyah distribution updates (agihan) — sent to paid donors within a
+--  chosen date range via WhatsApp (Murpati API). Run this block if
+--  upgrading an existing database.
+-- =====================================================================
+create table if not exists public.fidyah_distributions (
+  id              uuid primary key default gen_random_uuid(),
+  message         text not null,
+  image_url       text,
+  date_from       date not null,
+  date_to         date not null,
+  recipient_count integer not null default 0,
+  sent_count      integer not null default 0,
+  failed_count    integer not null default 0,
+  created_by      text not null,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists fidyah_distributions_created_at_idx
+  on public.fidyah_distributions (created_at desc);
+
+alter table public.fidyah_distributions enable row level security;
+
+drop policy if exists fidyah_distributions_admin_all on public.fidyah_distributions;
+create policy fidyah_distributions_admin_all on public.fidyah_distributions
+  for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+--  Per-recipient delivery status for fidyah distribution updates.
+--  Murpati's API has no delivery/read-receipt webhook — this only records
+--  whether the send call itself succeeded or failed, so failed recipients
+--  can be retried individually. Run this block if upgrading.
+-- =====================================================================
+create table if not exists public.fidyah_distribution_recipients (
+  id              uuid primary key default gen_random_uuid(),
+  distribution_id uuid not null references public.fidyah_distributions(id) on delete cascade,
+  name            text not null,
+  phone           text not null,
+  status          text not null check (status in ('sent', 'failed')),
+  error           text,
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists fidyah_distribution_recipients_distribution_idx
+  on public.fidyah_distribution_recipients (distribution_id);
+
+alter table public.fidyah_distribution_recipients enable row level security;
+
+drop policy if exists fidyah_distribution_recipients_admin_all on public.fidyah_distribution_recipients;
+create policy fidyah_distribution_recipients_admin_all on public.fidyah_distribution_recipients
+  for all to authenticated using (true) with check (true);

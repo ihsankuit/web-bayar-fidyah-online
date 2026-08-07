@@ -78,6 +78,33 @@ export interface ActivityLogEntry {
   created_at: string;
 }
 
+/** A fidyah distribution update sent to paid donors via WhatsApp (Murpati). */
+export interface FidyahDistribution {
+  id: string;
+  message: string;
+  image_url: string | null;
+  date_from: string;
+  date_to: string;
+  recipient_count: number;
+  sent_count: number;
+  failed_count: number;
+  created_by: string;
+  created_at: string;
+}
+
+export type FidyahDistributionRecipientStatus = "sent" | "failed";
+
+/** Per-recipient WhatsApp send result for a fidyah distribution update. */
+export interface FidyahDistributionRecipient {
+  id: string;
+  distribution_id: string;
+  name: string;
+  phone: string;
+  status: FidyahDistributionRecipientStatus;
+  error: string | null;
+  created_at: string;
+}
+
 export type GalleryType = "image" | "video";
 
 export interface GalleryItem {

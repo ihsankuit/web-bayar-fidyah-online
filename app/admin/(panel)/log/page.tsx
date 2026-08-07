@@ -27,6 +27,8 @@ const ACTION_LABELS: Record<string, string> = {
   "blog.save_draft": "Simpan draf artikel",
   "blog.delete": "Padam artikel",
   "media.delete": "Padam media",
+  "agihan.send": "Hantar makluman agihan fidyah (WhatsApp)",
+  "agihan.retry": "Cuba hantar semula agihan fidyah yang gagal",
   "admin.create": "Tambah pentadbir baharu",
   "admin.delete": "Padam pentadbir",
 };

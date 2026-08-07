@@ -206,6 +206,26 @@ Rujukan penuh (semua field, kod ralat, contoh respons): **[public/docs/api-refer
 Untuk agen AI/LLM yang perlu panggil API ini secara automatik, guna fail
 skill sedia-pakai: **[docs/bayar-fidyah-online-skill/SKILL.md](docs/bayar-fidyah-online-skill/SKILL.md)**.
 
+## 9. Agihan fidyah via WhatsApp (Murpati)
+
+Halaman **Admin > Agihan Fidyah** hantar makluman kemaskini agihan (teks +
+gambar pilihan) kepada pembayar yang telah selesai bayar dalam julat tarikh
+yang dipilih, melalui WhatsApp (guna [Murpati](https://murpati.com)).
+
+1. Perlukan langganan **Murpati Pro atau Max** (paras percuma/Basic tiada
+   akses API).
+2. Cipta API Key di [murpati.com/settings](https://murpati.com/settings) →
+   tab "API Keys" (dipaparkan sekali sahaja — simpan segera).
+3. Sambungkan peranti WhatsApp di
+   [murpati.com/devices](https://murpati.com/devices) dan salin **Session
+   ID**-nya (peranti mesti berstatus "connected").
+4. Isi kedua-dua nilai di **Admin > Integrasi → WhatsApp (Murpati)** — atau
+   set env var `MURPATI_API_KEY` / `MURPATI_SESSION_ID` sebagai alternatif.
+
+Setiap penghantaran direkod dalam jadual `fidyah_distributions` (lihat
+`supabase/schema.sql`) dan dipaparkan sebagai sejarah di halaman Agihan
+Fidyah, serta dicatat dalam Log Aktiviti.
+
 ## Skrip
 
 ```bash

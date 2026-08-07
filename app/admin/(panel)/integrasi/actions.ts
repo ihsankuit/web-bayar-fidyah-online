@@ -85,6 +85,34 @@ export async function saveTracking(
   return { ok: true, message: "Tetapan analitik disimpan." };
 }
 
+/** Save WhatsApp (Murpati) credentials used to send agihan notifications. */
+export async function saveMurpati(
+  _prev: IntegrationState,
+  formData: FormData
+): Promise<IntegrationState> {
+  const supabase = await requireUser();
+
+  const murpati_api_key =
+    (formData.get("murpati_api_key") as string)?.trim() || null;
+  const murpati_session_id =
+    (formData.get("murpati_session_id") as string)?.trim() || null;
+
+  const { error } = await supabase.from("integration_settings").upsert(
+    {
+      id: 1,
+      murpati_api_key,
+      murpati_session_id,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/integrasi");
+  return { ok: true, message: "Tetapan WhatsApp (Murpati) disimpan." };
+}
+
 /** Generate a fresh API key. */
 export async function regenerateApiKey(): Promise<void> {
   const supabase = await requireUser();
