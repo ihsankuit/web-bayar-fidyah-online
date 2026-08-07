@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
-import type { FidyahDistribution } from "@/lib/database.types";
+import type { AgihanTemplate, FidyahDistribution } from "@/lib/database.types";
 import { formatDate, formatDateOnly } from "@/lib/utils";
 import { AgihanForm } from "@/components/admin/agihan-form";
 
@@ -23,13 +23,20 @@ export const dynamic = "force-dynamic";
 
 export default async function AgihanPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("fidyah_distributions")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const [{ data }, { data: templateRows }] = await Promise.all([
+    supabase
+      .from("fidyah_distributions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("agihan_templates")
+      .select("*")
+      .order("created_at", { ascending: false }),
+  ]);
 
   const history = (data as FidyahDistribution[]) ?? [];
+  const templates = (templateRows as AgihanTemplate[]) ?? [];
 
   return (
     <div className="space-y-6">
@@ -41,7 +48,7 @@ export default async function AgihanPage() {
         </p>
       </div>
 
-      <AgihanForm />
+      <AgihanForm templates={templates} />
 
       <Card>
         <CardHeader>
