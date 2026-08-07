@@ -74,7 +74,9 @@ export async function generateMetadata({
     : undefined;
 
   return {
-    title: metaTitle,
+    // `absolute` overrides the root layout's "%s | Bayar Fidyah Online"
+    // template so article titles are not lengthened with the site suffix.
+    title: { absolute: metaTitle },
     description: metaDescription,
     ...(keywords && keywords.length ? { keywords } : {}),
     alternates: {

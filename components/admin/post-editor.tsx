@@ -16,8 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Markdown } from "@/components/site/markdown";
 import { cn, slugify } from "@/lib/utils";
 
-/** Matches app/layout.tsx's title template ("%s | Bayar Fidyah Online"). */
-const TITLE_SUFFIX = " | Bayar Fidyah Online";
 const TITLE_MAX = 60;
 const EXCERPT_MAX = 160;
 
@@ -89,13 +87,7 @@ export function PostEditor({ post }: { post?: BlogPost }) {
               />
               <p className="text-xs">
                 Tajuk halaman (SERP):{" "}
-                <CharCount
-                  current={title.length + TITLE_SUFFIX.length}
-                  max={TITLE_MAX}
-                />{" "}
-                <span className="text-muted-foreground">
-                  (&quot;{title || "…"}&quot;{TITLE_SUFFIX})
-                </span>
+                <CharCount current={title.length} max={TITLE_MAX} />
               </p>
             </div>
             <div className="space-y-2">

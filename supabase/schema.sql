@@ -265,7 +265,7 @@ on conflict (id) do nothing;
 -- =====================================================================
 --  Seed: a couple of published blog posts (optional)
 -- =====================================================================
-insert into public.blog_posts (slug, title, excerpt, content, status, author, published_at)
+insert into public.blog_posts (slug, title, excerpt, content, status, author, published_at, seo_title, seo_description, seo_keywords)
 values
   (
     'apa-itu-fidyah',
@@ -274,7 +274,10 @@ values
     E'Fidyah ialah bayaran denda yang wajib ditunaikan oleh golongan tertentu yang meninggalkan puasa Ramadan.\n\n## Golongan yang wajib\n\n- Warga emas yang uzur\n- Pesakit kronik tanpa harapan sembuh\n- Ibu hamil dan menyusu\n- Mereka yang melewatkan qada'' puasa\n\n## Cara pengiraan\n\nKadar asas ialah nilai secupak beras bagi setiap hari yang ditinggalkan.',
     'published',
     'Admin',
-    now()
+    now(),
+    'Apa Itu Fidyah & Siapa Wajib Membayarnya? Panduan Lengkap',
+    'Fahami maksud fidyah, golongan yang wajib membayarnya (warga emas, pesakit, ibu hamil) dan cara pengiraan kadar fidyah puasa Ramadan di Malaysia.',
+    'fidyah, apa itu fidyah, siapa wajib bayar fidyah, hukum fidyah puasa, kadar fidyah Malaysia, cara kira fidyah'
   )
 on conflict (slug) do nothing;
 
