@@ -27,6 +27,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmojiPickerButton } from "@/components/admin/emoji-picker-button";
 
+const VARIABLE_TAGS: { tag: string; label: string }[] = [
+  { tag: "{{nama}}", label: "Nama" },
+  { tag: "{{jumlah}}", label: "Jumlah" },
+  { tag: "{{hari}}", label: "Hari" },
+  { tag: "{{kategori}}", label: "Kategori" },
+  { tag: "{{negeri}}", label: "Negeri" },
+];
+
 function FormButtons({
   previewAction,
   saveTemplateAction,
@@ -209,14 +217,18 @@ export function AgihanForm({
               <Label htmlFor="message">Makluman Agihan</Label>
               <div className="flex flex-wrap gap-2">
                 <EmojiPickerButton onSelect={insertAtCursor} />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => insertAtCursor("{{nama}}")}
-                >
-                  {"{{nama}}"}
-                </Button>
+                {VARIABLE_TAGS.map(({ tag, label }) => (
+                  <Button
+                    key={tag}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    title={label}
+                    onClick={() => insertAtCursor(tag)}
+                  >
+                    {tag}
+                  </Button>
+                ))}
               </div>
             </div>
             <Textarea
@@ -225,11 +237,18 @@ export function AgihanForm({
               name="message"
               required
               rows={4}
-              placeholder="Assalamualaikum {{nama}}, agihan fidyah anda telah selesai diagihkan kepada..."
+              placeholder="Assalamualaikum {{nama}}, agihan fidyah anda ({{jumlah}}, {{hari}} hari) telah selesai diagihkan kepada..."
             />
             <p className="text-xs text-muted-foreground">
-              Guna <code className="rounded bg-muted px-1 py-0.5">{"{{nama}}"}</code>{" "}
-              untuk masukkan nama setiap pembayar secara automatik.
+              Tag tersedia:{" "}
+              {VARIABLE_TAGS.map(({ tag, label }, i) => (
+                <span key={tag}>
+                  <code className="rounded bg-muted px-1 py-0.5">{tag}</code>{" "}
+                  ({label}){i < VARIABLE_TAGS.length - 1 ? ", " : ""}
+                </span>
+              ))}
+              {" "}— digantikan secara automatik ikut setiap pembayar semasa
+              hantar.
             </p>
           </div>
 

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { slugify } from "@/lib/utils";
+import { formatMYR, slugify } from "@/lib/utils";
+import { getCategory } from "@/lib/fidyah";
 import { logActivity } from "@/lib/activity-log";
 import type { FidyahDistributionRecipient } from "@/lib/database.types";
 import {
@@ -28,6 +29,14 @@ async function requireUser() {
 interface Recipient {
   name: string;
   phone: string;
+  /** Total amount (sen) across all matching donations, for {{jumlah}}. */
+  amountSen: number;
+  /** Total days × multiplier across all matching donations, for {{hari}}. */
+  days: number;
+  /** Distinct category ids across all matching donations, for {{kategori}}. */
+  categories: string[];
+  /** For {{negeri}} — the first non-null negeri found among their donations. */
+  negeri: string | null;
 }
 
 interface RecipientResult extends Recipient {
@@ -35,15 +44,27 @@ interface RecipientResult extends Recipient {
   error: string | null;
 }
 
-/** Substitutes the {{nama}} variable tag with the recipient's name. */
-function applyTemplateVariables(message: string, recipientName: string): string {
-  return message.replaceAll("{{nama}}", recipientName);
+/**
+ * Substitutes variable tags with values resolved for this recipient:
+ * {{nama}}, {{jumlah}}, {{hari}}, {{kategori}}, {{negeri}}.
+ */
+function applyTemplateVariables(message: string, recipient: Recipient): string {
+  const categoryLabel =
+    recipient.categories.map((id) => getCategory(id)?.title ?? id).join(" & ") ||
+    "-";
+
+  return message
+    .replaceAll("{{nama}}", recipient.name)
+    .replaceAll("{{jumlah}}", formatMYR(recipient.amountSen))
+    .replaceAll("{{hari}}", String(recipient.days))
+    .replaceAll("{{kategori}}", categoryLabel)
+    .replaceAll("{{negeri}}", recipient.negeri ?? "-");
 }
 
 /**
  * Sends one message (text or media, depending on whether an image is set) to
- * a recipient. `message` is the raw template — {{nama}} is substituted with
- * the recipient's own name before sending.
+ * a recipient. `message` is the raw template — variable tags are substituted
+ * with this recipient's own values before sending.
  */
 async function sendToRecipient(
   settings: Awaited<ReturnType<typeof getMurpatiSettings>>,
@@ -51,7 +72,7 @@ async function sendToRecipient(
   message: string,
   imageUrl: string | null
 ): Promise<RecipientResult> {
-  const personalized = applyTemplateVariables(message, recipient.name);
+  const personalized = applyTemplateVariables(message, recipient);
   const result = imageUrl
     ? await sendMurpatiMedia(settings, recipient.phone, imageUrl, personalized)
     : await sendMurpatiText(settings, recipient.phone, personalized);
@@ -63,7 +84,21 @@ async function sendToRecipient(
   };
 }
 
-/** Paid donors within [dateFrom, dateTo] (inclusive), deduped by phone number. */
+interface DonationRow {
+  payer_name: string;
+  payer_phone: string | null;
+  negeri: string | null;
+  amount_sen: number;
+  days: number;
+  multiplier: number;
+  category: string;
+}
+
+/**
+ * Paid donors within [dateFrom, dateTo] (inclusive), aggregated by phone
+ * number — a donor with several donations in range gets one recipient entry
+ * with amount/days summed and categories collected across all of them.
+ */
 async function resolveRecipients(
   supabase: Awaited<ReturnType<typeof createClient>>,
   dateFrom: string,
@@ -71,17 +106,36 @@ async function resolveRecipients(
 ): Promise<Recipient[]> {
   const { data } = await supabase
     .from("donations")
-    .select("payer_name, payer_phone")
+    .select("payer_name, payer_phone, negeri, amount_sen, days, multiplier, category")
     .eq("status", "paid")
     .not("payer_phone", "is", null)
     .gte("paid_at", `${dateFrom}T00:00:00.000Z`)
     .lte("paid_at", `${dateTo}T23:59:59.999Z`);
 
   const byPhone = new Map<string, Recipient>();
-  for (const row of (data as { payer_name: string; payer_phone: string | null }[]) ?? []) {
+  for (const row of (data as DonationRow[]) ?? []) {
     const phone = normalizeMalaysianPhone(row.payer_phone ?? "");
-    if (!phone || byPhone.has(phone)) continue;
-    byPhone.set(phone, { name: row.payer_name, phone });
+    if (!phone) continue;
+
+    const days = (row.days ?? 0) * (row.multiplier ?? 1);
+    const existing = byPhone.get(phone);
+    if (existing) {
+      existing.amountSen += row.amount_sen ?? 0;
+      existing.days += days;
+      if (row.category && !existing.categories.includes(row.category)) {
+        existing.categories.push(row.category);
+      }
+      if (!existing.negeri && row.negeri) existing.negeri = row.negeri;
+    } else {
+      byPhone.set(phone, {
+        name: row.payer_name,
+        phone,
+        amountSen: row.amount_sen ?? 0,
+        days,
+        categories: row.category ? [row.category] : [],
+        negeri: row.negeri ?? null,
+      });
+    }
   }
   return Array.from(byPhone.values());
 }
@@ -220,6 +274,10 @@ export async function sendAgihanUpdate(
       phone: r.phone,
       status: r.status,
       error: r.error,
+      amount_sen: r.amountSen,
+      days: r.days,
+      category: r.categories.join(",") || null,
+      negeri: r.negeri,
     }))
   );
 
@@ -267,7 +325,14 @@ export async function retryFailedRecipients(formData: FormData) {
   for (const recipient of failedRecipients) {
     const result = await sendToRecipient(
       settings,
-      { name: recipient.name, phone: recipient.phone },
+      {
+        name: recipient.name,
+        phone: recipient.phone,
+        amountSen: recipient.amount_sen,
+        days: recipient.days,
+        categories: recipient.category ? recipient.category.split(",") : [],
+        negeri: recipient.negeri,
+      },
       distribution.message,
       distribution.image_url
     );

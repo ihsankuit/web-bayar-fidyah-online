@@ -440,9 +440,21 @@ drop policy if exists fidyah_distribution_recipients_admin_all on public.fidyah_
 create policy fidyah_distribution_recipients_admin_all on public.fidyah_distribution_recipients
   for all to authenticated using (true) with check (true);
 
+-- Snapshot of the {{jumlah}}/{{hari}}/{{kategori}}/{{negeri}} variable values
+-- resolved for this recipient at send time, so a later retry personalizes
+-- with the SAME figures rather than re-querying donations (which may have
+-- changed since). `category` is a comma-joined list of category ids.
+-- Run this block if upgrading an existing database.
+alter table public.fidyah_distribution_recipients
+  add column if not exists amount_sen integer not null default 0,
+  add column if not exists days integer not null default 0,
+  add column if not exists category text,
+  add column if not exists negeri text;
+
 -- =====================================================================
---  Saved message templates for agihan updates. `message` may contain the
---  {{nama}} variable tag, substituted per-recipient at send time.
+--  Saved message templates for agihan updates. `message` may contain
+--  variable tags — {{nama}}, {{jumlah}}, {{hari}}, {{kategori}}, {{negeri}}
+--  — substituted per-recipient at send time.
 --  Run this block if upgrading an existing database.
 -- =====================================================================
 create table if not exists public.agihan_templates (

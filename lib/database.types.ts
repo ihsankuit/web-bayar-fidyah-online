@@ -97,8 +97,9 @@ export interface FidyahDistribution {
 }
 
 /**
- * A saved agihan message template. `message` may contain the {{nama}}
- * variable tag, substituted with each recipient's name at send time.
+ * A saved agihan message template. `message` may contain variable tags —
+ * {{nama}}, {{jumlah}}, {{hari}}, {{kategori}}, {{negeri}} — substituted
+ * per-recipient at send time.
  */
 export interface AgihanTemplate {
   id: string;
@@ -109,7 +110,11 @@ export interface AgihanTemplate {
 
 export type FidyahDistributionRecipientStatus = "sent" | "failed";
 
-/** Per-recipient WhatsApp send result for a fidyah distribution update. */
+/**
+ * Per-recipient WhatsApp send result for a fidyah distribution update. The
+ * amount_sen/days/category/negeri fields are a snapshot of the variable-tag
+ * values resolved at send time, reused as-is on retry.
+ */
 export interface FidyahDistributionRecipient {
   id: string;
   distribution_id: string;
@@ -117,6 +122,10 @@ export interface FidyahDistributionRecipient {
   phone: string;
   status: FidyahDistributionRecipientStatus;
   error: string | null;
+  amount_sen: number;
+  days: number;
+  category: string | null;
+  negeri: string | null;
   created_at: string;
 }
 
