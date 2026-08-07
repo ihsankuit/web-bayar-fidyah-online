@@ -14,7 +14,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Markdown } from "@/components/site/markdown";
-import { slugify } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
+
+/** Matches app/layout.tsx's title template ("%s | Bayar Fidyah Online"). */
+const TITLE_SUFFIX = " | Bayar Fidyah Online";
+const TITLE_MAX = 60;
+const EXCERPT_MAX = 160;
+
+function CharCount({ current, max }: { current: number; max: number }) {
+  const over = current > max;
+  return (
+    <span className={cn(over ? "text-destructive" : "text-muted-foreground")}>
+      {current}/{max}
+      {over ? " — terlalu panjang, mungkin dipotong dalam hasil carian" : ""}
+    </span>
+  );
+}
 
 /** Format an ISO timestamp for a `datetime-local` input's value (local time). */
 function toDatetimeLocal(iso: string | null | undefined): string {
@@ -47,6 +62,7 @@ export function PostEditor({ post }: { post?: BlogPost }) {
   const [slugEdited, setSlugEdited] = useState(Boolean(post?.slug));
   const [content, setContent] = useState(post?.content ?? "");
   const [status, setStatus] = useState(post?.status ?? "draft");
+  const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
 
   useEffect(() => {
     if (state.error) toast.error(state.error);
@@ -71,6 +87,16 @@ export function PostEditor({ post }: { post?: BlogPost }) {
                 }}
                 required
               />
+              <p className="text-xs">
+                Tajuk halaman (SERP):{" "}
+                <CharCount
+                  current={title.length + TITLE_SUFFIX.length}
+                  max={TITLE_MAX}
+                />{" "}
+                <span className="text-muted-foreground">
+                  (&quot;{title || "…"}&quot;{TITLE_SUFFIX})
+                </span>
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="slug">Slug (URL)</Label>
@@ -90,9 +116,14 @@ export function PostEditor({ post }: { post?: BlogPost }) {
               <Textarea
                 id="excerpt"
                 name="excerpt"
-                defaultValue={post?.excerpt ?? ""}
-                placeholder="Ringkasan pendek untuk paparan senarai."
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                placeholder="Ringkasan pendek untuk paparan senarai & meta description."
               />
+              <p className="text-xs">
+                Meta description:{" "}
+                <CharCount current={excerpt.length} max={EXCERPT_MAX} />
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="content">Kandungan (Markdown)</Label>
