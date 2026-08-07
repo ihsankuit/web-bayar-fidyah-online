@@ -460,3 +460,9 @@ alter table public.agihan_templates enable row level security;
 drop policy if exists agihan_templates_admin_all on public.agihan_templates;
 create policy agihan_templates_admin_all on public.agihan_templates
   for all to authenticated using (true) with check (true);
+
+-- Per-article SEO overrides for blog posts (managed in the post editor).
+alter table public.blog_posts
+  add column if not exists seo_title       text,
+  add column if not exists seo_description text,
+  add column if not exists seo_keywords    text;

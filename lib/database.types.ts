@@ -58,6 +58,10 @@ export interface BlogPost {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  /** Per-article SEO overrides; fall back to title/excerpt when empty. */
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string | null;
 }
 
 export interface MediaAsset {

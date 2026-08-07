@@ -32,6 +32,11 @@ export async function savePost(
   const content = (formData.get("content") as string) ?? "";
   const cover_image = (formData.get("cover_image") as string)?.trim() || null;
   const author = (formData.get("author") as string)?.trim() || null;
+  const seo_title = (formData.get("seo_title") as string)?.trim() || null;
+  const seo_description =
+    (formData.get("seo_description") as string)?.trim() || null;
+  const seo_keywords =
+    (formData.get("seo_keywords") as string)?.trim() || null;
   const status = (formData.get("status") as string) === "published"
     ? "published"
     : "draft";
@@ -64,6 +69,9 @@ export async function savePost(
     content,
     cover_image,
     author,
+    seo_title,
+    seo_description,
+    seo_keywords,
     status,
     published_at: publishedAt,
   };

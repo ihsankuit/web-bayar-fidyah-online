@@ -126,6 +126,50 @@ export function PostEditor({ post }: { post?: BlogPost }) {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardContent className="space-y-4 p-6">
+            <div>
+              <h3 className="text-sm font-semibold">SEO Artikel</h3>
+              <p className="text-xs text-muted-foreground">
+                Pilihan — jika dikosongkan, tajuk &amp; ringkasan artikel di
+                atas digunakan sebagai meta title &amp; description.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seo_title">Tajuk Meta (SEO Title)</Label>
+              <Input
+                id="seo_title"
+                name="seo_title"
+                defaultValue={post?.seo_title ?? ""}
+                placeholder="Contoh: Cara Bayar Fidyah Online 2026 | Panduan Lengkap"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seo_description">
+                Penerangan Meta (SEO Description)
+              </Label>
+              <Textarea
+                id="seo_description"
+                name="seo_description"
+                defaultValue={post?.seo_description ?? ""}
+                placeholder="Ringkasan 150–160 aksara untuk hasil carian Google."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="seo_keywords">Kata Kunci (Keywords)</Label>
+              <Textarea
+                id="seo_keywords"
+                name="seo_keywords"
+                defaultValue={post?.seo_keywords ?? ""}
+                placeholder="fidyah, bayar fidyah online, hukum fidyah, ..."
+              />
+              <p className="text-xs text-muted-foreground">
+                Pisahkan dengan koma atau baris baharu.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-6">

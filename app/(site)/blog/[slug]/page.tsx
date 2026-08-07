@@ -62,23 +62,35 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return { title: "Artikel tidak dijumpai" };
+
+  const metaTitle = post.seo_title?.trim() || post.title;
+  const metaDescription =
+    post.seo_description?.trim() || post.excerpt || undefined;
+  const keywords = post.seo_keywords
+    ? post.seo_keywords
+        .split(/[\n,]+/)
+        .map((k) => k.trim())
+        .filter(Boolean)
+    : undefined;
+
   return {
-    title: post.title,
-    description: post.excerpt ?? undefined,
+    title: metaTitle,
+    description: metaDescription,
+    ...(keywords && keywords.length ? { keywords } : {}),
     alternates: {
       canonical: `/blog/${post.slug}`,
     },
     openGraph: {
-      title: post.title,
-      description: post.excerpt ?? undefined,
+      title: metaTitle,
+      description: metaDescription,
       type: "article",
       url: `${siteUrl}/blog/${post.slug}`,
       ...(post.cover_image ? { images: [post.cover_image] } : {}),
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title,
-      description: post.excerpt ?? undefined,
+      title: metaTitle,
+      description: metaDescription,
       ...(post.cover_image ? { images: [post.cover_image] } : {}),
     },
   };
