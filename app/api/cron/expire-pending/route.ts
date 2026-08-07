@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { emitDonationEvent } from "@/lib/webhooks";
+import type { Donation } from "@/lib/database.types";
 
 const CHIP_TIMEOUT_HOURS = 24;
 const MANUAL_TIMEOUT_DAYS = 7;
@@ -40,7 +42,7 @@ export async function GET(request: Request) {
     .eq("status", "pending")
     .eq("payment_method", "chip")
     .lt("created_at", chipCutoff)
-    .select("id");
+    .select("*");
 
   const { data: expiredManual } = await supabase
     .from("donations")
@@ -49,7 +51,7 @@ export async function GET(request: Request) {
     .eq("payment_method", "manual")
     .is("proof_of_payment_path", null)
     .lt("created_at", manualCutoff)
-    .select("id");
+    .select("*");
 
   const chipCount = expiredChip?.length ?? 0;
   const manualCount = expiredManual?.length ?? 0;
@@ -60,6 +62,16 @@ export async function GET(request: Request) {
       action: "donation.auto_expire",
       details: { chip: chipCount, manual: manualCount },
     });
+
+    // Let the follow-up automation (e.g. n8n) know so it can nudge the payer
+    // to retry — fired after the response so a slow receiver never delays cron.
+    const expired = [
+      ...((expiredChip ?? []) as Donation[]),
+      ...((expiredManual ?? []) as Donation[]),
+    ];
+    after(() =>
+      Promise.all(expired.map((d) => emitDonationEvent("donation.failed", d)))
+    );
   }
 
   return NextResponse.json({ ok: true, expired: { chip: chipCount, manual: manualCount } });

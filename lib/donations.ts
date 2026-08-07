@@ -53,6 +53,10 @@ export async function settleDonationByReference(
   if (paid && !alreadyPaid) {
     after(() => sendReceiptEmail(donation));
     after(() => emitDonationEvent("donation.paid", donation));
+  } else if (!paid && existing.status !== "failed") {
+    // Only emit on the first transition into "failed" — CHIP can post more
+    // than one terminal-failure callback for the same purchase.
+    after(() => emitDonationEvent("donation.failed", donation));
   }
 
   return donation;
