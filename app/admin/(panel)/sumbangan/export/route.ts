@@ -26,6 +26,7 @@ const HEADERS = [
   "UTM Term",
   "UTM Content",
   "Mesej",
+  "IP Address",
 ];
 
 function csvCell(value: string): string {
@@ -54,6 +55,7 @@ function toRow(d: Donation): string {
     d.utm_term ?? "",
     d.utm_content ?? "",
     d.message ?? "",
+    d.client_ip ?? "",
   ]
     .map(csvCell)
     .join(",");
