@@ -114,6 +114,21 @@ tekan "Tandakan Dibayar" untuk sahkan secara manual.
 2. Salin API key → `RESEND_API_KEY`.
 3. Set `RESEND_FROM_EMAIL` kepada penghantar yang disahkan.
 
+### Resit PDF
+
+Setiap pembayaran yang **berjaya** ada resit PDF di `/resit/<rujukan>`, dijana
+atas permintaan daripada rekod sumbangan (tiada fail disimpan — muat turun
+semula sentiasa mengikut data terkini). Ia boleh dicapai daripada:
+
+- halaman `/status` pembayar (butang **Muat Turun Resit (PDF)**),
+- emel resit (butang muat turun), dan
+- **Admin > Sumbangan** (butang **PDF** pada baris berstatus Berjaya).
+
+Route menolak permintaan untuk sumbangan yang belum dibayar (409), jadi resit
+tidak boleh dijana untuk bayaran yang belum selesai. PDF dijana dengan
+[`pdf-lib`](https://pdf-lib.js.org) menggunakan fon Helvetica terbina — tiada
+fail fon atau dependency native, supaya ia berjalan dalam fungsi serverless.
+
 ## 5. Deploy ke Vercel
 
 1. Push repositori ini ke GitHub dan import ke Vercel (Next.js auto-dikesan).
