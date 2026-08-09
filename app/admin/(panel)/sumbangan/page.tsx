@@ -296,17 +296,27 @@ export default async function SumbanganPage({
                           </form>
                         )}
                         {d.status === "paid" && (
-                          <form action={resendReceipt}>
-                            <input type="hidden" name="id" value={d.id} />
-                            <Button
-                              type="submit"
-                              size="sm"
-                              variant="ghost"
-                              title="Hantar semula resit ke emel pembayar"
-                            >
-                              <Send /> Resit
+                          <>
+                            <Button asChild size="sm" variant="ghost">
+                              <a
+                                href={`/resit/${encodeURIComponent(d.reference)}`}
+                                title="Muat turun resit PDF"
+                              >
+                                <Download /> PDF
+                              </a>
                             </Button>
-                          </form>
+                            <form action={resendReceipt}>
+                              <input type="hidden" name="id" value={d.id} />
+                              <Button
+                                type="submit"
+                                size="sm"
+                                variant="ghost"
+                                title="Hantar semula resit ke emel pembayar"
+                              >
+                                <Send /> Resit
+                              </Button>
+                            </form>
+                          </>
                         )}
                         <DeleteDonationButton
                           id={d.id}

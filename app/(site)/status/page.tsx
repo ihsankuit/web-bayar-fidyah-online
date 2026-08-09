@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, XCircle, HelpCircle, Clock } from "lucide-react";
+import { CheckCircle2, Download, XCircle, HelpCircle, Clock } from "lucide-react";
 
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
@@ -121,8 +121,15 @@ export default async function StatusPage({
             )}
 
             <div className="flex flex-col gap-2 pt-2">
-              {paid || pending ? (
+              {paid && donation && (
                 <Button asChild>
+                  <a href={`/resit/${encodeURIComponent(donation.reference)}`}>
+                    <Download /> Muat Turun Resit (PDF)
+                  </a>
+                </Button>
+              )}
+              {paid || pending ? (
+                <Button asChild variant={paid ? "outline" : "default"}>
                   <Link href="/">Kembali ke Laman Utama</Link>
                 </Button>
               ) : (
