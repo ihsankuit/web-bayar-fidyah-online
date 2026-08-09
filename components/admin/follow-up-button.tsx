@@ -2,13 +2,11 @@
 
 import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Bookmark, Loader2, Send } from "lucide-react";
+import Link from "next/link";
+import { Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  saveFollowUpTemplates,
-  sendFollowUp,
-} from "@/app/admin/(panel)/sumbangan/actions";
+import { sendFollowUp } from "@/app/admin/(panel)/sumbangan/actions";
 import type { Donation, FollowUpSettings } from "@/lib/database.types";
 import { FOLLOWUP_TAGS } from "@/lib/followup";
 import { Button } from "@/components/ui/button";
@@ -23,24 +21,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/lib/utils";
 
-function ActionButtons({
-  saveAction,
-}: {
-  saveAction: (formData: FormData) => void;
-}) {
+function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <div className="flex flex-wrap justify-end gap-2">
-      <Button
-        type="submit"
-        variant="outline"
-        formAction={saveAction}
-        formNoValidate
-        disabled={pending}
-      >
-        {pending ? <Loader2 className="animate-spin" /> : <Bookmark />}
-        Simpan Sebagai Teks Lalai
-      </Button>
+    <div className="flex justify-end">
       <Button type="submit" disabled={pending}>
         {pending ? <Loader2 className="animate-spin" /> : <Send />}
         Hantar Susulan
@@ -70,11 +54,6 @@ export function FollowUpButton({
     }
   }
 
-  async function saveAction(formData: FormData) {
-    const result = await saveFollowUpTemplates({}, formData);
-    if (result.ok) toast.success(result.message);
-    else if (result.error) toast.error(result.error);
-  }
 
   function insertTag(
     ref: React.RefObject<HTMLTextAreaElement | null>,
@@ -224,10 +203,15 @@ export function FollowUpButton({
 
             <p className="text-xs text-muted-foreground">
               Tag digantikan automatik dengan maklumat pembayar ini semasa
-              hantar.
+              hantar. Suntingan di sini untuk penghantaran ini sahaja — untuk
+              ubah teks lalai semua susulan, pergi ke{" "}
+              <Link href="/admin/notifikasi" className="underline">
+                Notifikasi
+              </Link>
+              .
             </p>
 
-            <ActionButtons saveAction={saveAction} />
+            <SubmitButton />
           </form>
         </DialogContent>
       </Dialog>

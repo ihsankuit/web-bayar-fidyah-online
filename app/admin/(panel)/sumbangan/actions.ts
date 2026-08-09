@@ -11,18 +11,14 @@ import {
 import { getPurchase } from "@/lib/chip";
 import { sendFollowUpEmail, sendReceiptEmail } from "@/lib/resend";
 import { logActivity } from "@/lib/activity-log";
-import {
-  applyFollowUpVariables,
-  DEFAULT_FOLLOWUP,
-  paymentLink,
-} from "@/lib/followup";
+import { applyFollowUpVariables, paymentLink } from "@/lib/followup";
 import {
   getMurpatiSettings,
   isMurpatiSessionConnected,
   normalizeMalaysianPhone,
   sendMurpatiText,
 } from "@/lib/murpati";
-import type { Donation, FollowUpSettings } from "@/lib/database.types";
+import type { Donation } from "@/lib/database.types";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -220,34 +216,6 @@ export async function sendFollowUp(
       `Susulan dihantar melalui ${sent.join(" & ")}.` +
       (failed.length > 0 ? ` Gagal: ${failed.join("; ")}.` : ""),
   };
-}
-
-/** Save the follow-up templates as the defaults used to prefill the dialog. */
-export async function saveFollowUpTemplates(
-  _prev: FollowUpState,
-  formData: FormData
-): Promise<FollowUpState> {
-  const supabase = await requireUser();
-
-  const value: FollowUpSettings = {
-    whatsapp_message:
-      ((formData.get("whatsapp_message") as string) || "").trim() ||
-      DEFAULT_FOLLOWUP.whatsapp_message,
-    email_subject:
-      ((formData.get("email_subject") as string) || "").trim() ||
-      DEFAULT_FOLLOWUP.email_subject,
-    email_body:
-      ((formData.get("email_body") as string) || "").trim() ||
-      DEFAULT_FOLLOWUP.email_body,
-  };
-
-  const { error } = await supabase
-    .from("site_settings")
-    .upsert({ key: "followup", value }, { onConflict: "key" });
-  if (error) return { error: error.message };
-
-  revalidateAll();
-  return { ok: true, message: "Teks lalai susulan disimpan." };
 }
 
 /** Permanently delete a donation record. */
