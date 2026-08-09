@@ -17,7 +17,7 @@ export default async function SiteLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { whatsapp_number } = await getLandingContent();
+  const { whatsapp_number, whatsapp_greeting } = await getLandingContent();
 
   return (
     <>
@@ -28,7 +28,7 @@ export default async function SiteLayout({
       </Suspense>
       <ScrollTracker />
       {children}
-      <FloatingWhatsApp phone={whatsapp_number} />
+      <FloatingWhatsApp phone={whatsapp_number} greeting={whatsapp_greeting} />
     </>
   );
 }

@@ -179,6 +179,8 @@ export interface LandingContent {
    * "chat with admin" button. Empty hides the button.
    */
   whatsapp_number: string;
+  /** Greeting shown in the WhatsApp bubble. Empty uses a default. */
+  whatsapp_greeting: string;
   /**
    * Per-category overrides for the "Siapa Yang Wajib Membayar Fidyah?"
    * cards, keyed by FidyahCategoryId (see lib/fidyah.ts). Any field left

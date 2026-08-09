@@ -95,5 +95,6 @@ export const DEFAULT_LANDING: LandingContent = {
   bank_account_name: "",
   bank_account_number: "",
   whatsapp_number: "",
+  whatsapp_greeting: "",
   category_content: {},
 };

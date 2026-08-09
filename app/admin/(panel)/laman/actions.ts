@@ -99,6 +99,8 @@ export async function saveLanding(
       (formData.get("bank_account_number") as string)?.trim() || "",
     whatsapp_number:
       (formData.get("whatsapp_number") as string)?.trim() || "",
+    whatsapp_greeting:
+      (formData.get("whatsapp_greeting") as string)?.trim() || "",
     category_content,
   };
 

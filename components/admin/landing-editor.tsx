@@ -278,6 +278,12 @@ export function LandingEditor({ content }: { content: LandingContent }) {
             name="whatsapp_number"
             defaultValue={content.whatsapp_number}
           />
+          <Field
+            label="Teks sapaan gelembung"
+            name="whatsapp_greeting"
+            defaultValue={content.whatsapp_greeting}
+            placeholder="Ada pertanyaan? Kami di sini 👋"
+          />
         </CardContent>
       </Card>
 
