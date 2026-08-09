@@ -266,6 +266,23 @@ export function LandingEditor({ content }: { content: LandingContent }) {
 
       <Card>
         <CardHeader>
+          <CardTitle>WhatsApp (Chat dengan Admin)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Butang WhatsApp terapung dipaparkan di penjuru kanan bawah setiap
+            halaman. Kosongkan untuk menyembunyikannya.
+          </p>
+          <Field
+            label="No. WhatsApp (dengan kod negara, cth. 60123456789)"
+            name="whatsapp_number"
+            defaultValue={content.whatsapp_number}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Soalan Lazim & Footer</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

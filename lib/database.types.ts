@@ -175,6 +175,11 @@ export interface LandingContent {
   bank_account_name: string;
   bank_account_number: string;
   /**
+   * WhatsApp number (with country code, e.g. 60123456789) for the floating
+   * "chat with admin" button. Empty hides the button.
+   */
+  whatsapp_number: string;
+  /**
    * Per-category overrides for the "Siapa Yang Wajib Membayar Fidyah?"
    * cards, keyed by FidyahCategoryId (see lib/fidyah.ts). Any field left
    * unset falls back to the hardcoded default (title/description) or the
