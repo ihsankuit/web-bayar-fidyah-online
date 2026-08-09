@@ -44,6 +44,9 @@ export interface Donation {
   upsell_accepted: boolean;
   upsell_title: string | null;
   upsell_amount_sen: number;
+  /** Manual follow-up reminders sent for an unpaid/failed payment. */
+  followup_count: number;
+  last_followup_at: string | null;
 }
 
 export interface BlogPost {
@@ -194,4 +197,16 @@ export interface UpsellSettings {
   poster_image_url: string;
   accept_label: string;
   skip_label: string;
+}
+
+/**
+ * Default follow-up message templates, stored under the `followup` settings
+ * key. Each may contain variable tags — {{nama}}, {{rujukan}}, {{jumlah}},
+ * {{hari}}, {{kategori}}, {{pautan}} — substituted per payer at send time.
+ * Admins can still edit the text per-send before it goes out.
+ */
+export interface FollowUpSettings {
+  whatsapp_message: string;
+  email_subject: string;
+  email_body: string;
 }

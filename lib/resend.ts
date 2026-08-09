@@ -70,6 +70,49 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
   }
 }
 
+/**
+ * Send a manually-composed follow-up email to a payer whose payment is still
+ * pending or has failed. `body` is plain text (as typed by the admin) —
+ * escaped and rendered with line breaks preserved. Returns false on failure
+ * so the caller can report which channels actually went out.
+ */
+export async function sendFollowUpEmail(
+  to: string,
+  subject: string,
+  body: string,
+  actionUrl: string
+): Promise<boolean> {
+  const resend = getClient();
+  if (!resend) {
+    console.warn("[resend] RESEND_API_KEY not set — skipping follow-up email.");
+    return false;
+  }
+
+  const html = `
+  <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #1a2333;">
+    <div style="background: #2563eb; color: #fff; padding: 24px; border-radius: 12px 12px 0 0;">
+      <h1 style="margin: 0; font-size: 20px;">Bayar Fidyah Online</h1>
+    </div>
+    <div style="border: 1px solid #e2e6ef; border-top: none; padding: 24px; border-radius: 0 0 12px 12px;">
+      <div style="white-space: pre-wrap; line-height: 1.6;">${escapeHtml(body)}</div>
+      <p style="margin: 24px 0 0;">
+        <a href="${escapeHtml(actionUrl)}"
+           style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
+          Sambung Pembayaran
+        </a>
+      </p>
+    </div>
+  </div>`;
+
+  try {
+    await resend.emails.send({ from: FROM, to, subject, html });
+    return true;
+  } catch (err) {
+    console.error("[resend] Failed to send follow-up email:", err);
+    return false;
+  }
+}
+
 function row(label: string, value: string): string {
   return `<tr>
     <td style="padding: 8px 0; color: #5a6478; border-bottom: 1px solid #eef1f6;">${label}</td>
