@@ -24,6 +24,7 @@ const ACTION_LABELS: Record<string, string> = {
   "donation.auto_expire": "Luputkan sumbangan tertunda secara automatik",
   "donation.resend_receipt": "Hantar semula resit",
   "donation.followup": "Hantar susulan kepada pembayar",
+  "notifikasi.save_followup": "Kemas kini templat notifikasi susulan",
   "blog.publish": "Terbitkan artikel",
   "blog.save_draft": "Simpan draf artikel",
   "blog.delete": "Padam artikel",

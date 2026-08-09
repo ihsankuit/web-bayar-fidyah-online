@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Bell,
   FileText,
   GalleryHorizontalEnd,
   Gift,
@@ -43,6 +44,7 @@ const nav = [
   { href: "/admin/laman", label: "Laman Utama", icon: PanelsTopLeft },
   { href: "/admin/seo", label: "SEO", icon: Search },
   { href: "/admin/kempen", label: "Kempen Naik Taraf", icon: Gift },
+  { href: "/admin/notifikasi", label: "Notifikasi", icon: Bell },
   { href: "/admin/integrasi", label: "Integrasi", icon: Plug },
   { href: "/admin/log", label: "Log Aktiviti", icon: History },
   { href: "/admin/keselamatan", label: "Keselamatan", icon: ShieldCheck },

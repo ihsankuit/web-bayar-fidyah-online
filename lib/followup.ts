@@ -50,9 +50,12 @@ export async function getFollowUpSettings(): Promise<FollowUpSettings> {
   return DEFAULT_FOLLOWUP;
 }
 
-/** The page a payer lands on to review/continue their payment. */
+/**
+ * "Continue payment" link for a payer. Resolves to a live CHIP checkout via
+ * `/bayar/[reference]`, which reissues one if the original has gone stale.
+ */
 export function paymentLink(donation: Donation): string {
-  return `${siteUrl}/status?ref=${encodeURIComponent(donation.reference)}`;
+  return `${siteUrl}/bayar/${encodeURIComponent(donation.reference)}`;
 }
 
 /** Substitutes the follow-up variable tags with this donation's own values. */

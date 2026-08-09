@@ -233,11 +233,19 @@ mempunyai butang **Susulan**. Ia membuka dialog untuk mengarang peringatan
 kepada pembayar — WhatsApp (Murpati) dan/atau emel (Resend) — dengan teks
 yang boleh disunting sebelum hantar.
 
+Teks lalai diurus di **Admin > Notifikasi** (disimpan di bawah kunci
+`followup` dalam `site_settings`) dan terpakai untuk semua susulan
+seterusnya. Suntingan dalam dialog hanya untuk penghantaran itu sahaja.
+
 Teks menyokong tag pemboleh ubah: `{{nama}}`, `{{rujukan}}`, `{{jumlah}}`,
-`{{hari}}`, `{{kategori}}`, `{{pautan}}` (pautan `/status?ref=…` untuk
-menyambung pembayaran). Butang **Simpan Sebagai Teks Lalai** menyimpan teks
-semasa sebagai templat lalai (kunci `followup` dalam `site_settings`) yang
-akan mengisi dialog pada kali seterusnya.
+`{{hari}}`, `{{kategori}}` dan `{{pautan}}`.
+
+`{{pautan}}` menghasilkan `/bayar/<rujukan>` — satu route yang membawa
+pembayar terus ke halaman bayaran CHIP. Purchase asal digunakan semula jika
+masih boleh dibayar; jika sudah luput, satu purchase baharu dijana automatik
+(dan sumbangan berstatus *Gagal* dikembalikan ke *Menunggu*), supaya pautan
+susulan tidak pernah membawa ke halaman mati. Bayaran manual pula dihalakan
+ke `/status?ref=…` kerana ia tiada checkout CHIP.
 
 Bilangan susulan dan tarikh susulan terakhir disimpan pada rekod sumbangan
 (`followup_count`, `last_followup_at`) dan dipaparkan pada butang, supaya
