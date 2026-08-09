@@ -131,6 +131,15 @@ alter table public.donations add column if not exists upsell_title text;
 alter table public.donations add column if not exists upsell_amount_sen integer not null default 0;
 
 -- ---------------------------------------------------------------------
+--  Follow-up reminders sent to payers whose payment is still pending or
+--  has failed (WhatsApp via Murpati and/or email via Resend, triggered
+--  manually from Admin > Sumbangan).
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists followup_count integer not null default 0;
+alter table public.donations add column if not exists last_followup_at timestamptz;
+
+-- ---------------------------------------------------------------------
 --  Blog posts
 -- ---------------------------------------------------------------------
 create table if not exists public.blog_posts (

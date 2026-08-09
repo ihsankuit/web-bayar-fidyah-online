@@ -25,6 +25,8 @@ import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { ProofViewer } from "@/components/admin/proof-viewer";
 import { DeleteDonationButton } from "@/components/admin/delete-donation-button";
+import { FollowUpButton } from "@/components/admin/follow-up-button";
+import { getFollowUpSettings } from "@/lib/followup";
 import {
   confirmManualPayment,
   recheckChipStatus,
@@ -85,10 +87,8 @@ export default async function SumbanganPage({
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
-  const [{ data, count }, { data: sumRows }] = await Promise.all([
-    listQuery.range(from, to),
-    sumQuery,
-  ]);
+  const [{ data, count }, { data: sumRows }, followUpTemplates] =
+    await Promise.all([listQuery.range(from, to), sumQuery, getFollowUpSettings()]);
 
   const rows = (data as Donation[]) ?? [];
   const total = count ?? 0;
@@ -262,6 +262,12 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
+                        {d.status !== "paid" && (
+                          <FollowUpButton
+                            donation={d}
+                            templates={followUpTemplates}
+                          />
+                        )}
                         {d.status !== "paid" && d.chip_purchase_id && (
                           <form action={recheckChipStatus}>
                             <input type="hidden" name="id" value={d.id} />

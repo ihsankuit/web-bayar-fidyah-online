@@ -9,9 +9,20 @@ import {
   settleDonationByReference,
 } from "@/lib/donations";
 import { getPurchase } from "@/lib/chip";
-import { sendReceiptEmail } from "@/lib/resend";
+import { sendFollowUpEmail, sendReceiptEmail } from "@/lib/resend";
 import { logActivity } from "@/lib/activity-log";
-import type { Donation } from "@/lib/database.types";
+import {
+  applyFollowUpVariables,
+  DEFAULT_FOLLOWUP,
+  paymentLink,
+} from "@/lib/followup";
+import {
+  getMurpatiSettings,
+  isMurpatiSessionConnected,
+  normalizeMalaysianPhone,
+  sendMurpatiText,
+} from "@/lib/murpati";
+import type { Donation, FollowUpSettings } from "@/lib/database.types";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -91,6 +102,152 @@ export async function resendReceipt(formData: FormData) {
     to: donation.payer_email,
   });
   revalidateAll();
+}
+
+export interface FollowUpState {
+  error?: string;
+  ok?: boolean;
+  message?: string;
+}
+
+/**
+ * Send a manually-composed follow-up reminder (WhatsApp and/or email) to a
+ * payer whose payment is still pending or has failed. The admin edits the
+ * text in the dialog before sending; variable tags are substituted here with
+ * this donation's own values.
+ */
+export async function sendFollowUp(
+  _prev: FollowUpState,
+  formData: FormData
+): Promise<FollowUpState> {
+  const supabase = await requireUser();
+  const id = formData.get("id") as string;
+  if (!id) return { error: "Sumbangan tidak sah." };
+
+  const viaWhatsapp = formData.get("via_whatsapp") === "on";
+  const viaEmail = formData.get("via_email") === "on";
+  if (!viaWhatsapp && !viaEmail) {
+    return { error: "Sila pilih sekurang-kurangnya satu saluran (WhatsApp atau emel)." };
+  }
+
+  const { data: donation } = await supabase
+    .from("donations")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle<Donation>();
+  if (!donation) return { error: "Rekod sumbangan tidak dijumpai." };
+  if (donation.status === "paid") {
+    return { error: "Sumbangan ini sudah dibayar — tiada susulan diperlukan." };
+  }
+
+  const sent: string[] = [];
+  const failed: string[] = [];
+
+  if (viaWhatsapp) {
+    const phone = normalizeMalaysianPhone(donation.payer_phone ?? "");
+    if (!phone) {
+      failed.push("WhatsApp (tiada no. telefon sah)");
+    } else {
+      const settings = await getMurpatiSettings();
+      if (!settings.apiKey || !settings.sessionId) {
+        failed.push("WhatsApp (Murpati belum disediakan di Integrasi)");
+      } else if (!(await isMurpatiSessionConnected(settings))) {
+        failed.push("WhatsApp (peranti Murpati tidak disambung)");
+      } else {
+        const message = applyFollowUpVariables(
+          ((formData.get("whatsapp_message") as string) || "").trim(),
+          donation
+        );
+        if (!message) {
+          failed.push("WhatsApp (mesej kosong)");
+        } else {
+          const result = await sendMurpatiText(settings, phone, message);
+          if (result.ok) sent.push("WhatsApp");
+          else failed.push(`WhatsApp (${result.error})`);
+        }
+      }
+    }
+  }
+
+  if (viaEmail) {
+    const subject = applyFollowUpVariables(
+      ((formData.get("email_subject") as string) || "").trim(),
+      donation
+    );
+    const body = applyFollowUpVariables(
+      ((formData.get("email_body") as string) || "").trim(),
+      donation
+    );
+    if (!subject || !body) {
+      failed.push("Emel (tajuk atau kandungan kosong)");
+    } else {
+      const ok = await sendFollowUpEmail(
+        donation.payer_email,
+        subject,
+        body,
+        paymentLink(donation)
+      );
+      if (ok) sent.push("Emel");
+      else failed.push("Emel (hantar gagal — semak tetapan Resend)");
+    }
+  }
+
+  if (sent.length > 0) {
+    await supabase
+      .from("donations")
+      .update({
+        followup_count: (donation.followup_count ?? 0) + 1,
+        last_followup_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+  }
+
+  await logActivity("donation.followup", {
+    reference: donation.reference,
+    status: donation.status,
+    sent: sent.join(", ") || "-",
+    failed: failed.join(", ") || "-",
+  });
+
+  revalidateAll();
+
+  if (sent.length === 0) {
+    return { error: `Susulan gagal dihantar — ${failed.join("; ")}` };
+  }
+  return {
+    ok: true,
+    message:
+      `Susulan dihantar melalui ${sent.join(" & ")}.` +
+      (failed.length > 0 ? ` Gagal: ${failed.join("; ")}.` : ""),
+  };
+}
+
+/** Save the follow-up templates as the defaults used to prefill the dialog. */
+export async function saveFollowUpTemplates(
+  _prev: FollowUpState,
+  formData: FormData
+): Promise<FollowUpState> {
+  const supabase = await requireUser();
+
+  const value: FollowUpSettings = {
+    whatsapp_message:
+      ((formData.get("whatsapp_message") as string) || "").trim() ||
+      DEFAULT_FOLLOWUP.whatsapp_message,
+    email_subject:
+      ((formData.get("email_subject") as string) || "").trim() ||
+      DEFAULT_FOLLOWUP.email_subject,
+    email_body:
+      ((formData.get("email_body") as string) || "").trim() ||
+      DEFAULT_FOLLOWUP.email_body,
+  };
+
+  const { error } = await supabase
+    .from("site_settings")
+    .upsert({ key: "followup", value }, { onConflict: "key" });
+  if (error) return { error: error.message };
+
+  revalidateAll();
+  return { ok: true, message: "Teks lalai susulan disimpan." };
 }
 
 /** Permanently delete a donation record. */
