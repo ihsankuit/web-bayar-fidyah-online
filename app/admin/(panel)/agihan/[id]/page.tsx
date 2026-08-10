@@ -64,8 +64,10 @@ export default async function AgihanDetailPage({
           Butiran Penghantaran
         </h1>
         <p className="text-muted-foreground">
-          {formatDateOnly(dist.date_from)} – {formatDateOnly(dist.date_to)} ·
-          dihantar oleh {dist.created_by} pada {formatDate(dist.created_at)}
+          {dist.date_from && dist.date_to
+            ? `${formatDateOnly(dist.date_from)} – ${formatDateOnly(dist.date_to)}`
+            : "Senarai import"}{" "}
+          · dihantar oleh {dist.created_by} pada {formatDate(dist.created_at)}
         </p>
       </div>
 

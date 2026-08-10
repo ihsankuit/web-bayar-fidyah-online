@@ -240,6 +240,18 @@ yang dipilih, melalui WhatsApp (guna [Murpati](https://murpati.com)).
 4. Isi kedua-dua nilai di **Admin > Integrasi → WhatsApp (Murpati)** — atau
    set env var `MURPATI_API_KEY` / `MURPATI_SESSION_ID` sebagai alternatif.
 
+Penerima boleh datang daripada dua sumber, digabung dan ditapis bertindih
+mengikut no. telefon:
+
+- **Rekod pembayaran** — pembayar yang telah selesai bayar dalam julat tarikh.
+- **Import kontak** — tampal senarai atau muat naik CSV (`Nama,0123456789`
+  satu baris satu kontak). Julat tarikh boleh dikosongkan jika mahu hantar
+  kepada senarai import sahaja. Kontak import tiada rekod pembayaran, jadi tag
+  `{{jumlah}}`/`{{hari}}`/`{{kategori}}`/`{{negeri}}` dipaparkan sebagai `-`.
+
+Butang **Hantar Ujian** menghantar mesej ke satu nombor (tag diisi nilai
+contoh) untuk semakan sebelum blast sebenar — tidak direkodkan dalam sejarah.
+
 Setiap penghantaran direkod dalam jadual `fidyah_distributions` (lihat
 `supabase/schema.sql`) dan dipaparkan sebagai sejarah di halaman Agihan
 Fidyah, serta dicatat dalam Log Aktiviti.

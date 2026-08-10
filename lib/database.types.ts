@@ -90,8 +90,9 @@ export interface FidyahDistribution {
   id: string;
   message: string;
   image_url: string | null;
-  date_from: string;
-  date_to: string;
+  /** Null when the blast targeted an imported contact list only. */
+  date_from: string | null;
+  date_to: string | null;
   recipient_count: number;
   sent_count: number;
   failed_count: number;
@@ -113,6 +114,9 @@ export interface AgihanTemplate {
 
 export type FidyahDistributionRecipientStatus = "sent" | "failed";
 
+/** Whether a blast recipient came from a donation record or an imported list. */
+export type FidyahDistributionRecipientSource = "donation" | "import";
+
 /**
  * Per-recipient WhatsApp send result for a fidyah distribution update. The
  * amount_sen/days/category/negeri fields are a snapshot of the variable-tag
@@ -129,6 +133,7 @@ export interface FidyahDistributionRecipient {
   days: number;
   category: string | null;
   negeri: string | null;
+  source: FidyahDistributionRecipientSource;
   created_at: string;
 }
 

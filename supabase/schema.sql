@@ -463,6 +463,19 @@ alter table public.fidyah_distribution_recipients
   add column if not exists category text,
   add column if not exists negeri text;
 
+-- A blast may target an imported contact list with no date range at all, so
+-- the range is optional. Run this block if upgrading an existing database.
+alter table public.fidyah_distributions alter column date_from drop not null;
+alter table public.fidyah_distributions alter column date_to drop not null;
+
+-- Where the recipient came from: a matched donation record, or a contact list
+-- imported for that blast. Imported contacts have no donation figures, so the
+-- {{jumlah}}/{{hari}}/{{kategori}}/{{negeri}} tags render as "-" for them —
+-- this flag keeps a retry rendering the same way as the original send.
+alter table public.fidyah_distribution_recipients
+  add column if not exists source text not null default 'donation'
+    check (source in ('donation', 'import'));
+
 -- =====================================================================
 --  Saved message templates for agihan updates. `message` may contain
 --  variable tags — {{nama}}, {{jumlah}}, {{hari}}, {{kategori}}, {{negeri}}

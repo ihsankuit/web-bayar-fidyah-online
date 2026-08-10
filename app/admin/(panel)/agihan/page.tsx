@@ -96,8 +96,9 @@ export default async function AgihanPage() {
                       </Link>
                     </TableCell>
                     <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
-                      {formatDateOnly(h.date_from)} –{" "}
-                      {formatDateOnly(h.date_to)}
+                      {h.date_from && h.date_to
+                        ? `${formatDateOnly(h.date_from)} – ${formatDateOnly(h.date_to)}`
+                        : "Senarai import"}
                     </TableCell>
                     <TableCell className="text-right text-sm">
                       <span className="font-medium text-emerald-600">

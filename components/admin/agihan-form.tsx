@@ -2,7 +2,15 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
-import { Bookmark, Loader2, Search, Send, X } from "lucide-react";
+import {
+  Bookmark,
+  FlaskConical,
+  Loader2,
+  Search,
+  Send,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -10,9 +18,11 @@ import {
   previewRecipients,
   saveTemplate,
   sendAgihanUpdate,
+  sendTestBlast,
   type PreviewState,
   type SendState,
   type TemplateState,
+  type TestState,
 } from "@/app/admin/(panel)/agihan/actions";
 import type { AgihanTemplate } from "@/lib/database.types";
 import { Button } from "@/components/ui/button";
@@ -34,6 +44,26 @@ const VARIABLE_TAGS: { tag: string; label: string }[] = [
   { tag: "{{kategori}}", label: "Kategori" },
   { tag: "{{negeri}}", label: "Negeri" },
 ];
+
+function TestButton({
+  testAction,
+}: {
+  testAction: (formData: FormData) => void;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <Button
+      type="submit"
+      variant="outline"
+      formAction={testAction}
+      formNoValidate
+      disabled={pending}
+    >
+      {pending ? <Loader2 className="animate-spin" /> : <FlaskConical />}
+      Hantar Ujian
+    </Button>
+  );
+}
 
 function FormButtons({
   previewAction,
@@ -90,6 +120,10 @@ export function AgihanForm({
     TemplateState,
     FormData
   >(saveTemplate, {});
+  const [testState, testAction] = useActionState<TestState, FormData>(
+    sendTestBlast,
+    {}
+  );
   const formRef = useRef<HTMLFormElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
   const templateNameRef = useRef<HTMLInputElement>(null);
@@ -109,6 +143,11 @@ export function AgihanForm({
       toast.error(sendState.error);
     }
   }, [sendState]);
+
+  useEffect(() => {
+    if (testState.ok) toast.success(testState.message);
+    else if (testState.error) toast.error(testState.error);
+  }, [testState]);
 
   useEffect(() => {
     if (templateState.ok) {
@@ -156,18 +195,51 @@ export function AgihanForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="date_from">Tarikh Bayaran Dari</Label>
-              <Input id="date_from" name="date_from" type="date" required />
+              <Input id="date_from" name="date_from" type="date" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="date_to">Hingga</Label>
-              <Input id="date_to" name="date_to" type="date" required />
+              <Input id="date_to" name="date_to" type="date" />
             </div>
+          </div>
+
+          <div className="space-y-3 rounded-lg border border-dashed border-border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label className="flex items-center gap-2">
+                <Upload className="h-4 w-4" /> Import Kontak (pilihan)
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                Satu kontak satu baris: <code>Nama,0123456789</code>
+              </span>
+            </div>
+            <Textarea
+              name="contacts_text"
+              rows={3}
+              placeholder={"Ahmad,0123456789\nSiti,0198765432"}
+            />
+            <Input
+              name="contacts_file"
+              type="file"
+              accept=".csv,.txt,text/csv,text/plain"
+            />
+            <p className="text-xs text-muted-foreground">
+              Guna ini untuk hantar kepada penerima di luar rekod pembayaran.
+              Julat tarikh boleh dikosongkan jika awak nak hantar kepada senarai
+              import sahaja. Nombor bertindih ditapis automatik.
+            </p>
           </div>
 
           {previewState.checked && (
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
               <p className="font-medium">
-                {previewState.count} pembayar akan menerima notifikasi ini.
+                {previewState.count} penerima akan menerima notifikasi ini.
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {previewState.fromDonations} daripada rekod pembayaran ·{" "}
+                {previewState.fromImport} daripada senarai import
+                {previewState.duplicates
+                  ? ` · ${previewState.duplicates} bertindih ditapis`
+                  : ""}
               </p>
               {(previewState.names?.length ?? 0) > 0 && (
                 <p className="mt-1 text-muted-foreground">
@@ -175,6 +247,12 @@ export function AgihanForm({
                   {(previewState.count ?? 0) > (previewState.names?.length ?? 0)
                     ? ", ..."
                     : ""}
+                </p>
+              )}
+              {(previewState.skipped?.length ?? 0) > 0 && (
+                <p className="mt-1 text-destructive">
+                  Baris import dilangkau (nombor tidak sah):{" "}
+                  {previewState.skipped!.join(", ")}
                 </p>
               )}
             </div>
@@ -267,6 +345,23 @@ export function AgihanForm({
               name="template_name"
               placeholder="cth: Makluman Agihan Ramadan"
             />
+          </div>
+
+          <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+            <Label htmlFor="test_phone">Hantar Ujian Dahulu</Label>
+            <div className="flex flex-wrap gap-2">
+              <Input
+                id="test_phone"
+                name="test_phone"
+                className="w-full sm:w-56"
+                placeholder="0123456789"
+              />
+              <TestButton testAction={testAction} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Hantar mesej ini ke satu nombor sahaja untuk semakan. Tag diisi
+              dengan nilai contoh, dan ia tidak direkodkan dalam sejarah.
+            </p>
           </div>
 
           <FormButtons
