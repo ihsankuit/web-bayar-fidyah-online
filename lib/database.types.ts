@@ -217,3 +217,20 @@ export interface FollowUpSettings {
   email_subject: string;
   email_body: string;
 }
+
+/**
+ * Notification sent the moment a payment settles, stored under the
+ * `payment_success` settings key. The email always carries the itemised
+ * breakdown (that part is data, not copy) — only the subject and the intro
+ * paragraph above it are editable. Text may contain variable tags:
+ * {{nama}}, {{rujukan}}, {{jumlah}}, {{hari}}, {{kategori}}, {{tarikh}},
+ * {{resit}}.
+ */
+export interface PaymentSuccessSettings {
+  email_subject: string;
+  email_intro: string;
+  email_attach_pdf: boolean;
+  whatsapp_enabled: boolean;
+  whatsapp_message: string;
+  whatsapp_attach_pdf: boolean;
+}

@@ -25,6 +25,8 @@ const ACTION_LABELS: Record<string, string> = {
   "donation.resend_receipt": "Hantar semula resit",
   "donation.followup": "Hantar susulan kepada pembayar",
   "notifikasi.save_followup": "Kemas kini templat notifikasi susulan",
+  "notifikasi.save_payment_success":
+    "Kemas kini templat notifikasi pembayaran berjaya",
   "blog.publish": "Terbitkan artikel",
   "blog.save_draft": "Simpan draf artikel",
   "blog.delete": "Padam artikel",
