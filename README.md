@@ -124,6 +124,9 @@ semula sentiasa mengikut data terkini). Ia boleh dicapai daripada:
 - emel resit (butang muat turun), dan
 - **Admin > Sumbangan** (butang **PDF** pada baris berstatus Berjaya).
 
+Resit turut **dilampirkan** dalam emel pengesahan, dan boleh dihantar sebagai
+lampiran WhatsApp — lihat **Admin > Notifikasi**.
+
 Route menolak permintaan untuk sumbangan yang belum dibayar (409), jadi resit
 tidak boleh dijana untuk bayaran yang belum selesai. PDF dijana dengan
 [`pdf-lib`](https://pdf-lib.js.org) menggunakan fon Helvetica terbina — tiada
@@ -240,6 +243,22 @@ yang dipilih, melalui WhatsApp (guna [Murpati](https://murpati.com)).
 Setiap penghantaran direkod dalam jadual `fidyah_distributions` (lihat
 `supabase/schema.sql`) dan dipaparkan sebagai sejarah di halaman Agihan
 Fidyah, serta dicatat dalam Log Aktiviti.
+
+### Notifikasi pembayaran berjaya
+
+**Admin > Notifikasi** mengawal mesej yang dihantar sebaik pembayaran
+disahkan (termasuk pindahan bank yang diluluskan admin):
+
+- **Emel resit** — tajuk dan teks pengenalan boleh disunting; jadual butiran
+  dijana automatik daripada rekod sumbangan. Resit PDF dilampirkan (boleh
+  dimatikan).
+- **WhatsApp** — pengesahan melalui Murpati, **dimatikan secara lalai** kerana
+  ia menggunakan kuota Murpati dan perlukan peranti disambung. Boleh sertakan
+  resit PDF sebagai lampiran. Dilangkau jika pembayar tiada no. telefon.
+
+Tag: `{{nama}}`, `{{rujukan}}`, `{{jumlah}}`, `{{hari}}`, `{{kategori}}`,
+`{{tarikh}}`, `{{resit}}`. Tetapan disimpan di bawah kunci `payment_success`
+dalam `site_settings`.
 
 ### Susulan pembayaran (follow-up)
 

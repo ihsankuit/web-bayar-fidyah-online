@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendReceiptEmail } from "@/lib/resend";
+import { sendPaymentSuccessWhatsApp } from "@/lib/notifications";
 import { emitDonationEvent } from "@/lib/webhooks";
 import { sendServerConversion } from "@/lib/tracking/conversions";
 import type { Donation } from "@/lib/database.types";
@@ -52,6 +53,7 @@ export async function settleDonationByReference(
   // response instead of waiting on Resend/the webhook receiver.
   if (paid && !alreadyPaid) {
     after(() => sendReceiptEmail(donation));
+    after(() => sendPaymentSuccessWhatsApp(donation));
     after(() => emitDonationEvent("donation.paid", donation));
   }
 
@@ -90,6 +92,7 @@ export async function markDonationPaid(
 
   const donation = updated ?? existing;
   after(() => sendReceiptEmail(donation));
+  after(() => sendPaymentSuccessWhatsApp(donation));
   after(() => sendServerConversion(donation));
   after(() => emitDonationEvent("donation.paid", donation));
   return donation;
