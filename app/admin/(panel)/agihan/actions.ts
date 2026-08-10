@@ -6,7 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMYR, slugify } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
 import { logActivity } from "@/lib/activity-log";
-import type { FidyahDistributionRecipient } from "@/lib/database.types";
+import { parseContacts } from "@/lib/contacts";
+import type {
+  FidyahDistributionRecipient,
+  FidyahDistributionRecipientSource,
+} from "@/lib/database.types";
 import {
   getMurpatiSettings,
   isMurpatiSessionConnected,
@@ -37,6 +41,8 @@ interface Recipient {
   categories: string[];
   /** For {{negeri}} — the first non-null negeri found among their donations. */
   negeri: string | null;
+  /** Imported contacts carry no donation figures — see applyTemplateVariables. */
+  source: FidyahDistributionRecipientSource;
 }
 
 interface RecipientResult extends Recipient {
@@ -47,16 +53,22 @@ interface RecipientResult extends Recipient {
 /**
  * Substitutes variable tags with values resolved for this recipient:
  * {{nama}}, {{jumlah}}, {{hari}}, {{kategori}}, {{negeri}}.
+ *
+ * An imported contact has no donation behind it, so the donation-derived tags
+ * render as "-" rather than a misleading "RM 0.00" / "0 hari".
  */
 function applyTemplateVariables(message: string, recipient: Recipient): string {
-  const categoryLabel =
-    recipient.categories.map((id) => getCategory(id)?.title ?? id).join(" & ") ||
-    "-";
+  const imported = recipient.source === "import";
+  const categoryLabel = imported
+    ? "-"
+    : recipient.categories
+        .map((id) => getCategory(id)?.title ?? id)
+        .join(" & ") || "-";
 
   return message
-    .replaceAll("{{nama}}", recipient.name)
-    .replaceAll("{{jumlah}}", formatMYR(recipient.amountSen))
-    .replaceAll("{{hari}}", String(recipient.days))
+    .replaceAll("{{nama}}", recipient.name || "-")
+    .replaceAll("{{jumlah}}", imported ? "-" : formatMYR(recipient.amountSen))
+    .replaceAll("{{hari}}", imported ? "-" : String(recipient.days))
     .replaceAll("{{kategori}}", categoryLabel)
     .replaceAll("{{negeri}}", recipient.negeri ?? "-");
 }
@@ -134,10 +146,72 @@ async function resolveRecipients(
         days,
         categories: row.category ? [row.category] : [],
         negeri: row.negeri ?? null,
+        source: "donation",
       });
     }
   }
   return Array.from(byPhone.values());
+}
+
+/**
+ * Full recipient list for a blast: paid donors in the date range (when one is
+ * given) plus any imported contacts, deduped by phone. Donation records win
+ * on a clash so the variable tags keep their real figures.
+ */
+async function buildRecipientList(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  dateFrom: string,
+  dateTo: string,
+  importedRaw: string
+): Promise<{ recipients: Recipient[]; skipped: number[]; duplicates: number }> {
+  const fromDonations =
+    dateFrom && dateTo
+      ? await resolveRecipients(supabase, dateFrom, dateTo)
+      : [];
+
+  const parsed = parseContacts(importedRaw);
+  const byPhone = new Map<string, Recipient>();
+
+  for (const r of fromDonations) byPhone.set(r.phone, r);
+
+  let duplicates = parsed.duplicates;
+  for (const contact of parsed.contacts) {
+    if (byPhone.has(contact.phone)) {
+      duplicates++;
+      continue;
+    }
+    byPhone.set(contact.phone, {
+      name: contact.name,
+      phone: contact.phone,
+      amountSen: 0,
+      days: 0,
+      categories: [],
+      negeri: null,
+      source: "import",
+    });
+  }
+
+  return {
+    recipients: Array.from(byPhone.values()),
+    skipped: parsed.skipped,
+    duplicates,
+  };
+}
+
+/** Reads the pasted textarea and any uploaded CSV into one blob of lines. */
+async function collectImportedRaw(formData: FormData): Promise<string> {
+  const pasted = ((formData.get("contacts_text") as string) || "").trim();
+  const file = formData.get("contacts_file") as File | null;
+
+  let fromFile = "";
+  if (file && file.size > 0) {
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error("Saiz fail kontak melebihi had 2MB.");
+    }
+    fromFile = await file.text();
+  }
+
+  return [pasted, fromFile].filter(Boolean).join("\n");
 }
 
 export interface PreviewState {
@@ -145,27 +219,135 @@ export interface PreviewState {
   checked?: boolean;
   count?: number;
   names?: string[];
+  fromDonations?: number;
+  fromImport?: number;
+  skipped?: number[];
+  duplicates?: number;
 }
 
-/** Resolves and previews recipients for a date range, without sending anything. */
+/**
+ * Validates the recipient selection. Either a date range or an imported
+ * contact list (or both) is enough — a blast to an imported list alone is a
+ * legitimate use.
+ */
+function validateSelection(
+  dateFrom: string,
+  dateTo: string,
+  importedRaw: string
+): string | null {
+  if (!dateFrom && !dateTo && !importedRaw) {
+    return "Sila pilih julat tarikh atau import senarai kontak.";
+  }
+  if ((dateFrom && !dateTo) || (!dateFrom && dateTo)) {
+    return "Sila lengkapkan kedua-dua tarikh, atau kosongkan kedua-duanya.";
+  }
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    return "Tarikh 'dari' mesti sebelum atau sama dengan tarikh 'hingga'.";
+  }
+  return null;
+}
+
+/** Resolves and previews recipients, without sending anything. */
 export async function previewRecipients(
   _prev: PreviewState,
   formData: FormData
 ): Promise<PreviewState> {
   const { supabase } = await requireUser();
-  const dateFrom = formData.get("date_from") as string;
-  const dateTo = formData.get("date_to") as string;
+  const dateFrom = (formData.get("date_from") as string) || "";
+  const dateTo = (formData.get("date_to") as string) || "";
 
-  if (!dateFrom || !dateTo) return { error: "Sila pilih julat tarikh." };
-  if (dateFrom > dateTo)
-    return { error: "Tarikh 'dari' mesti sebelum atau sama dengan tarikh 'hingga'." };
+  let importedRaw: string;
+  try {
+    importedRaw = await collectImportedRaw(formData);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Fail tidak sah." };
+  }
 
-  const recipients = await resolveRecipients(supabase, dateFrom, dateTo);
+  const invalid = validateSelection(dateFrom, dateTo, importedRaw);
+  if (invalid) return { error: invalid };
+
+  const { recipients, skipped, duplicates } = await buildRecipientList(
+    supabase,
+    dateFrom,
+    dateTo,
+    importedRaw
+  );
 
   return {
     checked: true,
     count: recipients.length,
-    names: recipients.slice(0, 12).map((r) => r.name),
+    names: recipients.slice(0, 12).map((r) => r.name || r.phone),
+    fromDonations: recipients.filter((r) => r.source === "donation").length,
+    fromImport: recipients.filter((r) => r.source === "import").length,
+    skipped,
+    duplicates,
+  };
+}
+
+export interface TestState {
+  error?: string;
+  ok?: boolean;
+  message?: string;
+}
+
+/** Sample values so a test send shows exactly how the tags will render. */
+const TEST_RECIPIENT: Omit<Recipient, "phone"> = {
+  name: "Ahmad bin Ali",
+  amountSen: 1400,
+  days: 7,
+  categories: ["uzur_tua"],
+  negeri: "Selangor",
+  source: "donation",
+};
+
+/**
+ * Sends the composed message to one number so the admin can see it in
+ * WhatsApp before blasting. Variable tags are filled with sample values, and
+ * nothing is recorded against the distribution history.
+ */
+export async function sendTestBlast(
+  _prev: TestState,
+  formData: FormData
+): Promise<TestState> {
+  await requireUser();
+
+  const rawPhone = ((formData.get("test_phone") as string) || "").trim();
+  const message = ((formData.get("message") as string) || "").trim();
+  const file = formData.get("image") as File | null;
+
+  const phone = normalizeMalaysianPhone(rawPhone);
+  if (!phone) return { error: "No. telefon ujian tidak sah." };
+  if (!message) return { error: "Sila masukkan makluman agihan dahulu." };
+
+  const settings = await getMurpatiSettings();
+  if (!settings.apiKey || !settings.sessionId) {
+    return {
+      error:
+        "WhatsApp (Murpati) belum disediakan. Sila isi API Key & Session ID di Integrasi.",
+    };
+  }
+  if (!(await isMurpatiSessionConnected(settings))) {
+    return {
+      error:
+        "Peranti WhatsApp Murpati tidak disambung. Sila semak status peranti di murpati.com/devices.",
+    };
+  }
+
+  // The image is only uploaded on a real send; a test goes out as text so it
+  // never leaves a stray file in storage.
+  const note = file && file.size > 0 ? " (gambar tidak disertakan dalam ujian)" : "";
+  const body =
+    "[UJIAN] " +
+    applyTemplateVariables(message, { ...TEST_RECIPIENT, phone });
+
+  const result = await sendMurpatiText(settings, phone, body);
+  if (!result.ok) return { error: `Ujian gagal dihantar — ${result.error}` };
+
+  await logActivity("agihan.test", { phone });
+
+  return {
+    ok: true,
+    message: `Mesej ujian dihantar ke ${rawPhone}${note}.`,
   };
 }
 
@@ -188,14 +370,20 @@ export async function sendAgihanUpdate(
 ): Promise<SendState> {
   const { supabase, email } = await requireUser();
 
-  const dateFrom = formData.get("date_from") as string;
-  const dateTo = formData.get("date_to") as string;
+  const dateFrom = (formData.get("date_from") as string) || "";
+  const dateTo = (formData.get("date_to") as string) || "";
   const message = ((formData.get("message") as string) || "").trim();
   const file = formData.get("image") as File | null;
 
-  if (!dateFrom || !dateTo) return { error: "Sila pilih julat tarikh." };
-  if (dateFrom > dateTo)
-    return { error: "Tarikh 'dari' mesti sebelum atau sama dengan tarikh 'hingga'." };
+  let importedRaw: string;
+  try {
+    importedRaw = await collectImportedRaw(formData);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Fail tidak sah." };
+  }
+
+  const invalid = validateSelection(dateFrom, dateTo, importedRaw);
+  if (invalid) return { error: invalid };
   if (!message) return { error: "Sila masukkan makluman agihan." };
   if (file && file.size > 10 * 1024 * 1024)
     return { error: "Saiz gambar melebihi had 10MB." };
@@ -216,10 +404,16 @@ export async function sendAgihanUpdate(
     };
   }
 
-  const recipients = await resolveRecipients(supabase, dateFrom, dateTo);
+  const { recipients } = await buildRecipientList(
+    supabase,
+    dateFrom,
+    dateTo,
+    importedRaw
+  );
   if (recipients.length === 0) {
     return {
-      error: "Tiada pembayar (dengan no. telefon) dijumpai dalam julat tarikh ini.",
+      error:
+        "Tiada penerima dijumpai — julat tarikh ini tiada pembayar dengan no. telefon, dan senarai import kosong.",
     };
   }
 
@@ -255,8 +449,8 @@ export async function sendAgihanUpdate(
     .insert({
       message,
       image_url: imageUrl,
-      date_from: dateFrom,
-      date_to: dateTo,
+      date_from: dateFrom || null,
+      date_to: dateTo || null,
       recipient_count: recipients.length,
       sent_count: sent,
       failed_count: failed,
@@ -278,12 +472,13 @@ export async function sendAgihanUpdate(
       days: r.days,
       category: r.categories.join(",") || null,
       negeri: r.negeri,
+      source: r.source,
     }))
   );
 
   await logActivity("agihan.send", {
-    date_from: dateFrom,
-    date_to: dateTo,
+    date_from: dateFrom || "-",
+    date_to: dateTo || "-",
     recipient_count: recipients.length,
     sent,
     failed,
@@ -332,6 +527,7 @@ export async function retryFailedRecipients(formData: FormData) {
         days: recipient.days,
         categories: recipient.category ? recipient.category.split(",") : [],
         negeri: recipient.negeri,
+        source: recipient.source ?? "donation",
       },
       distribution.message,
       distribution.image_url

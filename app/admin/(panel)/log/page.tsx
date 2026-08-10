@@ -33,6 +33,7 @@ const ACTION_LABELS: Record<string, string> = {
   "media.delete": "Padam media",
   "agihan.send": "Hantar makluman agihan fidyah (WhatsApp)",
   "agihan.retry": "Cuba hantar semula agihan fidyah yang gagal",
+  "agihan.test": "Hantar mesej ujian agihan fidyah",
   "admin.create": "Tambah pentadbir baharu",
   "admin.delete": "Padam pentadbir",
 };
