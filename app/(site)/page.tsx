@@ -96,6 +96,73 @@ export default async function HomePage() {
     areaServed: NEGERI,
   };
 
+  // JSON-LD: Service schema — describes what is actually offered here, which
+  // Organization alone doesn't convey.
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Bayaran Fidyah Puasa Online",
+    serviceType: "Pembayaran Fidyah Puasa Ramadan",
+    provider: {
+      "@type": "Organization",
+      name: "Bayar Fidyah Online",
+      url: SITE_URL,
+    },
+    areaServed: "Malaysia",
+    url: SITE_URL,
+    description:
+      "Platform pembayaran fidyah puasa dalam talian di Malaysia dengan kalkulator automatik.",
+  };
+
+  // JSON-LD: BreadcrumbList — the blog pages carry a real trail; this single
+  // entry just anchors the homepage as the root of that hierarchy.
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Bayar Fidyah Online",
+        item: SITE_URL,
+      },
+    ],
+  };
+
+  // JSON-LD: HowTo — mirrors the three steps a payer actually goes through on
+  // this page, so the flow is machine-readable.
+  const howToJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "Cara Bayar Fidyah Online",
+    description:
+      "Tiga langkah menunaikan fidyah puasa secara dalam talian di Malaysia.",
+    inLanguage: "ms",
+    totalTime: "PT3M",
+    step: [
+      {
+        "@type": "HowToStep",
+        position: 1,
+        name: "Kira jumlah fidyah",
+        text: "Masukkan bilangan hari puasa yang ditinggalkan dan pilih kategori anda. Kalkulator mengira jumlah secara automatik mengikut kadar semasa.",
+        url: `${SITE_URL}/#kira`,
+      },
+      {
+        "@type": "HowToStep",
+        position: 2,
+        name: "Isi butiran & bayar",
+        text: "Lengkapkan nama, emel dan negeri, kemudian pilih kaedah bayaran — FPX, kad, QR melalui CHIP, atau pindahan bank manual.",
+        url: `${SITE_URL}/#kira`,
+      },
+      {
+        "@type": "HowToStep",
+        position: 3,
+        name: "Terima resit",
+        text: "Resit rasmi dihantar automatik ke emel anda sebaik pembayaran disahkan, dan boleh dimuat turun sebagai PDF.",
+      },
+    ],
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <script
@@ -114,6 +181,24 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(serviceJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(howToJsonLd).replace(/</g, "\\u003c"),
         }}
       />
       <Navbar />
