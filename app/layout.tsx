@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { getSeoSettings } from "@/lib/seo";
+import { SITE_URL } from "@/lib/site-url";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -10,13 +11,11 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
-
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoSettings();
 
   return {
-    metadataBase: new URL(siteUrl),
+    metadataBase: new URL(SITE_URL),
     title: {
       default: seo.title,
       template: "%s | Bayar Fidyah Online",
@@ -37,13 +36,19 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: {
       canonical: "/",
+      // Single-language site: ms-MY is the only version, and x-default points
+      // at it so Google has no ambiguity about what to serve elsewhere.
+      languages: {
+        "ms-MY": "/",
+        "x-default": "/",
+      },
     },
     openGraph: {
       title: seo.title,
       description: seo.description,
       type: "website",
       locale: "ms_MY",
-      url: siteUrl,
+      url: SITE_URL,
       siteName: "Bayar Fidyah Online",
     },
     twitter: {

@@ -4,6 +4,7 @@ import { createPurchase, getPurchase } from "@/lib/chip";
 import { settleDonationByReference } from "@/lib/donations";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import type { Donation } from "@/lib/database.types";
+import { normalizeOrigin } from "@/lib/site-url";
 
 /**
  * GET /bayar/[reference] — "continue payment" link handed back to a payer
@@ -23,7 +24,9 @@ export async function GET(
   { params }: { params: Promise<{ reference: string }> }
 ) {
   const { reference } = await params;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+  const siteUrl = normalizeOrigin(
+    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+  );
   const statusUrl = new URL("/status", siteUrl);
 
   if (!(await checkRateLimit(`resume:${clientIp(request)}`, 20, 600))) {

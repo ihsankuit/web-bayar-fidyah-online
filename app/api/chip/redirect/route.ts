@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPurchase } from "@/lib/chip";
 import { settleDonationByReference } from "@/lib/donations";
+import { normalizeOrigin } from "@/lib/site-url";
 
 /**
  * CHIP `success_redirect` / `failure_redirect` handler (browser GET after
@@ -14,7 +15,9 @@ export async function GET(request: Request) {
   const reference = url.searchParams.get("ref");
   const result = url.searchParams.get("result");
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? url.origin;
+  const siteUrl = normalizeOrigin(
+    process.env.NEXT_PUBLIC_SITE_URL ?? url.origin
+  );
   const statusUrl = new URL("/status", siteUrl);
 
   if (!reference) {

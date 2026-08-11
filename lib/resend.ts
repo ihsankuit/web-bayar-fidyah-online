@@ -7,12 +7,10 @@ import {
   applySuccessVariables,
   getPaymentSuccessSettings,
 } from "@/lib/notifications";
+import { SITE_URL } from "@/lib/site-url";
 
 const FROM =
   process.env.RESEND_FROM_EMAIL ?? "Fidyah Online <onboarding@resend.dev>";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
 function getClient(): Resend | null {
   const key = process.env.RESEND_API_KEY;
@@ -63,7 +61,7 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
         ${row("Tarikh", donation.paid_at ? formatDate(donation.paid_at) : formatDate(donation.created_at))}
       </table>
       <p style="margin: 20px 0;">
-        <a href="${siteUrl}/resit/${encodeURIComponent(donation.reference)}"
+        <a href="${SITE_URL}/resit/${encodeURIComponent(donation.reference)}"
            style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
           Muat Turun Resit (PDF)
         </a>

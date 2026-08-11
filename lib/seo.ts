@@ -8,7 +8,9 @@ export interface SeoSettings {
 }
 
 export const DEFAULT_SEO: SeoSettings = {
-  title: "Bayar Fidyah Online — Tunaikan Fidyah Puasa Anda di Malaysia",
+  // NOTE: only used when Admin > SEO has no saved title — the stored value
+  // wins. Change it there too, or this default stays invisible.
+  title: "Bayar Fidyah Online — Cara Bayar Fidyah Puasa & Kalkulator 2026/2027",
   description:
     "Bayar fidyah puasa Ramadan secara online di semua negeri di Malaysia — Selangor, Kedah, Johor, Pahang, Perak & lain-lain. Kiraan automatik, pembayaran selamat FPX, kad & QR, resit ke emel. Bayar dalam 3 minit — kadar RM2.00 sehari.",
   keywords: [
