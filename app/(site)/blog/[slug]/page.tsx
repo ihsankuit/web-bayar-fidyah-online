@@ -9,10 +9,9 @@ import { Markdown } from "@/components/site/markdown";
 import { createClient } from "@/lib/supabase/public";
 import type { BlogPost } from "@/lib/database.types";
 import { formatDateOnly } from "@/lib/utils";
+import { SITE_URL } from "@/lib/site-url";
 
 export const revalidate = 60;
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
 async function getPost(slug: string): Promise<BlogPost | null> {
   try {
@@ -86,7 +85,7 @@ export async function generateMetadata({
       title: metaTitle,
       description: metaDescription,
       type: "article",
-      url: `${siteUrl}/blog/${post.slug}`,
+      url: `${SITE_URL}/blog/${post.slug}`,
       ...(post.cover_image ? { images: [post.cover_image] } : {}),
     },
     twitter: {
@@ -109,7 +108,7 @@ export default async function BlogPostPage({
 
   const relatedPosts = await getRelatedPosts(slug);
   const readingTime = estimateReadingTime(post.content);
-  const postUrl = `${siteUrl}/blog/${post.slug}`;
+  const postUrl = `${SITE_URL}/blog/${post.slug}`;
 
   // JSON-LD: Article schema
   const articleJsonLd = {
@@ -126,7 +125,7 @@ export default async function BlogPostPage({
     publisher: {
       "@type": "Organization",
       name: "Bayar Fidyah Online",
-      url: siteUrl,
+      url: SITE_URL,
     },
     ...(post.cover_image ? { image: post.cover_image } : {}),
     inLanguage: "ms",
@@ -141,13 +140,13 @@ export default async function BlogPostPage({
         "@type": "ListItem",
         position: 1,
         name: "Laman Utama",
-        item: siteUrl,
+        item: SITE_URL,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Blog",
-        item: `${siteUrl}/blog`,
+        item: `${SITE_URL}/blog`,
       },
       {
         "@type": "ListItem",

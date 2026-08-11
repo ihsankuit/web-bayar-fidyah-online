@@ -2,9 +2,7 @@ import { createClient } from "@/lib/supabase/public";
 import type { Donation, FollowUpSettings } from "@/lib/database.types";
 import { formatMYR } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
+import { SITE_URL } from "@/lib/site-url";
 
 /** Variable tags available in follow-up templates, for the admin UI. */
 export const FOLLOWUP_TAGS: { tag: string; label: string }[] = [
@@ -55,7 +53,7 @@ export async function getFollowUpSettings(): Promise<FollowUpSettings> {
  * `/bayar/[reference]`, which reissues one if the original has gone stale.
  */
 export function paymentLink(donation: Donation): string {
-  return `${siteUrl}/bayar/${encodeURIComponent(donation.reference)}`;
+  return `${SITE_URL}/bayar/${encodeURIComponent(donation.reference)}`;
 }
 
 /** Substitutes the follow-up variable tags with this donation's own values. */

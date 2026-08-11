@@ -11,6 +11,7 @@ import { emitDonationEvent } from "@/lib/webhooks";
 import { parseCookieHeader } from "@/lib/tracking/cookies";
 import { parseGaClientId } from "@/lib/tracking/google";
 import type { Donation } from "@/lib/database.types";
+import { normalizeOrigin } from "@/lib/site-url";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -109,9 +110,9 @@ export async function POST(request: Request) {
   }
 
   const reference = makeReference();
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    new URL(request.url).origin;
+  const siteUrl = normalizeOrigin(
+    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+  );
 
   let supabase;
   try {

@@ -9,9 +9,7 @@ import {
   sendMurpatiMedia,
   sendMurpatiText,
 } from "@/lib/murpati";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
+import { SITE_URL } from "@/lib/site-url";
 
 /** Variable tags available in payment-success templates, for the admin UI. */
 export const SUCCESS_TAGS: { tag: string; label: string }[] = [
@@ -62,7 +60,7 @@ export async function getPaymentSuccessSettings(): Promise<PaymentSuccessSetting
 
 /** Public URL of this donation's PDF receipt. */
 export function receiptLink(donation: Donation): string {
-  return `${siteUrl}/resit/${encodeURIComponent(donation.reference)}`;
+  return `${SITE_URL}/resit/${encodeURIComponent(donation.reference)}`;
 }
 
 /** Substitutes the payment-success variable tags with this donation's values. */

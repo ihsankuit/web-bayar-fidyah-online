@@ -39,8 +39,7 @@ import { getGalleryItems } from "@/lib/gallery";
 import { getRecentSocialProof } from "@/lib/social-proof";
 import { formatMYR } from "@/lib/utils";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
+import { SITE_URL } from "@/lib/site-url";
 
 export const revalidate = 60;
 
@@ -59,14 +58,14 @@ export default async function HomePage() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Bayar Fidyah Online",
-    url: siteUrl,
+    url: SITE_URL,
     description:
       "Platform pembayaran fidyah puasa Ramadan secara dalam talian di Malaysia.",
     inLanguage: "ms",
     publisher: {
       "@type": "Organization",
       name: "Bayar Fidyah Online",
-      url: siteUrl,
+      url: SITE_URL,
     },
   };
 
@@ -91,7 +90,7 @@ export default async function HomePage() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Bayar Fidyah Online",
-    url: siteUrl,
+    url: SITE_URL,
     description:
       "Platform pembayaran fidyah puasa Ramadan dalam talian yang menyokong semua negeri di Malaysia.",
     areaServed: NEGERI,

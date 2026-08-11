@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/public";
 import type { BlogPost } from "@/lib/database.types";
 import { formatDateOnly } from "@/lib/utils";
+import { SITE_URL } from "@/lib/site-url";
 
 export const metadata = {
   title: "Blog — Panduan Fidyah, Puasa & Ibadah",
@@ -19,8 +20,6 @@ export const metadata = {
 };
 
 export const revalidate = 60;
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bayarfidyahonline.com";
 
 /** Estimate reading time in minutes from markdown content. */
 function estimateReadingTime(content: string): number {
@@ -73,13 +72,13 @@ export default async function BlogIndexPage({
                 "@type": "ListItem",
                 position: 1,
                 name: "Laman Utama",
-                item: siteUrl,
+                item: SITE_URL,
               },
               {
                 "@type": "ListItem",
                 position: 2,
                 name: "Blog",
-                item: `${siteUrl}/blog`,
+                item: `${SITE_URL}/blog`,
               },
             ],
           }).replace(/</g, "\\u003c"),
