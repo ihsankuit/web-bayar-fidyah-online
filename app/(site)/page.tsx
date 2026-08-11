@@ -40,6 +40,7 @@ import { getRecentSocialProof } from "@/lib/social-proof";
 import { formatMYR } from "@/lib/utils";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
 import { SITE_URL } from "@/lib/site-url";
+import { ORG } from "@/lib/organization";
 
 export const revalidate = 60;
 
@@ -83,16 +84,40 @@ export default async function HomePage() {
     })),
   };
 
-  // JSON-LD: Organization schema with service area (all Malaysian states) —
-  // signals to search/answer engines that fidyah payment is available
-  // nationwide, not just where the office is physically located.
+  // JSON-LD: Organization schema for the real-world non-profit operating this
+  // site. Carries the same NAP as the Google Business Profile so the two
+  // reinforce each other, plus the nationwide service area — the office sits
+  // in Kajang, but fidyah payment is served across every state.
+  //
+  // Deliberately no aggregateRating: the 5.0/10 reviews live on the Google
+  // Business Profile, and marking up your own organisation's reviews on your
+  // own site breaches Google's review-snippet guidelines.
   const organizationJsonLd = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "Bayar Fidyah Online",
+    "@type": ORG.schemaType,
+    name: ORG.name,
+    alternateName: "Bayar Fidyah Online",
     url: SITE_URL,
+    logo: `${SITE_URL}${ORG.logoPath}`,
     description:
       "Platform pembayaran fidyah puasa Ramadan dalam talian yang menyokong semua negeri di Malaysia.",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: ORG.streetAddress,
+      addressLocality: ORG.locality,
+      addressRegion: ORG.region,
+      postalCode: ORG.postalCode,
+      addressCountry: ORG.country,
+    },
+    telephone: ORG.phoneE164,
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: ORG.phoneE164,
+      contactType: "customer support",
+      areaServed: "MY",
+      availableLanguage: ["ms", "en"],
+    },
+    sameAs: [ORG.website],
     areaServed: NEGERI,
   };
 
@@ -104,8 +129,8 @@ export default async function HomePage() {
     name: "Bayaran Fidyah Puasa Online",
     serviceType: "Pembayaran Fidyah Puasa Ramadan",
     provider: {
-      "@type": "Organization",
-      name: "Bayar Fidyah Online",
+      "@type": ORG.schemaType,
+      name: ORG.name,
       url: SITE_URL,
     },
     areaServed: "Malaysia",
