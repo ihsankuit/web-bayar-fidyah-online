@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { Logo } from "@/components/site/logo";
 import { Globe, MapPin, Phone } from "lucide-react";
-import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
+import { ORG, ORG_ADDRESS_LINE, ORG_SOCIAL } from "@/lib/organization";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  YoutubeIcon,
+} from "@/components/site/social-icons";
 
 export function Footer() {
   return (
@@ -50,6 +55,8 @@ export function Footer() {
                 </a>
               </p>
             </address>
+
+            <SocialLinks />
           </div>
 
           <div className="grid grid-cols-2 gap-8">
@@ -63,6 +70,7 @@ export function Footer() {
               <FooterLink href="/blog">Blog</FooterLink>
               <FooterLink href="/#galeri">Galeri</FooterLink>
               <FooterLink href="/#kategori">Kategori</FooterLink>
+              <FooterLink href="/privasi">Dasar Privasi</FooterLink>
             </FooterCol>
           </div>
         </div>
@@ -73,6 +81,44 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+const SOCIAL_ICONS: Record<
+  string,
+  (props: { className?: string }) => React.ReactElement
+> = {
+  Facebook: FacebookIcon,
+  Instagram: InstagramIcon,
+  YouTube: YoutubeIcon,
+};
+
+/**
+ * Renders only the profiles that have a URL filled in (see lib/organization.ts),
+ * so an account the charity hasn't set up yet never shows as a dead link.
+ */
+function SocialLinks() {
+  const links = ORG_SOCIAL.filter((s) => s.url);
+  if (links.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-3">
+      {links.map(({ label, url }) => {
+        const Icon = SOCIAL_ICONS[label];
+        return (
+          <a
+            key={label}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${ORG.name} di ${label}`}
+            className="rounded-full border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            {Icon ? <Icon className="h-4 w-4" /> : label}
+          </a>
+        );
+      })}
+    </div>
   );
 }
 

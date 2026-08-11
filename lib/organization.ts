@@ -29,5 +29,24 @@ export const ORG = {
   logoPath: "/logo-ihsanku.png",
 } as const;
 
+/**
+ * Official social profiles. Blank entries are skipped everywhere, so an
+ * unfilled one simply doesn't render — no dead links.
+ *
+ * These also feed schema.org `sameAs`, which is how Google ties this site to
+ * the same real-world entity as the Business Profile and the social accounts.
+ * Use the canonical profile URL, not a share or deep link.
+ */
+export const ORG_SOCIAL: { label: string; url: string }[] = [
+  { label: "Facebook", url: "" },
+  { label: "Instagram", url: "" },
+  { label: "YouTube", url: "" },
+];
+
+/** Non-empty social URLs, for schema.org `sameAs`. */
+export const ORG_SAME_AS = [ORG.website, ...ORG_SOCIAL.map((s) => s.url)].filter(
+  Boolean
+);
+
 /** Single-line address, as shown in the footer. */
 export const ORG_ADDRESS_LINE = `${ORG.streetAddress}, ${ORG.postalCode} ${ORG.locality}, ${ORG.region}`;
