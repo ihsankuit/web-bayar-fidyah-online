@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/site/logo";
+import { Globe, MapPin, Phone } from "lucide-react";
+import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
 
 export function Footer() {
   return (
@@ -16,6 +18,38 @@ export function Footer() {
               Ihsan untuk golongan asnaf dan fakir miskin di Malaysia dan luar
               negara.
             </p>
+
+            {/* Visible NAP, matching the Google Business Profile exactly.
+                Local ranking leans on this being crawlable on the page, not
+                only inside JSON-LD — and it doubles as a trust signal for a
+                site that takes payments. */}
+            <address className="space-y-2 text-sm not-italic text-muted-foreground">
+              <p className="font-medium text-foreground">{ORG.name}</p>
+              <p className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{ORG_ADDRESS_LINE}</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone className="h-4 w-4 shrink-0" />
+                <a
+                  href={`tel:${ORG.phoneE164}`}
+                  className="transition-colors hover:text-foreground"
+                >
+                  {ORG.phoneDisplay}
+                </a>
+              </p>
+              <p className="flex items-center gap-2">
+                <Globe className="h-4 w-4 shrink-0" />
+                <a
+                  href={ORG.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-foreground"
+                >
+                  ihsanku.org
+                </a>
+              </p>
+            </address>
           </div>
 
           <div className="grid grid-cols-2 gap-8">

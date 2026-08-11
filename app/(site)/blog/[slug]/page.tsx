@@ -228,7 +228,7 @@ export default async function BlogPostPage({
               Mudah, pantas, dan selamat. Bayar fidyah online dalam masa 5 minit.
             </p>
             <Link
-              href="/"
+              href="/#kira"
               className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Bayar Fidyah Sekarang
