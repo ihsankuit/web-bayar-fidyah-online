@@ -40,7 +40,7 @@ import { getRecentSocialProof } from "@/lib/social-proof";
 import { formatMYR } from "@/lib/utils";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
 import { SITE_URL } from "@/lib/site-url";
-import { ORG } from "@/lib/organization";
+import { ORG, ORG_SAME_AS } from "@/lib/organization";
 
 export const revalidate = 60;
 
@@ -117,7 +117,7 @@ export default async function HomePage() {
       areaServed: "MY",
       availableLanguage: ["ms", "en"],
     },
-    sameAs: [ORG.website],
+    sameAs: ORG_SAME_AS,
     areaServed: NEGERI,
   };
 
