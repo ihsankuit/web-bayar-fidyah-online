@@ -179,6 +179,8 @@ export interface LandingContent {
   bank_name: string;
   bank_account_name: string;
   bank_account_number: string;
+  /** DuitNow/bank QR shown alongside the account details. Hidden when empty. */
+  bank_qr_image_url: string;
   /**
    * WhatsApp number (with country code, e.g. 60123456789) for the floating
    * "chat with admin" button. Empty hides the button.

@@ -188,6 +188,7 @@ export async function POST(request: Request) {
         name: content.bank_name,
         accountName: content.bank_account_name,
         accountNumber: content.bank_account_number,
+        qrImageUrl: content.bank_qr_image_url,
       },
     });
   }
