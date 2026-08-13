@@ -85,11 +85,12 @@ export function FollowUpButton({
         }
       >
         <Send /> Susulan
-        {donation.followup_count > 0 && (
-          <span className="ml-1 rounded-full bg-muted px-1.5 text-xs text-muted-foreground">
-            {donation.followup_count}
-          </span>
-        )}
+        {/* Always shown, including zero — an admin scanning the list needs to
+            see "not chased yet" as readily as "chased twice". Falls back to 0
+            so a missing column renders a number rather than nothing. */}
+        <span className="ml-1 rounded-full bg-muted px-1.5 text-xs text-muted-foreground">
+          {donation.followup_count ?? 0}
+        </span>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>

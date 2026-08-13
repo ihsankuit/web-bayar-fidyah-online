@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2, Minus, Plus } from "lucide-react";
+import { Check, Copy, Download, Loader2, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,12 @@ import type { PaymentMethod, UpsellSettings } from "@/lib/database.types";
 interface ManualTransferData {
   reference: string;
   amountSen: number;
-  bank: { name: string; accountName: string; accountNumber: string };
+  bank: {
+    name: string;
+    accountName: string;
+    accountNumber: string;
+    qrImageUrl?: string;
+  };
 }
 
 export function FidyahForm({
@@ -473,16 +478,43 @@ function ManualTransferCard({ data }: { data: ManualTransferData }) {
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-          <Row label="Jumlah" value={formatMYR(data.amountSen)} />
-          <Row label="Rujukan" value={data.reference} />
+          {/* Amount, reference and account number are copyable: typing them by
+              hand is where transfers go wrong, and a mistyped reference means
+              an admin has to reconcile the payment manually. */}
+          <Row label="Jumlah" value={formatMYR(data.amountSen)} copyable />
+          <Row label="Rujukan" value={data.reference} copyable />
           {data.bank.name && <Row label="Bank" value={data.bank.name} />}
           {data.bank.accountName && (
             <Row label="Nama akaun" value={data.bank.accountName} />
           )}
           {data.bank.accountNumber && (
-            <Row label="No. akaun" value={data.bank.accountNumber} />
+            <Row label="No. akaun" value={data.bank.accountNumber} copyable />
           )}
         </div>
+
+        {data.bank.qrImageUrl && (
+          <div className="space-y-3 rounded-lg border p-4 text-center">
+            <p className="text-sm font-medium">Atau imbas QR</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.bank.qrImageUrl}
+              alt="Kod QR pembayaran"
+              className="mx-auto h-56 w-56 rounded-md border bg-white object-contain p-2"
+            />
+            <Button variant="outline" size="sm" asChild>
+              <a href={data.bank.qrImageUrl} download target="_blank" rel="noopener noreferrer">
+                <Download className="h-4 w-4" /> Muat Turun QR
+              </a>
+            </Button>
+            {/* A payer on a phone can't scan a QR shown on that same phone, so
+                spell out the gallery route rather than leaving them stuck. */}
+            <p className="text-xs text-muted-foreground">
+              Guna telefon? Simpan QR di atas, kemudian buka aplikasi bank anda
+              → DuitNow QR → <strong>pilih dari galeri</strong>. Lebih mudah:
+              salin no. akaun dan buat pindahan biasa.
+            </p>
+          </div>
+        )}
 
         {uploaded ? (
           <div className="space-y-4 text-center">
@@ -527,11 +559,47 @@ function ManualTransferCard({ data }: { data: ManualTransferData }) {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+  copyable = false,
+}: {
+  label: string;
+  value: string;
+  copyable?: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Gagal menyalin. Sila salin secara manual.");
+    }
+  }
+
   return (
-    <div className="flex justify-between border-b border-border/60 py-1.5 last:border-0">
+    <div className="flex items-center justify-between gap-2 border-b border-border/60 py-1.5 last:border-0">
       <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+      <span className="flex items-center gap-1.5">
+        <span className="font-medium">{value}</span>
+        {copyable && (
+          <button
+            type="button"
+            onClick={copy}
+            aria-label={`Salin ${label}`}
+            className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-emerald-600" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+          </button>
+        )}
+      </span>
     </div>
   );
 }

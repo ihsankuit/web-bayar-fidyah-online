@@ -261,6 +261,17 @@ export function LandingEditor({ content }: { content: LandingContent }) {
             name="bank_account_number"
             defaultValue={content.bank_account_number}
           />
+          <Field
+            label="URL gambar QR (DuitNow) — pilihan"
+            name="bank_qr_image_url"
+            defaultValue={content.bank_qr_image_url}
+          />
+          <p className="text-xs text-muted-foreground">
+            Muat naik gambar QR di <strong>Media</strong>, salin URL dan tampal
+            di sini. Kosongkan untuk sembunyikan QR. Pembayar di telefon
+            digalakkan salin no. akaun; QR lebih berguna untuk pengguna desktop
+            dan mereka yang mahu imbas dari galeri.
+          </p>
         </CardContent>
       </Card>
 

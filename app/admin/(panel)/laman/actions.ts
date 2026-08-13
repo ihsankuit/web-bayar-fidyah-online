@@ -97,6 +97,8 @@ export async function saveLanding(
       (formData.get("bank_account_name") as string)?.trim() || "",
     bank_account_number:
       (formData.get("bank_account_number") as string)?.trim() || "",
+    bank_qr_image_url:
+      (formData.get("bank_qr_image_url") as string)?.trim() || "",
     whatsapp_number:
       (formData.get("whatsapp_number") as string)?.trim() || "",
     whatsapp_greeting:
