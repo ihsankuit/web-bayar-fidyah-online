@@ -326,15 +326,22 @@ function Field({
   label,
   name,
   defaultValue,
+  placeholder,
 }: {
   label: string;
   name: string;
   defaultValue: string;
+  placeholder?: string;
 }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} defaultValue={defaultValue} />
+      <Input
+        id={name}
+        name={name}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+      />
     </div>
   );
 }
