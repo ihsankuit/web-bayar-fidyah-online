@@ -24,7 +24,7 @@ export const DEFAULT_LANDING: LandingContent = {
   stats: [
     { label: "Pembayar", value: "1,200+" },
     { label: "Jumlah Terkumpul", value: "RM85,000+" },
-    { label: "Kadar Sehari", value: "RM2.00" },
+    { label: "Kadar Sehari", value: "RM4.00" },
   ],
   faqs: [
     {
@@ -50,7 +50,7 @@ export const DEFAULT_LANDING: LandingContent = {
     {
       question: "1 cupak beras bersamaan berapa gram atau berapa ringgit?",
       answer:
-        "Secupak beras lazimnya bersamaan kira-kira 700 gram (0.7kg) makanan asasi. Nilai wangnya berbeza mengikut harga semasa dan penetapan pihak berkuasa agama negeri — di laman ini, kadar semasa ialah RM2.00 sehari, dikira automatik oleh kalkulator di atas.",
+        "Secupak beras lazimnya bersamaan kira-kira 700 gram (0.7kg) makanan asasi. Nilai wangnya berbeza mengikut harga semasa dan penetapan pihak berkuasa agama negeri — di laman ini, kadar semasa ialah RM4.00 sehari, dikira automatik oleh kalkulator di atas.",
     },
     {
       question: "Adakah pembayaran ini selamat?",
@@ -71,12 +71,12 @@ export const DEFAULT_LANDING: LandingContent = {
     {
       question: "Berapakah kadar fidyah di Malaysia?",
       answer:
-        "Kadar fidyah di Malaysia ditetapkan oleh pihak berkuasa agama negeri berdasarkan harga secupak beras (700 gram) makanan asasi. Nilai semasa ialah RM2.00 sehari. Sila rujuk pejabat agama negeri masing-masing untuk pengesahan rasmi.",
+        "Kadar fidyah di Malaysia ditetapkan oleh pihak berkuasa agama negeri berdasarkan harga secupak beras (700 gram) makanan asasi. Nilai semasa ialah RM4.00 sehari. Sila rujuk pejabat agama negeri masing-masing untuk pengesahan rasmi.",
     },
     {
       question: "Bagaimana cara mengira fidyah puasa Ramadan?",
       answer:
-        "Cara kira fidyah puasa Ramadan adalah mudah: kalikan bilangan hari yang ditinggalkan dengan kadar fidyah Malaysia (RM2.00 sehari). Jika qada' dilewatkan melepasi Ramadan berikutnya, tambah gandaan mengikut bilangan tahun yang ditinggalkan. Gunakan kalkulator fidyah di laman ini untuk pengiraan automatik.",
+        "Cara kira fidyah puasa Ramadan adalah mudah: kalikan bilangan hari yang ditinggalkan dengan kadar fidyah Malaysia (RM4.00 sehari). Jika qada' dilewatkan melepasi Ramadan berikutnya, tambah gandaan mengikut bilangan tahun yang ditinggalkan. Gunakan kalkulator fidyah di laman ini untuk pengiraan automatik.",
     },
     {
       question: "Adakah fidyah dan qada' perlu dibayar sekali gus?",

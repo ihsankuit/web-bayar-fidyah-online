@@ -9,12 +9,12 @@
  * price of a cupak of rice. Where a person delays their qada' past the
  * following Ramadan, the fidyah compounds for each year of delay.
  *
- * The default rate below (RM2.00 / day) reflects the common baseline rate used
+ * The default rate below (RM4.00 / day) reflects the current baseline rate used
  * by several state religious authorities. Administrators can override the
  * effective rate from the admin dashboard (see `site_settings.fidyah_rate_sen`).
  */
 
-export const DEFAULT_FIDYAH_RATE_SEN = 200; // RM2.00 per day
+export const DEFAULT_FIDYAH_RATE_SEN = 400; // RM4.00 per day
 
 export type FidyahCategoryId =
   | "uzur_tua"

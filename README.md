@@ -324,6 +324,6 @@ npm run test    # ujian unit (Vitest) — kalkulator fidyah, tandatangan CHIP, d
 
 ## Penafian
 
-Kadar fidyah lalai (RM2.00/hari) hanyalah nilai asas. Sila rujuk pihak berkuasa
+Kadar fidyah lalai (RM4.00/hari) hanyalah nilai asas. Sila rujuk pihak berkuasa
 agama negeri masing-masing untuk kadar rasmi terkini. Kadar boleh diubah dari
 **Dashboard → Laman Utama**.
