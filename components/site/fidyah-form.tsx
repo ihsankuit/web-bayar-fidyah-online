@@ -166,7 +166,7 @@ export function FidyahForm({
     <>
     <Card className="border-primary/20 shadow-lg shadow-primary/5">
       <CardHeader>
-        <CardTitle className="text-2xl">Kalkulator & Bayaran Fidyah</CardTitle>
+        <CardTitle className="text-2xl">Kalkulator Fidyah</CardTitle>
         <CardDescription>
           Masukkan bilangan hari yang ditinggalkan dan butiran anda. Jumlah
           dikira secara automatik.
