@@ -188,14 +188,26 @@ export async function sendFollowUp(
     }
   }
 
+  // The reminder going out matters more than the bookkeeping, so a failure
+  // here doesn't fail the action — but it must not pass silently either. An
+  // admin who sees "sent" while the counter stays at zero has no way to tell
+  // whether the message actually went, or how many times they've now chased
+  // the same payer.
+  let countWarning = "";
   if (sent.length > 0) {
-    await supabase
+    const { error: countError } = await supabase
       .from("donations")
       .update({
         followup_count: (donation.followup_count ?? 0) + 1,
         last_followup_at: new Date().toISOString(),
       })
       .eq("id", id);
+
+    if (countError) {
+      console.error("[followup] could not record the count:", countError);
+      countWarning =
+        " Amaran: kiraan susulan tidak direkod — lajur followup_count/last_followup_at mungkin belum wujud dalam pangkalan data (lihat supabase/schema.sql).";
+    }
   }
 
   await logActivity("donation.followup", {
@@ -214,7 +226,8 @@ export async function sendFollowUp(
     ok: true,
     message:
       `Susulan dihantar melalui ${sent.join(" & ")}.` +
-      (failed.length > 0 ? ` Gagal: ${failed.join("; ")}.` : ""),
+      (failed.length > 0 ? ` Gagal: ${failed.join("; ")}.` : "") +
+      countWarning,
   };
 }
 
