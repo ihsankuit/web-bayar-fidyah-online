@@ -64,6 +64,7 @@ export default async function StatusPage({
       {paid && donation && (
         <PurchaseTracker
           reference={donation.reference}
+          donationId={donation.id}
           value={donation.amount_sen / 100}
           googleAdsId={tracking?.googleAdsId}
           googleAdsConversionLabel={tracking?.googleAdsConversionLabel}
