@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/public";
 import type { BlogPost } from "@/lib/database.types";
 import { formatDateOnly } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site-url";
+import { RETIRED_BLOG_SLUGS } from "@/lib/blog-redirects";
 
 export const revalidate = 60;
 
@@ -39,8 +40,11 @@ async function getRelatedPosts(currentSlug: string): Promise<BlogPost[]> {
       .lte("published_at", new Date().toISOString())
       .neq("slug", currentSlug)
       .order("published_at", { ascending: false })
-      .limit(3);
-    return (data as BlogPost[]) ?? [];
+      // Fetch a few extra so filtering out retired slugs still leaves three.
+      .limit(6);
+    return ((data as BlogPost[]) ?? [])
+      .filter((p) => !RETIRED_BLOG_SLUGS.has(p.slug))
+      .slice(0, 3);
   } catch {
     return [];
   }
