@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { BLOG_REDIRECTS } from "./lib/blog-redirects";
+
 /**
  * Allow next/image to load from the Supabase Storage public bucket. The
  * hostname is derived from NEXT_PUBLIC_SUPABASE_URL when available; otherwise
@@ -28,6 +30,18 @@ const nextConfig: NextConfig = {
         : { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "https", hostname: "**.supabase.in" },
     ],
+  },
+  /**
+   * Permanent redirects from the retired duplicate articles into the one
+   * that survived. Handled here rather than in the page so they still work
+   * when the database is unreachable, and so the old URL never renders.
+   */
+  async redirects() {
+    return Object.entries(BLOG_REDIRECTS).map(([from, to]) => ({
+      source: `/blog/${from}`,
+      destination: `/blog/${to}`,
+      permanent: true,
+    }));
   },
   async headers() {
     return [

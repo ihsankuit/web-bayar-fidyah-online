@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/public";
 import { SITE_URL } from "@/lib/site-url";
+import { RETIRED_BLOG_SLUGS } from "@/lib/blog-redirects";
 
 export const revalidate = 3600;
 
@@ -37,6 +38,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     if (posts) {
       for (const post of posts) {
+        // A URL that only 301s is a soft error in Search Console, so retired
+        // slugs stay out of the sitemap even if the post is still published.
+        if (RETIRED_BLOG_SLUGS.has(post.slug)) continue;
         staticUrls.push({
           url: `${SITE_URL}/blog/${post.slug}`,
           lastModified: post.updated_at ? new Date(post.updated_at) : new Date(),

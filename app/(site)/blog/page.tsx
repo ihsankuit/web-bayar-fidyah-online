@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/public";
 import type { BlogPost } from "@/lib/database.types";
 import { formatDateOnly } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site-url";
+import { RETIRED_BLOG_SLUGS } from "@/lib/blog-redirects";
 
 export const metadata = {
   title: "Blog — Panduan Fidyah, Puasa & Ibadah",
@@ -45,7 +46,11 @@ export default async function BlogIndexPage({
       .eq("status", "published")
       .lte("published_at", new Date().toISOString())
       .order("published_at", { ascending: false });
-    posts = (data as BlogPost[]) ?? [];
+    // Retired duplicates only 301 elsewhere — don't spend internal links on
+    // them, even if they're still published in the database.
+    posts = ((data as BlogPost[]) ?? []).filter(
+      (p) => !RETIRED_BLOG_SLUGS.has(p.slug)
+    );
   } catch {
     posts = [];
   }
