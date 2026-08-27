@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Donation } from "@/lib/database.types";
 import { formatMYR } from "@/lib/utils";
 import { PurchaseTracker } from "@/components/analytics/purchase-tracker";
+import { AbandonTracker } from "@/components/analytics/abandon-tracker";
 import { getTrackingSettings } from "@/lib/tracking/settings";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +74,12 @@ export default async function StatusPage({
           phone={donation.payer_phone}
           ip={donation.client_ip}
           negeri={donation.negeri}
+        />
+      )}
+      {failed && donation && (
+        <AbandonTracker
+          reference={donation.reference}
+          value={donation.amount_sen / 100}
         />
       )}
       <Navbar />
