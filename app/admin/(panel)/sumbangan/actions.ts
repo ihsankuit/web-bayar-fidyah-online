@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   deleteDonation,
   markDonationPaid,
@@ -195,7 +196,12 @@ export async function sendFollowUp(
   // the same payer.
   let countWarning = "";
   if (sent.length > 0) {
-    const { error: countError } = await supabase
+    // Write through the service-role client: the `donations` table has RLS
+    // with an admin SELECT policy but no UPDATE policy, so a user-scoped
+    // update matches zero rows and returns no error — the counter would stay
+    // at 0 despite a "sent" result. The admin client bypasses RLS.
+    const admin = createAdminClient();
+    const { error: countError } = await admin
       .from("donations")
       .update({
         followup_count: (donation.followup_count ?? 0) + 1,
