@@ -386,7 +386,6 @@ export function FidyahForm({
               inputMode="decimal"
               min="1"
               step="0.01"
-              className="text-base"
               value={upsellAmount}
               onChange={(e) => setUpsellAmount(Number(e.target.value) || 0)}
             />

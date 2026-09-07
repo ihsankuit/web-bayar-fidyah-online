@@ -246,7 +246,7 @@ export default async function HomePage() {
             </>
           )}
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]" />
-          <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
+          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:py-16 lg:grid-cols-2 lg:items-center lg:gap-12 lg:py-24">
             <div className="space-y-6">
               <Badge
                 variant="secondary"
@@ -322,7 +322,7 @@ export default async function HomePage() {
         </section>
 
         {/* Hukum Fidyah */}
-        <section id="hukum" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="hukum" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               {content.hukum_title}
@@ -345,7 +345,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <figure className="mt-10 rounded-2xl border bg-card p-8 shadow-sm">
+            <figure className="mt-10 rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
               <p
                 dir="rtl"
                 lang="ar"
@@ -362,7 +362,7 @@ export default async function HomePage() {
         </section>
 
         {/* Categories */}
-        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -415,7 +415,7 @@ export default async function HomePage() {
         </section>
 
         {/* Qada' vs Fidyah reference table */}
-        <section id="qada-fidyah" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="qada-fidyah" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-5xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -454,7 +454,7 @@ export default async function HomePage() {
         </section>
 
         {/* Cara Kira Fidyah */}
-        <section id="cara-kira" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="cara-kira" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-4xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -478,7 +478,7 @@ export default async function HomePage() {
             <div className="mt-12 overflow-hidden rounded-2xl border bg-card shadow-sm">
               <div className="grid md:grid-cols-2">
                 {/* Situasi 1 */}
-                <div className="p-8">
+                <div className="p-6 sm:p-8">
                   <div className="flex items-center gap-3">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary-strong">
                       1
@@ -502,7 +502,7 @@ export default async function HomePage() {
                 </div>
 
                 {/* Situasi 2 */}
-                <div className="border-t p-8 md:border-l md:border-t-0">
+                <div className="border-t p-6 sm:p-8 md:border-l md:border-t-0">
                   <div className="flex items-center gap-3">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary-strong">
                       2
@@ -533,7 +533,7 @@ export default async function HomePage() {
         </section>
 
         {/* How it works */}
-        <section className="py-16 lg:py-24">
+        <section className="py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -572,7 +572,7 @@ export default async function HomePage() {
 
         {/* Galeri */}
         {gallery.length > 0 && (
-          <section id="galeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <section id="galeri" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
             <div className="mx-auto max-w-6xl px-4">
               <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -607,7 +607,7 @@ export default async function HomePage() {
         )}
 
         {/* Liputan Negeri */}
-        <section id="negeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="negeri" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Bayar Fidyah Online di Semua Negeri di Malaysia
@@ -631,7 +631,7 @@ export default async function HomePage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="faq" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -656,7 +656,7 @@ export default async function HomePage() {
         </section>
 
         {/* CTA */}
-        <section className="py-16 lg:py-24">
+        <section className="py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-5xl px-4">
             <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-16">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,rgba(255,255,255,.15),transparent)]" />

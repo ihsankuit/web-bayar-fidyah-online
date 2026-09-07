@@ -17,7 +17,9 @@ export function Navbar() {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" aria-label="ihsanku" className="mr-2">
-          <Logo size="lg" />
+          {/* Smaller mark on phones so it never crowds the CTA + menu button;
+              full size from the sm breakpoint up. */}
+          <Logo size="md" className="sm:h-12" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex ml-4">
