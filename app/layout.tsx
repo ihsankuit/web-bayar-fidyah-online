@@ -59,14 +59,30 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/** Origin of the Supabase project (for a <link rel="preconnect">), or "". */
+function supabaseOriginFromEnv(): string {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    return "";
+  }
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabaseOrigin = supabaseOriginFromEnv();
   return (
     <html lang="ms" suppressHydrationWarning>
       <head>
+        {/* Warm up the Supabase Storage origin — hero, gallery, blog covers and
+            admin-uploaded images are all served from it, so the TLS handshake
+            is done before the first <Image> requests bytes. */}
+        {supabaseOrigin && (
+          <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />
+        )}
         {/* Warm up the tracking/analytics origins (loaded via GTM) so they
             don't pay full connection setup on the critical path. */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />

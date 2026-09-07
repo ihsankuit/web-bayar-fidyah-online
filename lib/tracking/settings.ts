@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -19,7 +20,9 @@ export interface TrackingSettings {
   gtmId: string;
 }
 
-export async function getTrackingSettings(): Promise<TrackingSettings> {
+// Cached per request: the site layout and the status page both read this, and
+// dedup avoids a second admin-client round-trip in the same render.
+export const getTrackingSettings = cache(async function getTrackingSettings(): Promise<TrackingSettings> {
   const fallback: TrackingSettings = {
     gaId: process.env.NEXT_PUBLIC_GA_ID ?? "",
     gaApiSecret: process.env.GA_API_SECRET ?? "",
@@ -59,4 +62,4 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
     // service role/table unavailable — use env fallback.
   }
   return fallback;
-}
+});
