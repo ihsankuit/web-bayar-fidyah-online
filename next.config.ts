@@ -21,6 +21,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    // Server Actions cap request bodies at 1MB by default. The gallery admin
+    // uploads images (up to 10MB each) and now supports selecting several at
+    // once, so raise the limit to fit a reasonable bulk upload in one request.
+    serverActions: {
+      bodySizeLimit: "50mb",
+    },
+  },
   images: {
     // Serve AVIF/WebP (smaller than PNG/JPEG) where the browser supports it.
     formats: ["image/avif", "image/webp"],
