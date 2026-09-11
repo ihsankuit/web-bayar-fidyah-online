@@ -300,6 +300,7 @@ Configure a webhook URL at **Dashboard → Integrasi → Webhook Keluar
 | --- | --- |
 | `donation.created` | A donation record is created (before payment) |
 | `donation.paid` | A payment is confirmed (CHIP webhook or manual admin approval) |
+| `donation.abandoned` | A pending payment is auto-expired (CHIP after 24h, manual after 7d with no proof) — useful for abandoned-cart follow-ups |
 
 `donation.failed` is defined in the codebase but not currently emitted by
 any flow.
@@ -327,6 +328,11 @@ any flow.
     "currency": "MYR",
     "message": null,
     "payment_method": "chip",
+    "utm_source": "facebook",
+    "utm_medium": "cpc",
+    "utm_campaign": "ramadan-2026",
+    "utm_term": null,
+    "utm_content": "video-a",
     "paid_at": "2026-07-15T03:22:10.000Z",
     "created_at": "2026-07-15T03:20:44.000Z"
   },
@@ -335,8 +341,9 @@ any flow.
 ```
 
 `data` is the full internal donation row (all columns) plus a convenience
-Ringgit `amount` field — expect it to gain new fields over time; don't treat
-it as a closed schema.
+Ringgit `amount` field — so UTM attribution (`utm_source`, `utm_medium`,
+`utm_campaign`, `utm_term`, `utm_content`) arrives with every event. Expect
+`data` to gain new fields over time; don't treat it as a closed schema.
 
 Headers:
 
@@ -434,6 +441,7 @@ listed here only so you don't mistake them for public integration points:
 
 - **v1** (current) — `GET /donations`, `GET /donations/{reference}`,
   `GET /stats`, `GET/POST /blog`, `GET/PATCH/DELETE /blog/{slug}`,
-  `donation.created`/`donation.paid` webhooks. Donation objects and `/stats`
-  now carry UTM attribution (`utm_*` fields, `by_utm_source`, and a
-  `utm_source` filter on `GET /donations`).
+  `donation.created`/`donation.paid`/`donation.abandoned` webhooks. Donation
+  objects and `/stats` now carry UTM attribution (`utm_*` fields,
+  `by_utm_source`, and a `utm_source` filter on `GET /donations`); webhook
+  payloads carry the same UTM fields.
