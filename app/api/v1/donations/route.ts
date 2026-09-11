@@ -7,7 +7,7 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
 /**
  * GET /api/v1/donations
  * List donations for automations (e.g. n8n). Auth: API key.
- * Query params: status, limit (<=200), offset, from, to (ISO, on created_at).
+ * Query params: status, utm_source, limit (<=200), offset, from, to (ISO, on created_at).
  */
 export async function GET(request: Request) {
   if (!(await isAuthorized(request))) return unauthorized();
@@ -24,6 +24,7 @@ export async function GET(request: Request) {
   const offset = Math.max(Number(url.searchParams.get("offset")) || 0, 0);
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
+  const utmSource = url.searchParams.get("utm_source");
 
   try {
     const supabase = createAdminClient();
@@ -38,6 +39,7 @@ export async function GET(request: Request) {
     }
     if (from) query = query.gte("created_at", from);
     if (to) query = query.lte("created_at", to);
+    if (utmSource) query = query.eq("utm_source", utmSource);
 
     const { data, count, error } = await query;
     if (error) throw error;

@@ -36,12 +36,15 @@ export async function GET(request: Request) {
     // PostgREST, which would silently under-report totals as data grows, so
     // page through every paid row (only the columns we aggregate on).
     const PAGE = 1000;
-    type PaidRow = Pick<Donation, "amount_sen" | "category" | "payer_email">;
+    type PaidRow = Pick<
+      Donation,
+      "amount_sen" | "category" | "payer_email" | "utm_source"
+    >;
     const paid: PaidRow[] = [];
     for (let offset = 0; ; offset += PAGE) {
       const { data, error } = await supabase
         .from("donations")
-        .select("amount_sen, category, payer_email")
+        .select("amount_sen, category, payer_email, utm_source")
         .eq("status", "paid")
         .order("id", { ascending: true })
         .range(offset, offset + PAGE - 1)
@@ -61,6 +64,16 @@ export async function GET(request: Request) {
       b.amount += d.amount_sen / 100;
     }
 
+    // Revenue attributed by traffic source. Payments with no UTM (direct/
+    // organic) are grouped under "direct" so the totals always reconcile.
+    const byUtmSource: Record<string, { count: number; amount: number }> = {};
+    for (const d of paid) {
+      const key = d.utm_source || "direct";
+      const b = (byUtmSource[key] ??= { count: 0, amount: 0 });
+      b.count += 1;
+      b.amount += d.amount_sen / 100;
+    }
+
     return NextResponse.json({
       currency: "MYR",
       total_collected: totalPaidSen / 100,
@@ -70,6 +83,7 @@ export async function GET(request: Request) {
       count_failed: countFailed,
       unique_payers: new Set(paid.map((d) => d.payer_email)).size,
       by_category: byCategory,
+      by_utm_source: byUtmSource,
     });
   } catch (err) {
     console.error("[api/v1/stats]", err);

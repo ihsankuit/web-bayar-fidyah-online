@@ -77,6 +77,7 @@ List donations, newest first.
 | Param | Type | Notes |
 | --- | --- | --- |
 | `status` | `pending` \| `paid` \| `failed` | Filter by status |
+| `utm_source` | string | Filter by exact traffic source (e.g. `facebook`) |
 | `limit` | integer | Default 50, max 200 |
 | `offset` | integer | Default 0 |
 | `from` | ISO 8601 | `created_at >= from` |
@@ -108,6 +109,11 @@ curl -H "Authorization: Bearer $API_KEY" \
       "amount_sen": 1400,
       "currency": "MYR",
       "message": "Bayaran bagi pihak arwah ayah.",
+      "utm_source": "facebook",
+      "utm_medium": "cpc",
+      "utm_campaign": "ramadan-2026",
+      "utm_term": null,
+      "utm_content": "video-a",
       "paid_at": "2026-07-15T03:22:10.000Z",
       "created_at": "2026-07-15T03:20:44.000Z"
     }
@@ -169,13 +175,20 @@ curl -H "Authorization: Bearer $API_KEY" \
     "hamil_menyusu": { "count": 95, "amount": 1330.00 },
     "lewat_qada": { "count": 510, "amount": 7140.00 },
     "meninggal_dunia": { "count": 111, "amount": 1554.00 }
+  },
+  "by_utm_source": {
+    "facebook": { "count": 640, "amount": 8960.00 },
+    "google": { "count": 210, "amount": 2940.00 },
+    "direct": { "count": 466, "amount": 6532.00 }
   }
 }
 ```
 
 `by_category` only includes categories with at least one **paid** donation.
-Totals are computed across every paid row (not capped at 1000), so they stay
-accurate as the dataset grows.
+`by_utm_source` attributes paid revenue by traffic source; payments with no
+UTM (direct/organic) are grouped under `"direct"`, so its figures always
+reconcile with `total_collected`. Totals are computed across every paid row
+(not capped at 1000), so they stay accurate as the dataset grows.
 
 ---
 
@@ -421,4 +434,6 @@ listed here only so you don't mistake them for public integration points:
 
 - **v1** (current) — `GET /donations`, `GET /donations/{reference}`,
   `GET /stats`, `GET/POST /blog`, `GET/PATCH/DELETE /blog/{slug}`,
-  `donation.created`/`donation.paid` webhooks.
+  `donation.created`/`donation.paid` webhooks. Donation objects and `/stats`
+  now carry UTM attribution (`utm_*` fields, `by_utm_source`, and a
+  `utm_source` filter on `GET /donations`).
