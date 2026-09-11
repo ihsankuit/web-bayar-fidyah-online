@@ -34,6 +34,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from("blog_posts")
       .select("slug,updated_at")
       .eq("status", "published")
+      // Must match what the article page will actually render: a post whose
+      // published_at is in the future (scheduled) or null 404s on the page,
+      // so listing it here produces a "submitted URL not found (404)" in
+      // Search Console. Only list URLs that resolve to a real 200 page.
+      .lte("published_at", new Date().toISOString())
       .order("published_at", { ascending: false });
 
     if (posts) {
