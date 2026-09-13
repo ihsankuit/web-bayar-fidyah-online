@@ -30,31 +30,39 @@ export const MAX_FOLLOWUP_STAGES = 5;
  * step 1 assumes they simply forgot, step 2 assumes something went wrong and
  * offers help, step 3 steps back and leaves the door open without asking
  * again.
+ *
+ * Written to sound like a person, not a system reporting on a record. That
+ * means naming a likely reason the payment stalled rather than just stating
+ * that it did, short sentences over formal ones, and the reference number at
+ * the bottom in brackets — nobody opens a message to a person with a case
+ * number. The emails skip the reference in the body because it is already in
+ * the subject, and skip {{pautan}} because a "Sambung Pembayaran" button is
+ * appended to every one of them automatically.
  */
 export const DEFAULT_FOLLOWUP_STAGES: FollowUpStage[] = [
   {
     name: "Susulan 1 — Peringatan lembut",
     whatsapp_message:
-      "Assalamualaikum {{nama}},\n\nKami perasan pembayaran fidyah anda ({{rujukan}}) berjumlah {{jumlah}} masih belum selesai.\n\nAnda boleh menyambung pembayaran di sini:\n{{pautan}}\n\nJika anda telah pun membayar, abaikan mesej ini. Terima kasih.",
-    email_subject: "Pembayaran fidyah anda belum selesai — {{rujukan}}",
+      "Assalamualaikum {{nama}},\n\nKami perasan pembayaran fidyah {{jumlah}} yang anda mulakan tempoh hari belum sempat selesai. Selalunya halaman bayaran tertutup dahulu sebelum sempat habis — perkara biasa.\n\nKalau mahu sambung, boleh terus dari sini:\n{{pautan}}\n\nKalau sudah dibayar, abaikan sahaja mesej ini. Terima kasih.\n\n(Rujukan: {{rujukan}})",
+    email_subject: "Fidyah anda belum sempat selesai ({{rujukan}})",
     email_body:
-      "Assalamualaikum {{nama}},\n\nKami perasan pembayaran fidyah anda ({{rujukan}}) berjumlah {{jumlah}} bagi {{hari}} hari masih belum selesai.\n\nAnda boleh menyambung pembayaran melalui pautan di bawah.\n\nJika anda telah pun membayar, abaikan emel ini. Terima kasih.",
+      "Assalamualaikum {{nama}},\n\nKami perasan pembayaran fidyah {{jumlah}} bagi {{hari}} hari yang anda mulakan tempoh hari belum sempat selesai. Selalunya halaman bayaran tertutup dahulu sebelum sempat habis — perkara biasa, dan mudah disambung semula.\n\nButang di bawah membawa anda terus ke tempat anda berhenti.\n\nKalau sudah dibayar, abaikan sahaja emel ini. Terima kasih.",
   },
   {
     name: "Susulan 2 — Tawaran bantuan",
     whatsapp_message:
-      "Assalamualaikum {{nama}},\n\nPembayaran fidyah anda ({{rujukan}}) berjumlah {{jumlah}} bagi {{hari}} hari masih tergantung.\n\nAdakah anda menghadapi sebarang masalah semasa membuat pembayaran? Balas mesej ini dan kami akan bantu selesaikannya.\n\nJika mahu teruskan sendiri, pautan ini masih sah:\n{{pautan}}\n\nJika sudah dibayar, abaikan mesej ini. Terima kasih.",
-    email_subject: "Perlukan bantuan menyelesaikan fidyah anda? — {{rujukan}}",
+      "Assalamualaikum {{nama}},\n\nFidyah {{hari}} hari ({{jumlah}}) yang anda mulakan masih belum selesai.\n\nAda masalah semasa membayar? Kadangkala bank menolak transaksi, atau OTP lambat sampai. Kalau begitu keadaannya, balas sahaja mesej ini — kami bantu uruskan.\n\nKalau mahu cuba semula sendiri:\n{{pautan}}\n\nKalau sudah dibayar, abaikan ya. Terima kasih.\n\n(Rujukan: {{rujukan}})",
+    email_subject: "Ada masalah semasa membayar fidyah? ({{rujukan}})",
     email_body:
-      "Assalamualaikum {{nama}},\n\nPembayaran fidyah anda ({{rujukan}}) berjumlah {{jumlah}} bagi {{hari}} hari masih tergantung.\n\nKadangkala pembayaran gagal atas sebab teknikal — bank menolak transaksi, atau halaman tertutup sebelum sempat selesai. Jika itu yang berlaku, balas emel ini dan kami akan bantu.\n\nJika mahu teruskan sendiri, gunakan pautan di bawah.\n\nJika sudah dibayar, abaikan emel ini. Terima kasih.",
+      "Assalamualaikum {{nama}},\n\nFidyah {{hari}} hari ({{jumlah}}) yang anda mulakan masih belum selesai.\n\nAda masalah semasa membayar? Kadangkala bank menolak transaksi, atau halaman tertutup sebelum sempat disahkan. Kalau begitu keadaannya, balas sahaja emel ini dan kami bantu uruskan.\n\nKalau mahu cuba semula sendiri, gunakan butang di bawah.\n\nKalau sudah dibayar, abaikan ya. Terima kasih.",
   },
   {
-    name: "Susulan 3 — Peringatan akhir",
+    name: "Susulan 3 — Tanpa desakan",
     whatsapp_message:
-      "Assalamualaikum {{nama}},\n\nIni peringatan terakhir daripada kami mengenai pembayaran fidyah {{rujukan}} berjumlah {{jumlah}}.\n\nPautan di bawah kekal sah — anda boleh menyambung bila-bila masa apabila sesuai:\n{{pautan}}\n\nKami tidak akan menghantar peringatan lanjut selepas ini. Semoga Allah menerima amalan anda.",
-    email_subject: "Peringatan terakhir — fidyah {{rujukan}}",
+      "Assalamualaikum {{nama}},\n\nIni mesej terakhir daripada kami tentang fidyah {{jumlah}} itu — bukan kerana ada tempoh tamat, tetapi kerana kami tidak mahu mengganggu anda berulang kali.\n\nPautan ini kekal terbuka. Tiada tarikh luput, tiada desakan. Sambung bila-bila masa yang senang untuk anda:\n{{pautan}}\n\nKalau sekarang bukan masanya, kami faham. Kalau sudah dibayar dengan cara lain, abaikan sahaja mesej ini.\n\nSemoga Allah memudahkan urusan anda.\n\n(Rujukan: {{rujukan}})",
+    email_subject: "Pautan fidyah anda kekal terbuka ({{rujukan}})",
     email_body:
-      "Assalamualaikum {{nama}},\n\nIni peringatan terakhir daripada kami mengenai pembayaran fidyah {{rujukan}} berjumlah {{jumlah}} bagi {{hari}} hari.\n\nPautan di bawah kekal sah, jadi anda boleh menyambung bila-bila masa apabila sesuai. Kami tidak akan menghantar peringatan lanjut selepas ini.\n\nSemoga Allah menerima amalan anda.",
+      "Assalamualaikum {{nama}},\n\nIni emel terakhir daripada kami tentang fidyah {{jumlah}} bagi {{hari}} hari itu — bukan kerana ada tempoh tamat, tetapi kerana kami tidak mahu mengganggu anda berulang kali.\n\nPautan di bawah kekal terbuka. Tiada tarikh luput, tiada desakan — sambung bila-bila masa yang senang untuk anda.\n\nKalau sekarang bukan masanya, kami faham. Kalau sudah dibayar dengan cara lain, abaikan sahaja emel ini.\n\nSemoga Allah memudahkan urusan anda.",
   },
 ];
 
