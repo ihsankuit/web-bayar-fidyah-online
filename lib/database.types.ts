@@ -214,15 +214,30 @@ export interface UpsellSettings {
 }
 
 /**
- * Default follow-up message templates, stored under the `followup` settings
- * key. Each may contain variable tags — {{nama}}, {{rujukan}}, {{jumlah}},
+ * One step in the follow-up sequence — "Susulan 1", "Susulan 2" and so on.
+ * Chasing an unpaid fidyah twice with the identical wording reads like a
+ * bot, so each step carries its own tone: a gentle nudge, then an offer of
+ * help, then a final note that closes the matter politely.
+ *
+ * Text may contain variable tags — {{nama}}, {{rujukan}}, {{jumlah}},
  * {{hari}}, {{kategori}}, {{pautan}} — substituted per payer at send time.
- * Admins can still edit the text per-send before it goes out.
  */
-export interface FollowUpSettings {
+export interface FollowUpStage {
+  /** Shown on the step selector, e.g. "Susulan 1 — Peringatan lembut". */
+  name: string;
   whatsapp_message: string;
   email_subject: string;
   email_body: string;
+}
+
+/**
+ * Follow-up templates, stored under the `followup` settings key. The step
+ * matching how many reminders a payer has already had is preselected in the
+ * Susulan dialog; admins can pick a different one, and can still edit the
+ * text per-send without changing what's saved here.
+ */
+export interface FollowUpSettings {
+  stages: FollowUpStage[];
 }
 
 /**
