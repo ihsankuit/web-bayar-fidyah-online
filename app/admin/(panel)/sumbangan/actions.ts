@@ -219,6 +219,9 @@ export async function sendFollowUp(
   await logActivity("donation.followup", {
     reference: donation.reference,
     status: donation.status,
+    // Which step of the sequence went out, so the log reads as a history of
+    // how a payer was chased rather than a run of identical entries.
+    stage: ((formData.get("stage_name") as string) || "").trim() || "-",
     sent: sent.join(", ") || "-",
     failed: failed.join(", ") || "-",
   });

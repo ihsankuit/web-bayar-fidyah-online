@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 import { sendFollowUp } from "@/app/admin/(panel)/sumbangan/actions";
 import type { Donation, FollowUpSettings } from "@/lib/database.types";
-import { FOLLOWUP_TAGS } from "@/lib/followup";
+import { FOLLOWUP_TAGS, stageIndexForCount } from "@/lib/followup";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,7 +42,17 @@ export function FollowUpButton({
 }) {
   const [open, setOpen] = useState(false);
   const whatsappRef = useRef<HTMLTextAreaElement>(null);
+  const emailSubjectRef = useRef<HTMLInputElement>(null);
   const emailBodyRef = useRef<HTMLTextAreaElement>(null);
+
+  // Which step of the sequence this payer is due. Someone who has already
+  // had two reminders shouldn't receive the same opening line a third time,
+  // so the step matching their history is preselected.
+  const stages = templates.stages;
+  const [stageIndex, setStageIndex] = useState(() =>
+    stageIndexForCount(templates, donation.followup_count)
+  );
+  const stage = stages[stageIndex] ?? stages[0];
 
   async function sendAction(formData: FormData) {
     const result = await sendFollowUp({}, formData);
@@ -52,6 +62,21 @@ export function FollowUpButton({
     } else if (result.error) {
       toast.error(result.error);
     }
+  }
+
+  /**
+   * Swap the fields over to another step. Written straight to the DOM
+   * because the fields are uncontrolled — re-rendering wouldn't move a
+   * `defaultValue` that the browser has already applied.
+   */
+  function selectStage(index: number) {
+    const next = stages[index];
+    if (!next) return;
+    setStageIndex(index);
+    if (whatsappRef.current) whatsappRef.current.value = next.whatsapp_message;
+    if (emailSubjectRef.current)
+      emailSubjectRef.current.value = next.email_subject;
+    if (emailBodyRef.current) emailBodyRef.current.value = next.email_body;
   }
 
 
@@ -115,6 +140,31 @@ export function FollowUpButton({
 
           <form action={sendAction} className="space-y-5">
             <input type="hidden" name="id" value={donation.id} />
+            <input type="hidden" name="stage_name" value={stage?.name ?? ""} />
+
+            {stages.length > 1 && (
+              <div className="space-y-2">
+                <Label>Peringkat susulan</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {stages.map((s, i) => (
+                    <Button
+                      key={s.name + i}
+                      type="button"
+                      size="sm"
+                      variant={i === stageIndex ? "default" : "outline"}
+                      onClick={() => selectStage(i)}
+                    >
+                      {s.name}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dipilih automatik mengikut bilangan susulan yang pembayar ini
+                  sudah terima. Menukar peringkat akan menulis ganti ayat di
+                  bawah.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -156,7 +206,7 @@ export function FollowUpButton({
                 ref={whatsappRef}
                 name="whatsapp_message"
                 rows={6}
-                defaultValue={templates.whatsapp_message}
+                defaultValue={stage?.whatsapp_message ?? ""}
               />
             </div>
 
@@ -172,8 +222,9 @@ export function FollowUpButton({
                 Hantar melalui emel
               </Label>
               <Input
+                ref={emailSubjectRef}
                 name="email_subject"
-                defaultValue={templates.email_subject}
+                defaultValue={stage?.email_subject ?? ""}
                 placeholder="Tajuk emel"
               />
               <div className="flex flex-wrap justify-end gap-1">
@@ -194,7 +245,7 @@ export function FollowUpButton({
                 ref={emailBodyRef}
                 name="email_body"
                 rows={7}
-                defaultValue={templates.email_body}
+                defaultValue={stage?.email_body ?? ""}
               />
               <p className="text-xs text-muted-foreground">
                 Butang &quot;Sambung Pembayaran&quot; disertakan automatik di
