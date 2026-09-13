@@ -49,12 +49,12 @@ export const DEFAULT_FOLLOWUP_STAGES: FollowUpStage[] = [
       "Assalamualaikum {{nama}},\n\nPembayaran fidyah anda ({{rujukan}}) berjumlah {{jumlah}} bagi {{hari}} hari masih tergantung.\n\nKadangkala pembayaran gagal atas sebab teknikal — bank menolak transaksi, atau halaman tertutup sebelum sempat selesai. Jika itu yang berlaku, balas emel ini dan kami akan bantu.\n\nJika mahu teruskan sendiri, gunakan pautan di bawah.\n\nJika sudah dibayar, abaikan emel ini. Terima kasih.",
   },
   {
-    name: "Susulan 3 — Peringatan akhir",
+    name: "Susulan 3 — Tanpa desakan",
     whatsapp_message:
-      "Assalamualaikum {{nama}},\n\nIni peringatan terakhir daripada kami mengenai pembayaran fidyah {{rujukan}} berjumlah {{jumlah}}.\n\nPautan di bawah kekal sah — anda boleh menyambung bila-bila masa apabila sesuai:\n{{pautan}}\n\nKami tidak akan menghantar peringatan lanjut selepas ini. Semoga Allah menerima amalan anda.",
-    email_subject: "Peringatan terakhir — fidyah {{rujukan}}",
+      "Assalamualaikum {{nama}},\n\nIni mesej terakhir daripada kami tentang fidyah {{rujukan}} ({{jumlah}}) — bukan kerana ada tempoh tamat, tetapi kerana kami tidak mahu mengganggu anda berulang kali.\n\nPautan di bawah kekal terbuka tanpa tarikh luput. Sambung bila-bila masa yang sesuai untuk anda:\n{{pautan}}\n\nJika keadaan tidak mengizinkan buat masa ini, kami faham sepenuhnya. Jika anda sudah membayar melalui cara lain, abaikan sahaja mesej ini.\n\nSemoga Allah memudahkan urusan anda.",
+    email_subject: "Pautan fidyah anda kekal terbuka — {{rujukan}}",
     email_body:
-      "Assalamualaikum {{nama}},\n\nIni peringatan terakhir daripada kami mengenai pembayaran fidyah {{rujukan}} berjumlah {{jumlah}} bagi {{hari}} hari.\n\nPautan di bawah kekal sah, jadi anda boleh menyambung bila-bila masa apabila sesuai. Kami tidak akan menghantar peringatan lanjut selepas ini.\n\nSemoga Allah menerima amalan anda.",
+      "Assalamualaikum {{nama}},\n\nIni mesej terakhir daripada kami tentang fidyah {{rujukan}} berjumlah {{jumlah}} bagi {{hari}} hari — bukan kerana ada tempoh tamat, tetapi kerana kami tidak mahu mengganggu anda berulang kali.\n\nPautan di bawah kekal terbuka tanpa tarikh luput, jadi anda boleh menyambung bila-bila masa yang sesuai untuk anda.\n\nJika keadaan tidak mengizinkan buat masa ini, kami faham sepenuhnya. Jika anda sudah membayar melalui cara lain, abaikan sahaja emel ini.\n\nSemoga Allah memudahkan urusan anda.",
   },
 ];
 
