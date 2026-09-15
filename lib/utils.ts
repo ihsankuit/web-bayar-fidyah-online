@@ -21,17 +21,27 @@ export function formatRinggit(value: number): string {
   }).format(value);
 }
 
+// Timestamps are stored in UTC (Postgres timestamptz). These format for a
+// Malaysian audience, so pin the zone to Asia/Kuala_Lumpur (UTC+8) — otherwise
+// the value renders in the runtime's zone, which is UTC on the server (Vercel),
+// showing every time 8 hours early.
+const MY_TZ = "Asia/Kuala_Lumpur";
+
 export function formatDate(input: string | Date): string {
   const date = typeof input === "string" ? new Date(input) : input;
   return new Intl.DateTimeFormat("ms-MY", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: MY_TZ,
   }).format(date);
 }
 
 export function formatDateOnly(input: string | Date): string {
   const date = typeof input === "string" ? new Date(input) : input;
-  return new Intl.DateTimeFormat("ms-MY", { dateStyle: "long" }).format(date);
+  return new Intl.DateTimeFormat("ms-MY", {
+    dateStyle: "long",
+    timeZone: MY_TZ,
+  }).format(date);
 }
 
 /** Malay relative time, e.g. "3 minit lalu", "2 hari lalu". Floors to "Baru sahaja" under 1 minute. */
