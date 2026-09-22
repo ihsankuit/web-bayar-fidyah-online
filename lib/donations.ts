@@ -54,6 +54,12 @@ export async function settleDonationByReference(
   if (paid && !alreadyPaid) {
     after(() => sendReceiptEmail(donation));
     after(() => sendPaymentSuccessWhatsApp(donation));
+    // Fire the server-side conversion here too, not only from the /status
+    // page — a payer who closes the tab before the redirect (or pays via a
+    // channel that never returns) still settles through this callback, and
+    // the conversion must not depend on a browser arriving. Idempotent, so
+    // it won't double-count against the /status fire.
+    after(() => sendServerConversion(donation));
     after(() => emitDonationEvent("donation.paid", donation));
   }
 

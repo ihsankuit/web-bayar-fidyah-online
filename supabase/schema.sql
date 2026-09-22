@@ -131,6 +131,14 @@ alter table public.donations add column if not exists user_agent   text;
 alter table public.donations add column if not exists landing_url  text;
 
 -- ---------------------------------------------------------------------
+--  Server-side conversion guard. Set the first time a paid donation's
+--  GA4/Facebook server conversion is sent, so the event fires exactly
+--  once no matter which path settles it (CHIP callback, admin confirm,
+--  or the /status page). Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists conversion_sent_at timestamptz;
+
+-- ---------------------------------------------------------------------
 --  Upsell campaign accepted at checkout (combined into the same payment
 --  as the fidyah amount). The campaign's own config (title, description,
 --  amount, on/off) lives in `site_settings` under the key "upsell" —

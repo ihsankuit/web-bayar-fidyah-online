@@ -43,6 +43,8 @@ export interface Donation {
   fbc: string | null;
   client_ip: string | null;
   user_agent: string | null;
+  /** Set once the server-side GA4/Facebook conversion has been fired. */
+  conversion_sent_at: string | null;
   landing_url: string | null;
   /** Upsell campaign accepted at checkout (combined into the same payment). */
   upsell_accepted: boolean;
