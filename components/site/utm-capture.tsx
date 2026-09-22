@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { captureUtmParams } from "@/lib/utm";
+import { captureUtmParams, captureClickIds } from "@/lib/utm";
 
-/** Mounted once at the root layout: captures utm_* query params on every page load. */
+/**
+ * Mounted once in the site layout: captures utm_* and Google Ads click ids
+ * (gclid/gbraid/wbraid) from the query string on every page load.
+ */
 export function UtmCapture() {
   useEffect(() => {
     captureUtmParams();
+    captureClickIds();
   }, []);
   return null;
 }

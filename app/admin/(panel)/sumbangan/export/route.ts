@@ -25,6 +25,9 @@ const HEADERS = [
   "UTM Campaign",
   "UTM Term",
   "UTM Content",
+  "GCLID",
+  "GBRAID",
+  "WBRAID",
   "Mesej",
 ];
 
@@ -53,6 +56,9 @@ function toRow(d: Donation): string {
     d.utm_campaign ?? "",
     d.utm_term ?? "",
     d.utm_content ?? "",
+    d.gclid ?? "",
+    d.gbraid ?? "",
+    d.wbraid ?? "",
     d.message ?? "",
   ]
     .map(csvCell)

@@ -33,6 +33,10 @@ export interface Donation {
   utm_campaign: string | null;
   utm_term: string | null;
   utm_content: string | null;
+  /** Google Ads click ids for offline conversion import. */
+  gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
   /** Conversion attribution captured from the payer's browser at submission time. */
   ga_client_id: string | null;
   fbp: string | null;

@@ -105,6 +105,17 @@ alter table public.donations add column if not exists utm_content text;
 create index if not exists donations_utm_source_idx on public.donations (utm_source);
 
 -- ---------------------------------------------------------------------
+--  Google Ads click identifiers (auto-tagging): gclid, or gbraid/wbraid
+--  for iOS traffic. Captured from the landing URL so a conversion that is
+--  only confirmed later (e.g. a manual bank transfer) can be imported back
+--  into Google Ads (offline conversion import) against the original click.
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists gclid  text;
+alter table public.donations add column if not exists gbraid text;
+alter table public.donations add column if not exists wbraid text;
+
+-- ---------------------------------------------------------------------
 --  Conversion attribution, captured from the payer's own browser at
 --  submission time. Used to fire GA4/Facebook server-side conversion
 --  events reliably when a donation is later confirmed paid — including

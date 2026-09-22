@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { calculateFidyah, FIDYAH_CATEGORIES, NEGERI } from "@/lib/fidyah";
 import { formatMYR } from "@/lib/utils";
-import { getStoredUtm } from "@/lib/utm";
+import { getStoredUtm, getStoredClickIds } from "@/lib/utm";
 import type { PaymentMethod, UpsellSettings } from "@/lib/database.types";
 
 interface ManualTransferData {
@@ -99,6 +99,7 @@ export function FidyahForm({
     setSubmitting(true);
     try {
       const utm = getStoredUtm();
+      const clickIds = getStoredClickIds();
       const res = await fetch("/api/fidyah/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -117,6 +118,7 @@ export function FidyahForm({
             ? Math.round(Math.max(1, upsellAmount) * 100)
             : undefined,
           ...(utm ?? {}),
+          ...(clickIds ?? {}),
         }),
       });
       const data = await res.json();

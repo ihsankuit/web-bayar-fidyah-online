@@ -114,6 +114,9 @@ curl -H "Authorization: Bearer $API_KEY" \
       "utm_campaign": "ramadan-2026",
       "utm_term": null,
       "utm_content": "video-a",
+      "gclid": "Cj0KCQ...",
+      "gbraid": null,
+      "wbraid": null,
       "paid_at": "2026-07-15T03:22:10.000Z",
       "created_at": "2026-07-15T03:20:44.000Z"
     }
@@ -333,6 +336,9 @@ any flow.
     "utm_campaign": "ramadan-2026",
     "utm_term": null,
     "utm_content": "video-a",
+    "gclid": "Cj0KCQ...",
+    "gbraid": null,
+    "wbraid": null,
     "paid_at": "2026-07-15T03:22:10.000Z",
     "created_at": "2026-07-15T03:20:44.000Z"
   },
@@ -342,8 +348,11 @@ any flow.
 
 `data` is the full internal donation row (all columns) plus a convenience
 Ringgit `amount` field — so UTM attribution (`utm_source`, `utm_medium`,
-`utm_campaign`, `utm_term`, `utm_content`) arrives with every event. Expect
-`data` to gain new fields over time; don't treat it as a closed schema.
+`utm_campaign`, `utm_term`, `utm_content`) and Google Ads click ids
+(`gclid`, `gbraid`, `wbraid`) arrive with every event. Use the click ids to
+import the confirmed conversion back into Google Ads (offline conversion
+import). Expect `data` to gain new fields over time; don't treat it as a
+closed schema.
 
 Headers:
 
@@ -443,5 +452,6 @@ listed here only so you don't mistake them for public integration points:
   `GET /stats`, `GET/POST /blog`, `GET/PATCH/DELETE /blog/{slug}`,
   `donation.created`/`donation.paid`/`donation.abandoned` webhooks. Donation
   objects and `/stats` now carry UTM attribution (`utm_*` fields,
-  `by_utm_source`, and a `utm_source` filter on `GET /donations`); webhook
-  payloads carry the same UTM fields.
+  `by_utm_source`, and a `utm_source` filter on `GET /donations`) plus Google
+  Ads click ids (`gclid`/`gbraid`/`wbraid`) for offline conversion import;
+  webhook payloads carry the same fields.

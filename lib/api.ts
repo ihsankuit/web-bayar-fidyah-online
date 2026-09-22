@@ -56,6 +56,10 @@ export function serializeDonation(d: Donation) {
     utm_campaign: d.utm_campaign,
     utm_term: d.utm_term,
     utm_content: d.utm_content,
+    // Google Ads click ids — for offline conversion import back to Ads.
+    gclid: d.gclid,
+    gbraid: d.gbraid,
+    wbraid: d.wbraid,
     paid_at: d.paid_at,
     created_at: d.created_at,
   };
