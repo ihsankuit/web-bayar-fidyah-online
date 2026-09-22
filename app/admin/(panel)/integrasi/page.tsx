@@ -34,6 +34,7 @@ export default async function IntegrasiPage() {
         googleAdsId={tracking.googleAdsId}
         googleAdsConversionLabel={tracking.googleAdsConversionLabel}
         gtmId={tracking.gtmId}
+        sgtmUrl={tracking.sgtmUrl}
       />
 
       <IntegrationsManager

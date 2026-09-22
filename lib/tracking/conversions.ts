@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendFacebookPurchase } from "@/lib/tracking/facebook";
 import { sendGa4Purchase } from "@/lib/tracking/google";
+import { getTrackingSettings } from "@/lib/tracking/settings";
 import type { Donation } from "@/lib/database.types";
 
 /**
@@ -31,7 +32,37 @@ export async function sendServerConversion(donation: Donation): Promise<void> {
   if (!claimed || claimed.length === 0) return;
 
   const value = donation.amount_sen / 100;
+  const clientId =
+    donation.ga_client_id ??
+    `${Date.now()}.${Math.floor(Math.random() * 1e9)}`;
 
+  const { sgtmUrl } = await getTrackingSettings();
+
+  // When a server-side GTM container is configured, send ONE GA4 Measurement
+  // Protocol hit to it and let sGTM fan out to GA4 + Meta CAPI + Ads (with the
+  // matching data forwarded). Sending the Facebook CAPI event directly too
+  // would double-count Meta, so it's skipped in this path.
+  if (sgtmUrl) {
+    await sendGa4Purchase({
+      transactionId: donation.reference,
+      value,
+      currency: "MYR",
+      clientId,
+      endpointBase: sgtmUrl,
+      match: {
+        eventId: donation.reference,
+        email: donation.payer_email,
+        phone: donation.payer_phone,
+        fbp: donation.fbp,
+        fbc: donation.fbc,
+        clientIp: donation.client_ip,
+        userAgent: donation.user_agent,
+      },
+    });
+    return;
+  }
+
+  // No sGTM — post directly to Google (GA4 MP) and Meta (CAPI).
   await Promise.allSettled([
     sendFacebookPurchase({
       eventId: donation.reference,
@@ -49,9 +80,7 @@ export async function sendServerConversion(donation: Donation): Promise<void> {
       transactionId: donation.reference,
       value,
       currency: "MYR",
-      clientId:
-        donation.ga_client_id ??
-        `${Date.now()}.${Math.floor(Math.random() * 1e9)}`,
+      clientId,
     }),
   ]);
 }

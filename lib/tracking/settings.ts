@@ -18,6 +18,9 @@ export interface TrackingSettings {
   googleAdsId: string;
   googleAdsConversionLabel: string;
   gtmId: string;
+  /** Server-side GTM container URL. When set, server conversions are sent
+   *  here (GA4 Measurement Protocol) instead of directly to Google/Meta. */
+  sgtmUrl: string;
 }
 
 // Cached per request: the site layout and the status page both read this, and
@@ -33,6 +36,7 @@ export const getTrackingSettings = cache(async function getTrackingSettings(): P
     googleAdsConversionLabel:
       process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL ?? "",
     gtmId: process.env.NEXT_PUBLIC_GTM_ID ?? "",
+    sgtmUrl: process.env.SGTM_URL ?? "",
   };
 
   try {
@@ -40,7 +44,7 @@ export const getTrackingSettings = cache(async function getTrackingSettings(): P
     const { data } = await supabase
       .from("integration_settings")
       .select(
-        "ga_measurement_id, ga_api_secret, fb_pixel_id, fb_capi_access_token, fb_test_event_code, google_ads_id, google_ads_conversion_label, gtm_id"
+        "ga_measurement_id, ga_api_secret, fb_pixel_id, fb_capi_access_token, fb_test_event_code, google_ads_id, google_ads_conversion_label, gtm_id, sgtm_url"
       )
       .eq("id", 1)
       .maybeSingle();
@@ -56,6 +60,7 @@ export const getTrackingSettings = cache(async function getTrackingSettings(): P
         googleAdsConversionLabel:
           data.google_ads_conversion_label || fallback.googleAdsConversionLabel,
         gtmId: data.gtm_id || fallback.gtmId,
+        sgtmUrl: data.sgtm_url || fallback.sgtmUrl,
       };
     }
   } catch {

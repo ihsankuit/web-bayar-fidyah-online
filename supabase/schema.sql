@@ -413,6 +413,12 @@ alter table public.integration_settings
 alter table public.integration_settings
   add column if not exists gtm_id text;
 
+-- Server-side GTM container URL. When set, server conversions are sent here
+-- (GA4 Measurement Protocol) so sGTM fans them out to GA4/Meta/Ads, instead
+-- of the app posting directly to Google/Meta.
+alter table public.integration_settings
+  add column if not exists sgtm_url text;
+
 -- WhatsApp (Murpati) credentials, used to send fidyah distribution updates
 -- (managed from Admin > Integrasi).
 alter table public.integration_settings
