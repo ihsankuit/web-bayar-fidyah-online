@@ -21,27 +21,33 @@ export function formatRinggit(value: number): string {
   }).format(value);
 }
 
-// Timestamps are stored in UTC (Postgres timestamptz). These format for a
-// Malaysian audience, so pin the zone to Asia/Kuala_Lumpur (UTC+8) — otherwise
-// the value renders in the runtime's zone, which is UTC on the server (Vercel),
-// showing every time 8 hours early.
-const MY_TZ = "Asia/Kuala_Lumpur";
+// Timestamps are stored in UTC (Postgres timestamptz). We render them for a
+// Malaysian audience (UTC+8). Rather than pass timeZone:"Asia/Kuala_Lumpur"
+// — which silently falls back to UTC on any runtime whose ICU build lacks the
+// timezone database (a real Vercel/serverless gotcha, making every time show
+// 8 hours early) — shift the instant by a fixed +8h and format the shifted
+// value in UTC. Malaysia has no daylight saving, so +8 is always exact, and
+// timeZone:"UTC" needs no ICU tz data at all.
+const MY_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+function toMyt(input: string | Date): Date {
+  const date = typeof input === "string" ? new Date(input) : input;
+  return new Date(date.getTime() + MY_OFFSET_MS);
+}
 
 export function formatDate(input: string | Date): string {
-  const date = typeof input === "string" ? new Date(input) : input;
   return new Intl.DateTimeFormat("ms-MY", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone: MY_TZ,
-  }).format(date);
+    timeZone: "UTC",
+  }).format(toMyt(input));
 }
 
 export function formatDateOnly(input: string | Date): string {
-  const date = typeof input === "string" ? new Date(input) : input;
   return new Intl.DateTimeFormat("ms-MY", {
     dateStyle: "long",
-    timeZone: MY_TZ,
-  }).format(date);
+    timeZone: "UTC",
+  }).format(toMyt(input));
 }
 
 /** Malay relative time, e.g. "3 minit lalu", "2 hari lalu". Floors to "Baru sahaja" under 1 minute. */
