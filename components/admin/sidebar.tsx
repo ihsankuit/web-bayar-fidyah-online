@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
+  Contact,
   FileText,
   GalleryHorizontalEnd,
   Gift,
@@ -37,6 +38,7 @@ import { Logo } from "@/components/site/logo";
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/sumbangan", label: "Sumbangan", icon: Wallet },
+  { href: "/admin/pembayar", label: "Pembayar", icon: Contact },
   { href: "/admin/agihan", label: "Agihan Fidyah", icon: MessageCircle },
   { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/galeri", label: "Galeri", icon: GalleryHorizontalEnd },
