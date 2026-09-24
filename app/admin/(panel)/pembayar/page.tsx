@@ -33,15 +33,16 @@ export default async function PembayarPage({
   const term = q.trim().toLowerCase();
 
   const supabase = await createClient();
-  const { payers, withoutPhone } = await getPayers(supabase);
+  const { payers, withoutContact } = await getPayers(supabase);
 
+  const digits = term.replace(/\D/g, "");
   const filtered = term
     ? payers.filter(
         (p) =>
           p.name.toLowerCase().includes(term) ||
           p.email.toLowerCase().includes(term) ||
-          p.phone.includes(term.replace(/\D/g, "")) ||
-          p.displayPhone.toLowerCase().includes(term)
+          (digits && p.phone?.includes(digits)) ||
+          (p.displayPhone ?? "").toLowerCase().includes(term)
       )
     : payers;
 
@@ -65,7 +66,11 @@ export default async function PembayarPage({
           icon={<Users className="h-5 w-5" />}
           label="Pembayar unik"
           value={String(payers.length)}
-          hint={withoutPhone > 0 ? `${withoutPhone} tiada no. telefon` : undefined}
+          hint={
+            withoutContact > 0
+              ? `${withoutContact} tiada telefon/emel`
+              : undefined
+          }
         />
         <StatTile
           icon={<Repeat className="h-5 w-5" />}
@@ -122,7 +127,12 @@ export default async function PembayarPage({
                     <TableCell>
                       <div className="font-medium">{p.name}</div>
                       <div className="font-mono text-xs text-muted-foreground">
-                        {p.displayPhone}
+                        {p.displayPhone ?? p.email}
+                        {p.keyType === "email" && (
+                          <span className="ml-1.5 font-sans not-italic text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                            (emel)
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="hidden text-sm lg:table-cell">
@@ -156,7 +166,7 @@ export default async function PembayarPage({
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild size="sm" variant="ghost">
-                        <Link href={`/admin/pembayar/${p.phone}`}>
+                        <Link href={`/admin/pembayar/${encodeURIComponent(p.key)}`}>
                           Profil <ArrowRight className="h-4 w-4" />
                         </Link>
                       </Button>

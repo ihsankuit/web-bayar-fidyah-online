@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { createClient } from "@/lib/supabase/server";
-import { getPayerByPhone } from "@/lib/payers";
+import { getPayerByKey } from "@/lib/payers";
 import { getCategory } from "@/lib/fidyah";
 import { formatMYR, formatDate } from "@/lib/utils";
 
@@ -28,14 +28,14 @@ export const dynamic = "force-dynamic";
 export default async function PayerProfilePage({
   params,
 }: {
-  params: Promise<{ phone: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { phone } = await params;
+  const { id } = await params;
   const supabase = await createClient();
-  const payer = await getPayerByPhone(supabase, phone);
+  const payer = await getPayerByKey(supabase, decodeURIComponent(id));
   if (!payer) notFound();
 
-  const waLink = `https://wa.me/${payer.phone}`;
+  const waLink = payer.phone ? `https://wa.me/${payer.phone}` : null;
 
   return (
     <div className="space-y-6">
@@ -50,14 +50,16 @@ export default async function PayerProfilePage({
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{payer.name}</h1>
           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
-            <a
-              href={waLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 hover:text-foreground"
-            >
-              <Phone className="h-4 w-4" /> {payer.displayPhone}
-            </a>
+            {payer.displayPhone && waLink && (
+              <a
+                href={waLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:text-foreground"
+              >
+                <Phone className="h-4 w-4" /> {payer.displayPhone}
+              </a>
+            )}
             <a
               href={`mailto:${payer.email}`}
               className="inline-flex items-center gap-1.5 hover:text-foreground"
