@@ -130,3 +130,66 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@layer components {
+  /**
+   * Landing page texture.
+   *
+   * Both patterns are drawn as CSS masks over a flat colour rather than as
+   * coloured background images. That way they take their colour from the
+   * theme tokens and adapt to dark mode on their own, and they stay inside
+   * the stylesheet — no image requests, nothing extra for the browser to
+   * fetch, and no effect on LCP.
+   *
+   * The opacities are deliberately low. Texture on a page where people are
+   * about to enter payment details should be felt rather than seen; anything
+   * strong enough to notice competes with the form.
+   */
+
+  /* An eight-point star lattice — the geometry of Islamic tilework, dialled
+     down until it reads as woven paper. Tiles seamlessly: the half-motifs on
+     each edge meet their neighbours across the seam. */
+  .texture-geometric {
+    background-color: var(--primary);
+    opacity: 0.045;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='64'%20height='64'%20viewBox='0%200%2064%2064'%20fill='none'%20stroke='black'%20stroke-width='1.5'%3E%3Cpath%20d='M32%205%2059%2032%2032%2059%205%2032Z'/%3E%3Cpath%20d='M13%2013h38v38H13z'/%3E%3Cpath%20d='M0%2019%2013%2032%200%2045'/%3E%3Cpath%20d='M64%2019%2051%2032%2064%2045'/%3E%3Cpath%20d='M19%200%2032%2013%2045%200'/%3E%3Cpath%20d='M19%2064%2032%2051%2045%2064'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='64'%20height='64'%20viewBox='0%200%2064%2064'%20fill='none'%20stroke='black'%20stroke-width='1.5'%3E%3Cpath%20d='M32%205%2059%2032%2032%2059%205%2032Z'/%3E%3Cpath%20d='M13%2013h38v38H13z'/%3E%3Cpath%20d='M0%2019%2013%2032%200%2045'/%3E%3Cpath%20d='M64%2019%2051%2032%2064%2045'/%3E%3Cpath%20d='M19%200%2032%2013%2045%200'/%3E%3Cpath%20d='M19%2064%2032%2051%2045%2064'/%3E%3C/svg%3E");
+    -webkit-mask-size: 64px 64px;
+    mask-size: 64px 64px;
+    -webkit-mask-repeat: repeat;
+    mask-repeat: repeat;
+  }
+
+  .dark .texture-geometric {
+    opacity: 0.08;
+  }
+
+  /* Fine film grain, so large flat panels read as paper rather than as a
+     rendered rectangle. Masked with the foreground colour, so it darkens the
+     light theme and lightens the dark one without being re-authored. */
+  .texture-grain {
+    background-color: var(--foreground);
+    opacity: 0.035;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='140'%20height='140'%3E%3Cfilter%20id='g'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.75'%20numOctaves='3'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Crect%20width='140'%20height='140'%20filter='url%28%23g%29'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='140'%20height='140'%3E%3Cfilter%20id='g'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.75'%20numOctaves='3'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='saturate'%20values='0'/%3E%3C/filter%3E%3Crect%20width='140'%20height='140'%20filter='url%28%23g%29'/%3E%3C/svg%3E");
+    -webkit-mask-size: 140px 140px;
+    mask-size: 140px 140px;
+    -webkit-mask-repeat: repeat;
+    mask-repeat: repeat;
+  }
+
+  .dark .texture-grain {
+    opacity: 0.05;
+  }
+
+  /* Anyone who has asked their OS for more contrast has said, in effect,
+     that they need text to sit on a plain field. Decoration behind the copy
+     is the first thing to go — and on a site whose readers include older
+     payers, that request is worth honouring. */
+  @media (prefers-contrast: more) {
+    .texture-geometric,
+    .texture-grain {
+      display: none;
+    }
+  }
+}

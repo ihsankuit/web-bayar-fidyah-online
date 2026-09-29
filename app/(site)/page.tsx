@@ -39,6 +39,7 @@ import { getGalleryItems } from "@/lib/gallery";
 import { getRecentSocialProof } from "@/lib/social-proof";
 import { formatMYR } from "@/lib/utils";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
+import { GeometricTexture, GrainTexture } from "@/components/site/texture";
 import { SITE_URL } from "@/lib/site-url";
 import { ORG, ORG_SAME_AS } from "@/lib/organization";
 
@@ -245,7 +246,12 @@ export default async function HomePage() {
               <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-background/50 via-background/60 to-background" />
             </>
           )}
+          {/* Stacked back to front: lattice, then grain over it, then the
+              existing glow, which softens both where the headline sits. */}
+          <GeometricTexture />
+          <GrainTexture />
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]" />
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-background/40 to-background" />
           <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
             <div className="space-y-6">
               <Badge
@@ -298,7 +304,8 @@ export default async function HomePage() {
         </section>
 
         {/* Trust badges */}
-        <section className="border-y border-border/60 bg-muted/30">
+        <section className="relative isolate overflow-hidden border-y border-border/60 bg-muted/30">
+          <GeometricTexture />
           <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:grid-cols-3">
             <Feature
               icon={<ShieldCheck className="h-5 w-5" />}
@@ -362,7 +369,11 @@ export default async function HomePage() {
         </section>
 
         {/* Categories */}
-        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section
+          id="kategori"
+          className="relative isolate overflow-hidden scroll-mt-20 bg-muted/30 py-16 lg:py-24"
+        >
+          <GeometricTexture />
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -454,7 +465,11 @@ export default async function HomePage() {
         </section>
 
         {/* Cara Kira Fidyah */}
-        <section id="cara-kira" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section
+          id="cara-kira"
+          className="relative isolate overflow-hidden scroll-mt-20 bg-muted/30 py-16 lg:py-24"
+        >
+          <GrainTexture />
           <div className="mx-auto max-w-4xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -572,7 +587,11 @@ export default async function HomePage() {
 
         {/* Galeri */}
         {gallery.length > 0 && (
-          <section id="galeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <section
+            id="galeri"
+            className="relative isolate overflow-hidden scroll-mt-20 bg-muted/30 py-16 lg:py-24"
+          >
+            <GrainTexture />
             <div className="mx-auto max-w-6xl px-4">
               <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -607,7 +626,11 @@ export default async function HomePage() {
         )}
 
         {/* Liputan Negeri */}
-        <section id="negeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section
+          id="negeri"
+          className="relative isolate overflow-hidden scroll-mt-20 bg-muted/30 py-16 lg:py-24"
+        >
+          <GeometricTexture />
           <div className="mx-auto max-w-4xl px-4 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Bayar Fidyah Online di Semua Negeri di Malaysia
@@ -658,7 +681,12 @@ export default async function HomePage() {
         {/* CTA */}
         <section className="py-16 lg:py-24">
           <div className="mx-auto max-w-5xl px-4">
-            <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-16">
+            <div className="relative isolate overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-16">
+              {/* On a solid brand panel the lattice can carry more weight —
+                  it reads as embossing rather than as a pattern. Painted in
+                  white here rather than from the theme, since this panel is
+                  the same blue in both themes. */}
+              <GeometricTexture className="bg-white opacity-[0.12]" />
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,rgba(255,255,255,.15),transparent)]" />
               <h2 className="text-balance text-3xl font-bold sm:text-4xl">
                 Tunaikan Tanggungan Fidyah Anda Hari Ini
