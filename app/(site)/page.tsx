@@ -37,6 +37,7 @@ import { getLandingContent } from "@/lib/settings";
 import { getUpsellSettings } from "@/lib/upsell";
 import { getGalleryItems } from "@/lib/gallery";
 import { getRecentSocialProof } from "@/lib/social-proof";
+import { parseYouTubeId, youtubeEmbedUrl } from "@/lib/youtube";
 import { formatMYR } from "@/lib/utils";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
 import { SITE_URL } from "@/lib/site-url";
@@ -53,6 +54,15 @@ export default async function HomePage() {
   ]);
   const galleryImages = gallery.filter((g) => g.type === "image");
   const galleryVideos = gallery.filter((g) => g.type === "video");
+
+  // Explainer video. Autoplay is only allowed by browsers while muted, so an
+  // autoplaying embed starts silent (the viewer unmutes via the player).
+  const videoId = parseYouTubeId(content.video_url);
+  const videoSrc = videoId
+    ? `${youtubeEmbedUrl(videoId)}?rel=0&modestbranding=1${
+        content.video_autoplay ? "&autoplay=1&mute=1&playsinline=1" : ""
+      }`
+    : "";
 
   // JSON-LD: WebSite schema
   const websiteJsonLd = {
@@ -360,6 +370,40 @@ export default async function HomePage() {
             </figure>
           </div>
         </section>
+
+        {/* Explainer video */}
+        {videoId && (
+          <section
+            id="video"
+            className="scroll-mt-20 py-12 sm:py-16 lg:py-24"
+          >
+            <div className="mx-auto max-w-4xl px-4">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  {content.video_title}
+                </h2>
+              </div>
+              <div className="mt-10 overflow-hidden rounded-2xl border bg-card shadow-sm">
+                <div className="aspect-video w-full">
+                  <iframe
+                    src={videoSrc}
+                    title={content.video_title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    className="h-full w-full border-0"
+                  />
+                </div>
+              </div>
+              {content.video_autoplay && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  Video dimainkan automatik tanpa bunyi — tekan ikon bunyi pada
+                  video untuk mendengar.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Categories */}
         <section id="kategori" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">

@@ -170,6 +170,12 @@ export interface LandingContent {
   hero_cta: string;
   /** Optional soft background image behind the hero section. */
   hero_image_url: string;
+  /** Explainer video (YouTube URL or id). Empty hides the video section. */
+  video_url: string;
+  video_title: string;
+  /** Autoplay the video. Browsers only allow autoplay while muted, so an
+   *  autoplaying video starts silent with an unmute control. */
+  video_autoplay: boolean;
   about_title: string;
   about_body: string;
   hukum_title: string;
