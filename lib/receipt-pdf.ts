@@ -17,6 +17,7 @@ import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
  */
 
 const BRAND = rgb(0.145, 0.388, 0.921); // matches the site's primary blue
+const PAID = rgb(0.086, 0.639, 0.29); // green-600, for the LUNAS badge
 const INK = rgb(0.102, 0.137, 0.2);
 const MUTED = rgb(0.353, 0.392, 0.471);
 const HAIRLINE = rgb(0.886, 0.902, 0.937);
@@ -92,8 +93,7 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
     y: PAGE_H - 74,
     width: paidWidth + 20,
     height: 24,
-    color: rgb(1, 1, 1),
-    opacity: 0.18,
+    color: PAID,
   });
   page.drawText(paidLabel, {
     x: PAGE_W - MARGIN - paidWidth - 10,
