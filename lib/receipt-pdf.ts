@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf
 import type { Donation } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
+import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
 
 /**
  * Official receipt PDF for a settled fidyah payment, generated on demand from
@@ -74,6 +75,14 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
     size: 12,
     font,
     color: rgb(1, 1, 1),
+  });
+  page.drawText(sanitize(`Dikuasakan oleh ${ORG.name}`), {
+    x: MARGIN,
+    y: PAGE_H - 106,
+    size: 9.5,
+    font,
+    color: rgb(1, 1, 1),
+    opacity: 0.9,
   });
 
   const paidLabel = "LUNAS";
@@ -197,20 +206,54 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
     color: BRAND,
   });
 
-  // ---- Footer ------------------------------------------------------------
+  // ---- Issuer (organisation) --------------------------------------------
+  let fy = 182;
+  line(page, fy + 18);
+  page.drawText("Dikeluarkan oleh", {
+    x: MARGIN,
+    y: fy,
+    size: 8,
+    font,
+    color: MUTED,
+  });
+  fy -= 15;
+  page.drawText(sanitize(ORG.name), {
+    x: MARGIN,
+    y: fy,
+    size: 11,
+    font: bold,
+    color: INK,
+  });
+  fy -= 14;
+  page.drawText(sanitize(ORG_ADDRESS_LINE), {
+    x: MARGIN,
+    y: fy,
+    size: 9,
+    font,
+    color: MUTED,
+  });
+  fy -= 13;
+  page.drawText(
+    sanitize(
+      `Tel: ${ORG.phoneDisplay}     ${ORG.website.replace(/^https?:\/\//, "")}     bayarfidyahonline.com`
+    ),
+    { x: MARGIN, y: fy, size: 9, font, color: MUTED }
+  );
+
+  // ---- Notes / doa -------------------------------------------------------
   const notes = [
     "Resit ini dijana secara automatik dan sah tanpa tandatangan.",
     "Semoga Allah SWT menerima amalan anda dan memberi ganjaran berlipat ganda. Aamiin.",
   ];
-  let ny = 110;
+  let ny = 108;
   for (const note of notes) {
     page.drawText(note, { x: MARGIN, y: ny, size: 9, font, color: MUTED });
     ny -= 14;
   }
-  line(page, 84);
-  page.drawText("bayarfidyahonline.com", {
+  line(page, 74);
+  page.drawText("Terima kasih atas sumbangan fidyah anda.", {
     x: MARGIN,
-    y: 64,
+    y: 58,
     size: 9,
     font: bold,
     color: MUTED,
