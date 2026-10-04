@@ -26,6 +26,7 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import { ProofViewer } from "@/components/admin/proof-viewer";
 import { DeleteDonationButton } from "@/components/admin/delete-donation-button";
 import { FollowUpButton } from "@/components/admin/follow-up-button";
+import { EditDonationButton } from "@/components/admin/edit-donation-button";
 import { getFollowUpSettings } from "@/lib/followup";
 import {
   confirmManualPayment,
@@ -262,6 +263,7 @@ export default async function SumbanganPage({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
+                        <EditDonationButton donation={d} />
                         {d.status !== "paid" && (
                           <FollowUpButton
                             donation={d}
@@ -281,7 +283,7 @@ export default async function SumbanganPage({
                             </Button>
                           </form>
                         )}
-                        {d.payment_method === "manual" && d.proof_of_payment_path && (
+                        {d.proof_of_payment_path && (
                           <ProofViewer
                             donationId={d.id}
                             path={d.proof_of_payment_path}

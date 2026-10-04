@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import {
   deleteDonation,
@@ -9,6 +10,7 @@ import {
   settleDonationByReference,
 } from "@/lib/donations";
 import { getPurchase } from "@/lib/chip";
+import { getCategory } from "@/lib/fidyah";
 import { sendFollowUpEmail, sendReceiptEmail } from "@/lib/resend";
 import { logActivity } from "@/lib/activity-log";
 import { applyFollowUpVariables, paymentLink } from "@/lib/followup";
@@ -231,6 +233,163 @@ export async function sendFollowUp(
       `Susulan dihantar melalui ${sent.join(" & ")}.` +
       (failed.length > 0 ? ` Gagal: ${failed.join("; ")}.` : "") +
       countWarning,
+  };
+}
+
+export interface EditDonationState {
+  error?: string;
+  ok?: boolean;
+  message?: string;
+}
+
+const editSchema = z.object({
+  payer_name: z.string().trim().min(1, "Nama pembayar diperlukan.").max(120),
+  payer_email: z.string().trim().email("Alamat emel tidak sah.").max(160),
+  payer_phone: z.string().trim().max(30),
+  negeri: z.string().trim().max(60),
+  category: z.string().trim().min(1),
+  days: z.coerce
+    .number()
+    .int()
+    .min(1, "Bilangan hari mesti sekurang-kurangnya 1.")
+    .max(365, "Bilangan hari tidak boleh melebihi 365."),
+  multiplier: z.coerce
+    .number()
+    .int()
+    .min(1, "Gandaan mesti sekurang-kurangnya 1.")
+    .max(20, "Gandaan tidak boleh melebihi 20."),
+  amount: z.coerce.number().min(1, "Jumlah minimum ialah RM1.00").max(1_000_000),
+  message: z.string().trim().max(500),
+  status: z.enum(["pending", "paid", "failed"]),
+});
+
+/** Human-readable field labels for the activity log, so the audit trail reads. */
+const FIELD_LABELS: Record<string, string> = {
+  payer_name: "nama",
+  payer_email: "emel",
+  payer_phone: "telefon",
+  negeri: "negeri",
+  category: "kategori",
+  days: "hari",
+  multiplier: "gandaan",
+  amount_sen: "jumlah (sen)",
+  message: "catatan",
+  status: "status",
+};
+
+/**
+ * Edit a donation record and, optionally, settle it.
+ *
+ * This exists for payments that happened outside the gateway: a payer whose
+ * CHIP attempt failed, who then paid some other way and sent the receipt over
+ * WhatsApp. The admin uploads that receipt against the record and confirms
+ * it here, which is the only way such a payment ever reaches `paid`.
+ *
+ * Field changes are written before any status change, so that a confirmation
+ * sends the receipt with the corrected amount rather than the stale one. The
+ * before/after of every changed field goes to the activity log — this action
+ * can move money figures, so it must not be silent.
+ */
+export async function updateDonation(
+  _prev: EditDonationState,
+  formData: FormData
+): Promise<EditDonationState> {
+  const supabase = await requireUser();
+  const id = formData.get("id") as string;
+  if (!id) return { error: "Sumbangan tidak sah." };
+
+  const parsed = editSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Maklumat tidak sah." };
+  }
+  const input = parsed.data;
+
+  if (!getCategory(input.category)) {
+    return { error: "Kategori tidak sah." };
+  }
+
+  const { data: donation } = await supabase
+    .from("donations")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle<Donation>();
+  if (!donation) return { error: "Rekod sumbangan tidak dijumpai." };
+
+  // Ringgit in the form, sen in the database. Rounding rather than truncating
+  // so RM100.10 doesn't quietly become RM100.09.
+  const amountSen = Math.round(input.amount * 100);
+
+  const fields = {
+    payer_name: input.payer_name,
+    payer_email: input.payer_email,
+    payer_phone: input.payer_phone || null,
+    negeri: input.negeri || null,
+    category: input.category,
+    days: input.days,
+    multiplier: input.multiplier,
+    amount_sen: amountSen,
+    message: input.message || null,
+  };
+
+  const changes: Record<string, string> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    const before = donation[key as keyof Donation] ?? null;
+    if (before !== value) {
+      changes[FIELD_LABELS[key] ?? key] = `${before ?? "-"} → ${value ?? "-"}`;
+    }
+  }
+
+  if (Object.keys(changes).length > 0) {
+    const { error } = await supabase
+      .from("donations")
+      .update(fields)
+      .eq("id", id);
+    if (error) {
+      console.error("[sumbangan/updateDonation] update failed:", error);
+      return { error: `Gagal menyimpan perubahan: ${error.message}` };
+    }
+  }
+
+  // Status is handled separately from the plain fields: moving to `paid` has
+  // to go through markDonationPaid so the receipt, the WhatsApp confirmation,
+  // the server-side conversion and the webhook each fire exactly once.
+  let statusNote = "";
+  if (input.status !== donation.status) {
+    changes[FIELD_LABELS.status] = `${donation.status} → ${input.status}`;
+
+    if (input.status === "paid") {
+      const settled = await markDonationPaid(id);
+      if (!settled) return { error: "Gagal mengesahkan pembayaran." };
+      statusNote = " Resit dihantar kepada pembayar.";
+    } else {
+      // Reversing a confirmation. Nothing is sent, and paid_at is cleared so
+      // the record doesn't claim a payment time for a payment that is no
+      // longer confirmed.
+      const { error } = await supabase
+        .from("donations")
+        .update({ status: input.status, paid_at: null })
+        .eq("id", id);
+      if (error) return { error: `Gagal menukar status: ${error.message}` };
+      statusNote =
+        donation.status === "paid"
+          ? " Pengesahan pembayaran ditarik balik."
+          : "";
+    }
+  }
+
+  if (Object.keys(changes).length === 0) {
+    return { ok: true, message: "Tiada perubahan untuk disimpan." };
+  }
+
+  await logActivity("donation.edit", {
+    reference: donation.reference,
+    ...changes,
+  });
+
+  revalidateAll();
+  return {
+    ok: true,
+    message: `Sumbangan ${donation.reference} dikemaskini.${statusNote}`,
   };
 }
 
