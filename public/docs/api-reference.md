@@ -78,8 +78,8 @@ List donations, newest first.
 | --- | --- | --- |
 | `status` | `pending` \| `paid` \| `failed` | Filter by status |
 | `utm_source` | string | Filter by exact traffic source (e.g. `facebook`) |
-| `limit` | integer | Default 50, max 200 |
-| `offset` | integer | Default 0 |
+| `limit` | integer | Optional, uncapped. Omit to return **every** matching row |
+| `offset` | integer | Default 0 — start position |
 | `from` | ISO 8601 | `created_at >= from` |
 | `to` | ISO 8601 | `created_at <= to` |
 
@@ -127,8 +127,9 @@ curl -H "Authorization: Bearer $API_KEY" \
 }
 ```
 
-`count` is the total number of matching rows (not just the current page) —
-use it with `limit`/`offset` to paginate.
+`count` is the total number of matching rows. Omit `limit` to get them all
+in one response; or page with `limit`/`offset` when you prefer smaller pages
+(`limit` is `null` in the response when it wasn't set).
 
 ---
 
