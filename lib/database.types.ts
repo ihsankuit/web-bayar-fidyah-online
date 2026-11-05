@@ -151,8 +151,12 @@ export interface AgihanUpdate {
   title: string | null;
   location: string | null;
   caption: string | null;
-  image_url: string | null;
-  storage_path: string | null;
+  /** Up to 4 photos. */
+  image_urls: string[];
+  storage_paths: string[];
+  /** Legacy single-image fields (pre-multi-image); read as a fallback. */
+  image_url?: string | null;
+  storage_path?: string | null;
   happened_on: string; // date (YYYY-MM-DD)
   sort_order: number;
   created_at: string;

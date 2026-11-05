@@ -20,3 +20,15 @@ export async function getAgihanUpdates(limit = 12): Promise<AgihanUpdate[]> {
     return [];
   }
 }
+
+/** The update's photos, preferring the array and falling back to legacy single. */
+export function updateImages(u: AgihanUpdate): string[] {
+  if (u.image_urls?.length) return u.image_urls;
+  return u.image_url ? [u.image_url] : [];
+}
+
+/** The update's storage paths (for deletion), array with legacy fallback. */
+export function updateStoragePaths(u: AgihanUpdate): string[] {
+  if (u.storage_paths?.length) return u.storage_paths;
+  return u.storage_path ? [u.storage_path] : [];
+}

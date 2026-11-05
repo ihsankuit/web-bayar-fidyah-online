@@ -80,16 +80,18 @@ export function AgihanUpdateManager() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Gambar</Label>
+            <Label htmlFor="images">Gambar (maksimum 4)</Label>
             <Input
-              id="image"
+              id="images"
               type="file"
-              name="image"
+              name="images"
               accept="image/*"
+              multiple
               className="cursor-pointer"
             />
             <p className="text-xs text-muted-foreground">
-              Maksimum 10MB. Gambar dipaparkan dalam timeline di laman utama.
+              Boleh pilih sehingga 4 gambar, setiap satu maksimum 10MB. Gambar
+              dipaparkan dalam timeline di laman utama.
             </p>
           </div>
           <SubmitButton />

@@ -7,6 +7,7 @@ import { slugify } from "@/lib/utils";
 
 const BUCKET = "media";
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_IMAGES = 4;
 
 async function requireUser() {
   const supabase = await createClient();
@@ -22,14 +23,16 @@ export interface AgihanUpdateState {
   ok?: boolean;
 }
 
-/** Add a distribution-update timeline entry (photo + date + place + caption). */
+/** Add a distribution-update timeline entry (up to 4 photos + date + place + caption). */
 export async function addAgihanUpdate(
   _prev: AgihanUpdateState,
   formData: FormData
 ): Promise<AgihanUpdateState> {
   const supabase = await requireUser();
 
-  const file = formData.get("image") as File | null;
+  const files = formData
+    .getAll("images")
+    .filter((f): f is File => f instanceof File && f.size > 0);
   const title = ((formData.get("title") as string) || "").trim() || null;
   const location = ((formData.get("location") as string) || "").trim() || null;
   const caption = ((formData.get("caption") as string) || "").trim() || null;
@@ -39,15 +42,18 @@ export async function addAgihanUpdate(
   if (!title && !caption) {
     return { error: "Sila isi sekurang-kurangnya tajuk atau keterangan." };
   }
+  if (files.length > MAX_IMAGES) {
+    return { error: `Maksimum ${MAX_IMAGES} gambar bagi setiap agihan.` };
+  }
 
-  let imageUrl: string | null = null;
-  let storagePath: string | null = null;
+  const imageUrls: string[] = [];
+  const storagePaths: string[] = [];
 
-  if (file && file.size > 0) {
+  for (const file of files) {
     if (!file.type.startsWith("image/"))
-      return { error: "Fail yang dipilih bukan imej." };
+      return { error: `Fail "${file.name}" bukan imej.` };
     if (file.size > MAX_IMAGE_BYTES)
-      return { error: "Saiz imej melebihi had 10MB." };
+      return { error: `Imej "${file.name}" melebihi had 10MB.` };
 
     const ext = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
     const base = slugify(file.name.replace(/\.[^.]+$/, "")) || "agihan";
@@ -66,16 +72,16 @@ export async function addAgihanUpdate(
     const {
       data: { publicUrl },
     } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    imageUrl = publicUrl;
-    storagePath = path;
+    imageUrls.push(publicUrl);
+    storagePaths.push(path);
   }
 
   const { error } = await supabase.from("agihan_updates").insert({
     title,
     location,
     caption,
-    image_url: imageUrl,
-    storage_path: storagePath,
+    image_urls: imageUrls,
+    storage_paths: storagePaths,
     happened_on: happenedOn,
   });
   if (error) return { error: error.message };
@@ -85,14 +91,19 @@ export async function addAgihanUpdate(
   return { ok: true };
 }
 
-/** Delete a distribution-update entry and its uploaded image. */
+/** Delete a distribution-update entry and all its uploaded images. */
 export async function deleteAgihanUpdate(formData: FormData) {
   const supabase = await requireUser();
   const id = formData.get("id") as string;
-  const path = formData.get("storage_path") as string;
   if (!id) return;
 
-  if (path) await supabase.storage.from(BUCKET).remove([path]);
+  // Paths are passed newline-joined (storage keys never contain newlines).
+  const paths = ((formData.get("storage_paths") as string) || "")
+    .split("\n")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (paths.length > 0) await supabase.storage.from(BUCKET).remove(paths);
+
   await supabase.from("agihan_updates").delete().eq("id", id);
   revalidatePath("/admin/update-agihan");
   revalidatePath("/");

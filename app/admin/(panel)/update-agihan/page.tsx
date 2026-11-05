@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AgihanUpdateManager } from "@/components/admin/agihan-update-manager";
 import { createClient } from "@/lib/supabase/server";
 import type { AgihanUpdate } from "@/lib/database.types";
+import { updateImages, updateStoragePaths } from "@/lib/agihan-updates";
 import { formatDateOnly } from "@/lib/utils";
 import { deleteAgihanUpdate } from "./actions";
 
@@ -41,16 +42,23 @@ export default async function UpdateAgihanPage() {
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
+            {items.map((item) => {
+              const images = updateImages(item);
+              return (
               <Card key={item.id} className="overflow-hidden">
-                {item.image_url && (
+                {images.length > 0 && (
                   <div className="relative aspect-video bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={item.image_url}
+                      src={images[0]}
                       alt={item.title ?? ""}
                       className="h-full w-full object-cover"
                     />
+                    {images.length > 1 && (
+                      <span className="absolute bottom-2 right-2 rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white">
+                        {images.length} gambar
+                      </span>
+                    )}
                   </div>
                 )}
                 <CardContent className="space-y-1 p-4">
@@ -76,8 +84,8 @@ export default async function UpdateAgihanPage() {
                     <input type="hidden" name="id" value={item.id} />
                     <input
                       type="hidden"
-                      name="storage_path"
-                      value={item.storage_path ?? ""}
+                      name="storage_paths"
+                      value={updateStoragePaths(item).join("\n")}
                     />
                     <Button
                       type="submit"
@@ -90,7 +98,8 @@ export default async function UpdateAgihanPage() {
                   </form>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
