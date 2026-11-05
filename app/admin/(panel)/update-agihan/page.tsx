@@ -1,4 +1,5 @@
-import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -80,22 +81,29 @@ export default async function UpdateAgihanPage() {
                       {item.caption}
                     </p>
                   )}
-                  <form action={deleteAgihanUpdate} className="pt-2">
-                    <input type="hidden" name="id" value={item.id} />
-                    <input
-                      type="hidden"
-                      name="storage_paths"
-                      value={updateStoragePaths(item).join("\n")}
-                    />
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" /> Padam
+                  <div className="flex items-center gap-1 pt-2">
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/admin/update-agihan/${item.id}`}>
+                        <Pencil className="h-4 w-4" /> Edit
+                      </Link>
                     </Button>
-                  </form>
+                    <form action={deleteAgihanUpdate}>
+                      <input type="hidden" name="id" value={item.id} />
+                      <input
+                        type="hidden"
+                        name="storage_paths"
+                        value={updateStoragePaths(item).join("\n")}
+                      />
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" /> Padam
+                      </Button>
+                    </form>
+                  </div>
                 </CardContent>
               </Card>
               );
