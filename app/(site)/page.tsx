@@ -16,6 +16,7 @@ import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FidyahForm } from "@/components/site/fidyah-form";
 import { Gallery } from "@/components/site/gallery";
+import { AgihanTimeline } from "@/components/site/agihan-timeline";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import {
 import { getLandingContent } from "@/lib/settings";
 import { getUpsellSettings } from "@/lib/upsell";
 import { getGalleryItems } from "@/lib/gallery";
+import { getAgihanUpdates } from "@/lib/agihan-updates";
 import { getRecentSocialProof } from "@/lib/social-proof";
 import { parseYouTubeId, youtubeEmbedUrl } from "@/lib/youtube";
 import { formatMYR } from "@/lib/utils";
@@ -46,12 +48,14 @@ import { ORG, ORG_SAME_AS } from "@/lib/organization";
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [content, upsell, gallery, socialProof] = await Promise.all([
-    getLandingContent(),
-    getUpsellSettings(),
-    getGalleryItems(),
-    getRecentSocialProof(),
-  ]);
+  const [content, upsell, gallery, socialProof, agihanUpdates] =
+    await Promise.all([
+      getLandingContent(),
+      getUpsellSettings(),
+      getGalleryItems(),
+      getRecentSocialProof(),
+      getAgihanUpdates(),
+    ]);
   const galleryImages = gallery.filter((g) => g.type === "image");
   const galleryVideos = gallery.filter((g) => g.type === "video");
 
@@ -330,6 +334,30 @@ export default async function HomePage() {
             />
           </div>
         </section>
+
+        {/* Update Agihan (timeline) */}
+        {agihanUpdates.length > 0 && (
+          <section
+            id="update-agihan"
+            className="scroll-mt-20 py-12 sm:py-16 lg:py-24"
+          >
+            <div className="mx-auto max-w-5xl px-4">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  Update Agihan
+                </h2>
+                <p className="mt-3 text-muted-foreground">
+                  Ikuti perjalanan fidyah anda — setiap sumbangan disalurkan
+                  kepada golongan asnaf dan fakir miskin melalui projek Dapur
+                  Ihsan.
+                </p>
+              </div>
+              <div className="mt-12">
+                <AgihanTimeline items={agihanUpdates} />
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Hukum Fidyah */}
         <section id="hukum" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">

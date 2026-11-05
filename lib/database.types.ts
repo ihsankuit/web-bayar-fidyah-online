@@ -145,6 +145,19 @@ export interface FidyahDistributionRecipient {
 
 export type GalleryType = "image" | "video";
 
+/** A public distribution-update timeline entry (Admin -> Update Agihan). */
+export interface AgihanUpdate {
+  id: string;
+  title: string | null;
+  location: string | null;
+  caption: string | null;
+  image_url: string | null;
+  storage_path: string | null;
+  happened_on: string; // date (YYYY-MM-DD)
+  sort_order: number;
+  created_at: string;
+}
+
 export interface GalleryItem {
   id: string;
   type: GalleryType;
