@@ -7,6 +7,21 @@ import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import type { AgihanUpdate } from "@/lib/database.types";
 import { updateImages } from "@/lib/agihan-updates";
 import { cn, formatDateOnly } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+/** Captions longer than this (in words) are previewed with a "Baca lagi" link. */
+const CAPTION_WORD_LIMIT = 200;
+
+function captionPreview(caption: string): { text: string; truncated: boolean } {
+  const words = caption.trim().split(/\s+/);
+  if (words.length <= CAPTION_WORD_LIMIT) return { text: caption, truncated: false };
+  return { text: words.slice(0, CAPTION_WORD_LIMIT).join(" ") + "…", truncated: true };
+}
 
 /**
  * Horizontal, side-scrolling timeline of distribution updates. Each card is one
@@ -17,6 +32,7 @@ export function AgihanTimeline({ items }: { items: AgihanUpdate[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
+  const [active, setActive] = useState<AgihanUpdate | null>(null);
 
   const updateArrows = useCallback(() => {
     const el = trackRef.current;
@@ -114,15 +130,49 @@ export function AgihanTimeline({ items }: { items: AgihanUpdate[] }) {
                 </div>
               )}
 
-              {item.caption && (
-                <p className="mt-3 whitespace-pre-line text-pretty text-sm leading-relaxed text-muted-foreground">
-                  {item.caption}
-                </p>
-              )}
+              {item.caption &&
+                (() => {
+                  const preview = captionPreview(item.caption);
+                  return (
+                    <div className="mt-3">
+                      <p className="whitespace-pre-line text-pretty text-sm leading-relaxed text-muted-foreground">
+                        {preview.text}
+                      </p>
+                      {preview.truncated && (
+                        <button
+                          type="button"
+                          onClick={() => setActive(item)}
+                          className="mt-1 text-sm font-semibold text-primary-strong hover:underline"
+                        >
+                          Baca lagi →
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
             </article>
           );
         })}
       </div>
+
+      <Dialog open={active !== null} onOpenChange={(o) => !o && setActive(null)}>
+        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{active?.title ?? "Update Agihan"}</DialogTitle>
+          </DialogHeader>
+          {active && (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-primary-strong">
+                {formatDateOnly(active.happened_on)}
+                {active.location ? ` · ${active.location}` : ""}
+              </p>
+              <p className="whitespace-pre-line text-pretty text-sm leading-relaxed text-muted-foreground">
+                {active.caption}
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <button
         type="button"
