@@ -341,7 +341,7 @@ export default async function HomePage() {
             id="update-agihan"
             className="scroll-mt-20 py-12 sm:py-16 lg:py-24"
           >
-            <div className="mx-auto max-w-5xl px-4">
+            <div className="mx-auto max-w-6xl px-4">
               <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                   Update Agihan
