@@ -73,7 +73,8 @@ export function Footer() {
             <FooterCol title="Sumber">
               <FooterLink href="/blog">Blog</FooterLink>
               <FooterLink href="/#galeri">Galeri</FooterLink>
-              <FooterLink href="/#kategori">Kategori</FooterLink>
+              <FooterLink href="/tentang-kami">Tentang Kami</FooterLink>
+              <FooterLink href="/hubungi">Hubungi Kami</FooterLink>
               <FooterLink href="/privasi">Dasar Privasi</FooterLink>
             </FooterCol>
           </div>

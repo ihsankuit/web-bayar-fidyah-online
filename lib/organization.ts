@@ -30,6 +30,8 @@ export const ORG = {
   /** Google Maps plus code, a precise location identifier. */
   plusCode: "VQMW+22 Kajang, Selangor",
   logoPath: "/logo-ihsanku.png",
+  /** Support inbox. Blank hides the email row on the Hubungi page. */
+  email: "",
 } as const;
 
 /**
