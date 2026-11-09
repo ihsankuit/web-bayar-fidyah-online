@@ -1,23 +1,37 @@
 -- =====================================================================
---  Resolve the qada' keyword cannibalisation.
+--  Consolidate the qada' duplicate.
 --
---  Two articles sit on nearly the same query:
+--  Two articles were answering the same question:
 --
 --    /blog/fidyah-vs-qada          "Fidyah vs Qada Puasa: Apa Bezanya"
 --    /blog/qada-dan-fidyah-puasa   (written later, for a keyword gap)
 --
 --  When two of your own URLs answer one question, Google splits the
---  signals between them and often ranks neither. This is the last known
---  duplicate pair after the August consolidation handled the "si mati"
---  cluster and the 2025/2026 rate pages.
+--  signals between them and often ranks neither.
 --
---  This script does NOT decide for you. STEP 1 shows both articles side
---  by side; you read them, then run STEP 2 only if they really overlap.
+--  DECISION: keep `fidyah-vs-qada`. Shorter URL, it already carries the
+--  optimised seo_title/seo_description from the August SEO pass, and the
+--  homepage "Panduan Fidyah" section links to it by name.
+--
+--  The code side is already deployed: lib/blog-redirects.ts now maps
+--  qada-dan-fidyah-puasa -> fidyah-vs-qada, which drives the permanent
+--  redirect and drops the retired slug from the sitemap and the blog
+--  listing. This script is the database side.
+--
+--  Run STEP 1 and read it before STEP 2 — it decides one thing for you.
 -- =====================================================================
 
 
 -- ---------------------------------------------------------------------
---  STEP 1 — Compare the two. READ THIS BEFORE RUNNING ANYTHING ELSE.
+--  STEP 1 — Compare the two.
+--
+--  Only one thing to decide here: look at `words`. If
+--  `qada-dan-fidyah-puasa` is substantially the longer and better
+--  article, run STEP 2a to move its body across before retiring it.
+--  Otherwise skip 2a and go straight to 2b.
+--
+--  Do NOT change which slug survives. The redirect and the homepage link
+--  both point at fidyah-vs-qada already.
 -- ---------------------------------------------------------------------
 select
   slug,
@@ -25,7 +39,6 @@ select
   status,
   published_at,
   array_length(regexp_split_to_array(trim(content), '\s+'), 1) as words,
-  seo_keywords,
   left(content, 500) as opening
 from public.blog_posts
 where slug in ('fidyah-vs-qada', 'qada-dan-fidyah-puasa')
@@ -33,54 +46,8 @@ order by slug;
 
 
 -- ---------------------------------------------------------------------
---  HOW TO DECIDE
---
---  They cannibalise if BOTH articles are mainly answering "what is the
---  difference between fidyah and qada". In that case consolidate.
---
---  They do NOT cannibalise if one explains the difference while the other
---  covers something genuinely distinct — for example how to pay for both
---  at once, or the ruling on delaying qada'. In that case leave both
---  published and instead make their titles and H1s clearly different, so
---  Google can tell them apart.
---
---  IF CONSOLIDATING, KEEP `fidyah-vs-qada`. Three reasons:
---    1. Shorter, cleaner URL.
---    2. It already carries optimised seo_title/seo_description from the
---       August SEO pass.
---    3. The new homepage "Panduan Fidyah" section links to it by name.
---       Retiring it instead would waste that internal link.
---
---  If STEP 1 shows `qada-dan-fidyah-puasa` is the far better article,
---  do NOT flip which slug survives — move its body onto `fidyah-vs-qada`
---  (STEP 2b) so the surviving URL keeps the links pointing at it.
--- ---------------------------------------------------------------------
-
-
--- ---------------------------------------------------------------------
---  STEP 2a — Consolidate: retire the duplicate.
---
---  Unpublishes rather than deletes, so nothing is lost and one UPDATE
---  reverses it.
---
---  !! A CODE CHANGE MUST SHIP WITH THIS !!
---  Add this line to BLOG_REDIRECTS in lib/blog-redirects.ts and deploy,
---  otherwise the retired URL becomes a 404 instead of passing its
---  ranking signals to the survivor:
---
---      "qada-dan-fidyah-puasa": "fidyah-vs-qada",
---
---  That map also drives the sitemap and the blog listing, so adding the
---  line is all that is needed — nothing else references the slug.
--- ---------------------------------------------------------------------
--- update public.blog_posts
--- set status = 'draft'
--- where slug = 'qada-dan-fidyah-puasa';
-
-
--- ---------------------------------------------------------------------
---  STEP 2b — ONLY if STEP 1 showed the retired article is the better one.
---  Moves its body onto the surviving slug first.
+--  STEP 2a — ONLY if STEP 1 showed the retired article is the better one.
+--  Moves its body onto the surviving slug. Skip this otherwise.
 -- ---------------------------------------------------------------------
 -- update public.blog_posts as keeper set
 --   content     = retired.content,
@@ -92,19 +59,39 @@ order by slug;
 
 
 -- ---------------------------------------------------------------------
---  STEP 3 — Confirm the survivor is still published before you deploy
---  the redirect. A 301 into a 404 is worse than the duplicate was.
+--  STEP 2b — Retire the duplicate.
+--
+--  Unpublishes rather than deletes, so nothing is lost and one UPDATE
+--  reverses it.
+-- ---------------------------------------------------------------------
+update public.blog_posts
+set status = 'draft'
+where slug = 'qada-dan-fidyah-puasa';
+
+
+-- ---------------------------------------------------------------------
+--  STEP 3 — Confirm the survivor is still published.
+--  A 301 into a 404 is worse than the duplicate was.
 -- ---------------------------------------------------------------------
 select slug, status, published_at
 from public.blog_posts
-where slug = 'fidyah-vs-qada';
+where slug in ('fidyah-vs-qada', 'qada-dan-fidyah-puasa')
+order by slug;
+
+--  Expected: fidyah-vs-qada = published, qada-dan-fidyah-puasa = draft.
+--  If fidyah-vs-qada is NOT published, publish it before the redirect
+--  reaches production:
+--
+--    update public.blog_posts set status = 'published', published_at = now()
+--    where slug = 'fidyah-vs-qada';
 
 
 -- ---------------------------------------------------------------------
---  To undo STEP 2a:
+--  To undo:
 --
 --    update public.blog_posts set status = 'published'
 --    where slug = 'qada-dan-fidyah-puasa';
 --
---  ...and remove the matching line from lib/blog-redirects.ts.
+--  ...and remove the "qada-dan-fidyah-puasa" line from
+--  lib/blog-redirects.ts, otherwise the URL keeps redirecting.
 -- ---------------------------------------------------------------------
