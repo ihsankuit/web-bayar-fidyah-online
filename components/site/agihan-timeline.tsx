@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 
 import type { AgihanUpdate } from "@/lib/database.types";
-import { updateImages } from "@/lib/agihan-updates";
+import { captionPreview, updateImages } from "@/lib/agihan-updates";
 import { cn, formatDateOnly } from "@/lib/utils";
 import {
   Dialog,
@@ -13,15 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-/** Captions longer than this (in words) are previewed with a "Baca lagi" link. */
-const CAPTION_WORD_LIMIT = 200;
-
-function captionPreview(caption: string): { text: string; truncated: boolean } {
-  const words = caption.trim().split(/\s+/);
-  if (words.length <= CAPTION_WORD_LIMIT) return { text: caption, truncated: false };
-  return { text: words.slice(0, CAPTION_WORD_LIMIT).join(" ") + "…", truncated: true };
-}
 
 /**
  * Horizontal, side-scrolling timeline of distribution updates. Each card is one
