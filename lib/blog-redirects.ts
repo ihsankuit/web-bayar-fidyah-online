@@ -19,6 +19,11 @@ export const BLOG_REDIRECTS: Record<string, string> = {
   // Topic: the current fidyah rate. The year-stamped 2025 page is superseded
   // rather than duplicated, so it points forward to the 2026 article.
   "kadar-fidyah-2025": "kadar-fidyah-2026",
+  // Topic: the difference between fidyah and qada'. Two articles were
+  // answering the same question. fidyah-vs-qada survives — shorter URL, it
+  // already carries the optimised SEO fields, and the homepage "Panduan
+  // Fidyah" section links to it by name.
+  "qada-dan-fidyah-puasa": "fidyah-vs-qada",
 };
 
 /** Slugs that must no longer be advertised in the sitemap or blog listing. */
