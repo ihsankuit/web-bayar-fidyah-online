@@ -15,6 +15,42 @@ import {
 } from "@/components/ui/dialog";
 
 /**
+ * An update's photos, laid out the same way wherever they appear.
+ *
+ * The card and the "Baca lagi" dialog share this deliberately, `sizes`
+ * included: an identical sizes attribute means the browser picks the same
+ * srcset candidate in both places, so opening the dialog reuses the image
+ * already downloaded for the card instead of fetching a second copy.
+ */
+function UpdatePhotos({ item }: { item: AgihanUpdate }) {
+  const images = updateImages(item).slice(0, 4);
+  if (images.length === 0) return null;
+  const single = images.length === 1;
+
+  return (
+    <div className={cn(!single && "grid grid-cols-2 gap-2")}>
+      {images.map((src) => (
+        <div
+          key={src}
+          className={cn(
+            "relative overflow-hidden rounded-xl border bg-muted",
+            single ? "aspect-video" : "aspect-square"
+          )}
+        >
+          <Image
+            src={src}
+            alt={item.title ?? "Agihan fidyah"}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 85vw, 400px"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Horizontal, side-scrolling timeline of distribution updates. Each card is one
  * update (date · place · up to 4 photos · caption), joined along a top rail.
  * Native swipe on touch; prev/next buttons appear when there's room to scroll.
@@ -58,8 +94,6 @@ export function AgihanTimeline({ items }: { items: AgihanUpdate[] }) {
         className="flex gap-5 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, i) => {
-          const images = updateImages(item).slice(0, 4);
-          const single = images.length === 1;
           const isLast = i === items.length - 1;
           return (
             <article
@@ -94,32 +128,9 @@ export function AgihanTimeline({ items }: { items: AgihanUpdate[] }) {
                 </p>
               )}
 
-              {images.length > 0 && (
-                <div
-                  className={cn(
-                    "mt-3",
-                    !single && "grid grid-cols-2 gap-2"
-                  )}
-                >
-                  {images.map((src) => (
-                    <div
-                      key={src}
-                      className={cn(
-                        "relative overflow-hidden rounded-xl border bg-muted",
-                        single ? "aspect-video" : "aspect-square"
-                      )}
-                    >
-                      <Image
-                        src={src}
-                        alt={item.title ?? "Agihan fidyah"}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 85vw, 400px"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="mt-3">
+                <UpdatePhotos item={item} />
+              </div>
 
               {item.caption &&
                 (() => {
@@ -157,6 +168,7 @@ export function AgihanTimeline({ items }: { items: AgihanUpdate[] }) {
                 {formatDateOnly(active.happened_on)}
                 {active.location ? ` · ${active.location}` : ""}
               </p>
+              <UpdatePhotos item={active} />
               <p className="whitespace-pre-line text-pretty text-sm leading-relaxed text-muted-foreground">
                 {active.caption}
               </p>
