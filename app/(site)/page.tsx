@@ -37,6 +37,7 @@ import { getLandingContent } from "@/lib/settings";
 import { getUpsellSettings } from "@/lib/upsell";
 import { getGalleryItems } from "@/lib/gallery";
 import { getRecentSocialProof } from "@/lib/social-proof";
+import { getFeaturedGuides } from "@/lib/guides";
 import { formatMYR } from "@/lib/utils";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
 import { SITE_URL } from "@/lib/site-url";
@@ -45,12 +46,14 @@ import { ORG, ORG_SAME_AS } from "@/lib/organization";
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [content, upsell, gallery, socialProof] = await Promise.all([
-    getLandingContent(),
-    getUpsellSettings(),
-    getGalleryItems(),
-    getRecentSocialProof(),
-  ]);
+  const [content, upsell, gallery, socialProof, featuredGuides] =
+    await Promise.all([
+      getLandingContent(),
+      getUpsellSettings(),
+      getGalleryItems(),
+      getRecentSocialProof(),
+      getFeaturedGuides(),
+    ]);
   const galleryImages = gallery.filter((g) => g.type === "image");
   const galleryVideos = gallery.filter((g) => g.type === "video");
 
@@ -654,6 +657,56 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Panduan Fidyah — the homepage's only contextual links into the
+            blog. Anchor text is the query each article targets, so the link
+            passes a topic signal and not just equity. */}
+        {featuredGuides.length > 0 && (
+          <section
+            id="panduan"
+            className="scroll-mt-20 bg-muted/30 py-16 lg:py-24"
+          >
+            <div className="mx-auto max-w-5xl px-4">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  Panduan Fidyah
+                </h2>
+                <p className="mt-3 text-pretty text-muted-foreground">
+                  Belum pasti berapa yang perlu dibayar, atau siapa yang wajib
+                  membayarnya? Mulakan di sini.
+                </p>
+              </div>
+
+              <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {featuredGuides.map((guide) => (
+                  <li key={guide.slug}>
+                    <Link
+                      href={`/blog/${guide.slug}`}
+                      className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-accent/40"
+                    >
+                      <span className="font-semibold group-hover:text-primary">
+                        {guide.anchor}
+                      </span>
+                      <span className="mt-2 text-sm text-muted-foreground">
+                        {guide.blurb}
+                      </span>
+                      <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary-strong">
+                        Baca panduan
+                        <ArrowRight className="h-4 w-4" />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-10 text-center">
+                <Button asChild variant="outline">
+                  <Link href="/blog">Lihat semua panduan fidyah</Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* CTA */}
         <section className="py-16 lg:py-24">
