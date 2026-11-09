@@ -30,6 +30,10 @@ export function Footer() {
                 site that takes payments. */}
             <address className="space-y-2 text-sm not-italic text-muted-foreground">
               <p className="font-medium text-foreground">{ORG.name}</p>
+              <p className="text-xs">
+                Berdaftar dengan Jabatan Pendaftaran Pertubuhan Malaysia (ROS):{" "}
+                <span className="font-medium">{ORG.rosNumber}</span>
+              </p>
               <p className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{ORG_ADDRESS_LINE}</span>
@@ -76,9 +80,15 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border/60 pt-6 text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Bayar Fidyah Online. Semua hak
-          terpelihara.
+        <div className="mt-10 space-y-2 border-t border-border/60 pt-6 text-sm text-muted-foreground">
+          <p>
+            Sumbangan bagi kempen ini tidak layak untuk pengecualian atau
+            potongan cukai pendapatan.
+          </p>
+          <p>
+            © {new Date().getFullYear()} {ORG.name} ({ORG.rosNumber}). Semua
+            hak terpelihara.
+          </p>
         </div>
       </div>
     </footer>

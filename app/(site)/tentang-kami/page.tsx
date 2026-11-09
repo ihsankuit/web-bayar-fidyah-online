@@ -22,9 +22,9 @@ export const metadata: Metadata = {
  * directly under its YMYL guidance, and payers feel it too. Every claim
  * here is one the site can stand behind: the operating organisation, the
  * NAP that matches the Google Business Profile, where the money goes, and
- * how payment is handled. Facts the code does not hold — registration
- * number, founding year, names of religious reviewers — are deliberately
- * absent rather than invented; fill ORG.registrationNumber to surface it.
+ * how payment is handled, including the ROS registration number. Facts the
+ * code does not hold — founding year, names of religious reviewers — are
+ * deliberately absent rather than invented.
  */
 export default function TentangKamiPage() {
   const breadcrumbJsonLd = {
@@ -97,12 +97,10 @@ export default function TentangKamiPage() {
                 fidyah sering tersekat pada perkara yang sama: orang tidak pasti
                 berapa jumlahnya, dan tidak tahu ke mana hendak membayarnya.
               </p>
-              {ORG.registrationNumber && (
-                <p>
-                  No. pendaftaran pertubuhan:{" "}
-                  <strong>{ORG.registrationNumber}</strong>
-                </p>
-              )}
+              <p>
+                Berdaftar dengan Jabatan Pendaftaran Pertubuhan Malaysia (ROS):{" "}
+                <strong>{ORG.rosNumber}</strong>
+              </p>
               <p>
                 Maklumat lanjut mengenai aktiviti pertubuhan ada di{" "}
                 <a

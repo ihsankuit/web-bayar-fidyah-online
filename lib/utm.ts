@@ -61,3 +61,56 @@ export function getStoredUtm(): UtmParams | null {
     return null;
   }
 }
+
+/**
+ * Google Ads click identifiers, kept separately from UTM because they arrive
+ * independently: auto-tagging appends `gclid` (or `gbraid`/`wbraid` for iOS
+ * app/web traffic) whether or not utm_* are present. Storing them enables
+ * offline conversion import back to Google Ads — matching a conversion that is
+ * only confirmed later (e.g. a manual bank transfer) to the original ad click.
+ */
+export interface ClickIds {
+  gclid: string;
+  gbraid: string;
+  wbraid: string;
+}
+
+const CLICK_STORAGE_KEY = "fidyah_click_ids";
+const CLICK_KEYS = ["gclid", "gbraid", "wbraid"] as const;
+
+function parseClickIdsFromSearch(search: string): ClickIds | null {
+  const params = new URLSearchParams(search);
+  const hasAny = CLICK_KEYS.some((key) => params.get(key));
+  if (!hasAny) return null;
+
+  return {
+    gclid: params.get("gclid") ?? "",
+    gbraid: params.get("gbraid") ?? "",
+    wbraid: params.get("wbraid") ?? "",
+  };
+}
+
+/** Capture Google Ads click ids from the current URL into localStorage. */
+export function captureClickIds(): void {
+  if (typeof window === "undefined") return;
+  const parsed = parseClickIdsFromSearch(window.location.search);
+  if (!parsed) return;
+
+  try {
+    window.localStorage.setItem(CLICK_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // localStorage unavailable (private mode, disabled storage, etc).
+  }
+}
+
+/** Read the stored Google Ads click ids for this browser, if any. */
+export function getStoredClickIds(): ClickIds | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CLICK_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ClickIds;
+  } catch {
+    return null;
+  }
+}

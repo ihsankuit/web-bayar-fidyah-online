@@ -77,8 +77,9 @@ List donations, newest first.
 | Param | Type | Notes |
 | --- | --- | --- |
 | `status` | `pending` \| `paid` \| `failed` | Filter by status |
-| `limit` | integer | Default 50, max 200 |
-| `offset` | integer | Default 0 |
+| `utm_source` | string | Filter by exact traffic source (e.g. `facebook`) |
+| `limit` | integer | Optional, uncapped. Omit to return **every** matching row |
+| `offset` | integer | Default 0 — start position |
 | `from` | ISO 8601 | `created_at >= from` |
 | `to` | ISO 8601 | `created_at <= to` |
 
@@ -108,6 +109,14 @@ curl -H "Authorization: Bearer $API_KEY" \
       "amount_sen": 1400,
       "currency": "MYR",
       "message": "Bayaran bagi pihak arwah ayah.",
+      "utm_source": "facebook",
+      "utm_medium": "cpc",
+      "utm_campaign": "ramadan-2026",
+      "utm_term": null,
+      "utm_content": "video-a",
+      "gclid": "Cj0KCQ...",
+      "gbraid": null,
+      "wbraid": null,
       "paid_at": "2026-07-15T03:22:10.000Z",
       "created_at": "2026-07-15T03:20:44.000Z"
     }
@@ -118,8 +127,9 @@ curl -H "Authorization: Bearer $API_KEY" \
 }
 ```
 
-`count` is the total number of matching rows (not just the current page) —
-use it with `limit`/`offset` to paginate.
+`count` is the total number of matching rows. Omit `limit` to get them all
+in one response; or page with `limit`/`offset` when you prefer smaller pages
+(`limit` is `null` in the response when it wasn't set).
 
 ---
 
@@ -169,13 +179,20 @@ curl -H "Authorization: Bearer $API_KEY" \
     "hamil_menyusu": { "count": 95, "amount": 1330.00 },
     "lewat_qada": { "count": 510, "amount": 7140.00 },
     "meninggal_dunia": { "count": 111, "amount": 1554.00 }
+  },
+  "by_utm_source": {
+    "facebook": { "count": 640, "amount": 8960.00 },
+    "google": { "count": 210, "amount": 2940.00 },
+    "direct": { "count": 466, "amount": 6532.00 }
   }
 }
 ```
 
 `by_category` only includes categories with at least one **paid** donation.
-Totals are computed across every paid row (not capped at 1000), so they stay
-accurate as the dataset grows.
+`by_utm_source` attributes paid revenue by traffic source; payments with no
+UTM (direct/organic) are grouped under `"direct"`, so its figures always
+reconcile with `total_collected`. Totals are computed across every paid row
+(not capped at 1000), so they stay accurate as the dataset grows.
 
 ---
 
@@ -287,6 +304,7 @@ Configure a webhook URL at **Dashboard → Integrasi → Webhook Keluar
 | --- | --- |
 | `donation.created` | A donation record is created (before payment) |
 | `donation.paid` | A payment is confirmed (CHIP webhook or manual admin approval) |
+| `donation.abandoned` | A pending payment is auto-expired (CHIP after 24h, manual after 7d with no proof) — useful for abandoned-cart follow-ups |
 
 `donation.failed` is defined in the codebase but not currently emitted by
 any flow.
@@ -314,6 +332,14 @@ any flow.
     "currency": "MYR",
     "message": null,
     "payment_method": "chip",
+    "utm_source": "facebook",
+    "utm_medium": "cpc",
+    "utm_campaign": "ramadan-2026",
+    "utm_term": null,
+    "utm_content": "video-a",
+    "gclid": "Cj0KCQ...",
+    "gbraid": null,
+    "wbraid": null,
     "paid_at": "2026-07-15T03:22:10.000Z",
     "created_at": "2026-07-15T03:20:44.000Z"
   },
@@ -322,8 +348,12 @@ any flow.
 ```
 
 `data` is the full internal donation row (all columns) plus a convenience
-Ringgit `amount` field — expect it to gain new fields over time; don't treat
-it as a closed schema.
+Ringgit `amount` field — so UTM attribution (`utm_source`, `utm_medium`,
+`utm_campaign`, `utm_term`, `utm_content`) and Google Ads click ids
+(`gclid`, `gbraid`, `wbraid`) arrive with every event. Use the click ids to
+import the confirmed conversion back into Google Ads (offline conversion
+import). Expect `data` to gain new fields over time; don't treat it as a
+closed schema.
 
 Headers:
 
@@ -421,4 +451,8 @@ listed here only so you don't mistake them for public integration points:
 
 - **v1** (current) — `GET /donations`, `GET /donations/{reference}`,
   `GET /stats`, `GET/POST /blog`, `GET/PATCH/DELETE /blog/{slug}`,
-  `donation.created`/`donation.paid` webhooks.
+  `donation.created`/`donation.paid`/`donation.abandoned` webhooks. Donation
+  objects and `/stats` now carry UTM attribution (`utm_*` fields,
+  `by_utm_source`, and a `utm_source` filter on `GET /donations`) plus Google
+  Ads click ids (`gclid`/`gbraid`/`wbraid`) for offline conversion import;
+  webhook payloads carry the same fields.

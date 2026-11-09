@@ -73,6 +73,7 @@ export async function saveTracking(
       google_ads_id: get("google_ads_id"),
       google_ads_conversion_label: get("google_ads_conversion_label"),
       gtm_id: get("gtm_id"),
+      sgtm_url: get("sgtm_url"),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "id" }

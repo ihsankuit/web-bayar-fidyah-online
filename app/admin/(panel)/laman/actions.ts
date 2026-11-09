@@ -70,6 +70,11 @@ export async function saveLanding(
       (formData.get("hero_subtitle") as string) || DEFAULT_LANDING.hero_subtitle,
     hero_cta: (formData.get("hero_cta") as string) || DEFAULT_LANDING.hero_cta,
     hero_image_url: (formData.get("hero_image_url") as string)?.trim() || "",
+    video_url: (formData.get("video_url") as string)?.trim() || "",
+    video_title:
+      (formData.get("video_title") as string)?.trim() ||
+      DEFAULT_LANDING.video_title,
+    video_autoplay: formData.get("video_autoplay") === "on",
     about_title:
       (formData.get("about_title") as string) || DEFAULT_LANDING.about_title,
     about_body:

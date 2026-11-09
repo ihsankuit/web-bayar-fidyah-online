@@ -17,26 +17,38 @@ async function requireUser() {
   return supabase;
 }
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB per fail
+
 export interface GalleryState {
   error?: string;
   ok?: boolean;
+  /** How many files were stored successfully in a bulk upload. */
+  uploaded?: number;
+  /** How many files were skipped/failed, with a short reason each. */
+  failures?: string[];
 }
 
-export async function addGalleryImage(
-  _prev: GalleryState,
-  formData: FormData
-): Promise<GalleryState> {
-  const supabase = await requireUser();
-  const file = formData.get("file") as File | null;
-  const title = ((formData.get("title") as string) || "").trim() || null;
+type SupabaseServer = Awaited<ReturnType<typeof requireUser>>;
 
-  if (!file || file.size === 0) return { error: "Sila pilih fail gambar." };
-  if (file.size > 10 * 1024 * 1024)
-    return { error: "Saiz fail melebihi had 10MB." };
+/**
+ * Upload one image file to storage and insert its gallery row. Returns an
+ * error string on failure, or null on success. Shared by the bulk handler so
+ * one bad file never aborts the whole batch.
+ */
+async function uploadOneImage(
+  supabase: SupabaseServer,
+  file: File,
+  title: string | null
+): Promise<string | null> {
+  if (!file.type.startsWith("image/")) return "bukan fail imej";
+  if (file.size > MAX_IMAGE_BYTES) return "melebihi 10MB";
 
   const ext = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
   const base = slugify(file.name.replace(/\.[^.]+$/, "")) || "galeri";
-  const path = `galeri/${Date.now()}-${base}.${ext}`;
+  // A random suffix keeps two files uploaded in the same millisecond apart.
+  const path = `galeri/${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}-${base}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
@@ -44,7 +56,7 @@ export async function addGalleryImage(
       contentType: file.type || "image/jpeg",
       upsert: false,
     });
-  if (uploadError) return { error: uploadError.message };
+  if (uploadError) return uploadError.message;
 
   const {
     data: { publicUrl },
@@ -56,11 +68,44 @@ export async function addGalleryImage(
     image_url: publicUrl,
     storage_path: path,
   });
-  if (error) return { error: error.message };
+  if (error) return error.message;
+  return null;
+}
 
-  revalidatePath("/admin/galeri");
-  revalidatePath("/");
-  return { ok: true };
+/**
+ * Bulk image upload — accepts one or many files from a single <input multiple>.
+ * Each file is uploaded independently; a failure on one is reported but does
+ * not stop the rest. The optional title applies to every file in the batch.
+ */
+export async function addGalleryImages(
+  _prev: GalleryState,
+  formData: FormData
+): Promise<GalleryState> {
+  const supabase = await requireUser();
+  const files = formData
+    .getAll("files")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  const title = ((formData.get("title") as string) || "").trim() || null;
+
+  if (files.length === 0) return { error: "Sila pilih sekurang-kurangnya satu fail gambar." };
+
+  let uploaded = 0;
+  const failures: string[] = [];
+  for (const file of files) {
+    const err = await uploadOneImage(supabase, file, title);
+    if (err) failures.push(`${file.name}: ${err}`);
+    else uploaded += 1;
+  }
+
+  if (uploaded > 0) {
+    revalidatePath("/admin/galeri");
+    revalidatePath("/");
+  }
+
+  if (uploaded === 0) {
+    return { error: `Tiada gambar dimuat naik. ${failures.join("; ")}` };
+  }
+  return { ok: true, uploaded, failures: failures.length ? failures : undefined };
 }
 
 export async function addGalleryVideo(

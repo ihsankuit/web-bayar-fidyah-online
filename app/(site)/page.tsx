@@ -16,6 +16,7 @@ import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { FidyahForm } from "@/components/site/fidyah-form";
 import { Gallery } from "@/components/site/gallery";
+import { AgihanTimeline } from "@/components/site/agihan-timeline";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,8 +37,10 @@ import {
 import { getLandingContent } from "@/lib/settings";
 import { getUpsellSettings } from "@/lib/upsell";
 import { getGalleryItems } from "@/lib/gallery";
+import { getAgihanUpdates } from "@/lib/agihan-updates";
 import { getRecentSocialProof } from "@/lib/social-proof";
 import { getFeaturedGuides } from "@/lib/guides";
+import { parseYouTubeId, youtubeEmbedUrl } from "@/lib/youtube";
 import { formatMYR } from "@/lib/utils";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
 import { SITE_URL } from "@/lib/site-url";
@@ -46,16 +49,26 @@ import { ORG, ORG_SAME_AS } from "@/lib/organization";
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [content, upsell, gallery, socialProof, featuredGuides] =
+  const [content, upsell, gallery, socialProof, agihanUpdates, featuredGuides] =
     await Promise.all([
       getLandingContent(),
       getUpsellSettings(),
       getGalleryItems(),
       getRecentSocialProof(),
+      getAgihanUpdates(),
       getFeaturedGuides(),
     ]);
   const galleryImages = gallery.filter((g) => g.type === "image");
   const galleryVideos = gallery.filter((g) => g.type === "video");
+
+  // Explainer video. Autoplay is only allowed by browsers while muted, so an
+  // autoplaying embed starts silent (the viewer unmutes via the player).
+  const videoId = parseYouTubeId(content.video_url);
+  const videoSrc = videoId
+    ? `${youtubeEmbedUrl(videoId)}?rel=0&modestbranding=1${
+        content.video_autoplay ? "&autoplay=1&mute=1&playsinline=1" : ""
+      }`
+    : "";
 
   // JSON-LD: WebSite schema
   const websiteJsonLd = {
@@ -249,7 +262,7 @@ export default async function HomePage() {
             </>
           )}
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]" />
-          <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
+          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:py-16 lg:grid-cols-2 lg:items-center lg:gap-12 lg:py-24">
             <div className="space-y-6">
               <Badge
                 variant="secondary"
@@ -324,8 +337,32 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Update Agihan (timeline) */}
+        {agihanUpdates.length > 0 && (
+          <section
+            id="update-agihan"
+            className="scroll-mt-20 py-12 sm:py-16 lg:py-24"
+          >
+            <div className="mx-auto max-w-6xl px-4">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  Update Agihan
+                </h2>
+                <p className="mt-3 text-muted-foreground">
+                  Ikuti perjalanan fidyah anda — setiap sumbangan disalurkan
+                  kepada golongan asnaf dan fakir miskin melalui projek Dapur
+                  Ihsan.
+                </p>
+              </div>
+              <div className="mt-12">
+                <AgihanTimeline items={agihanUpdates} />
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Hukum Fidyah */}
-        <section id="hukum" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="hukum" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               {content.hukum_title}
@@ -348,7 +385,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <figure className="mt-10 rounded-2xl border bg-card p-8 shadow-sm">
+            <figure className="mt-10 rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
               <p
                 dir="rtl"
                 lang="ar"
@@ -364,8 +401,42 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Explainer video */}
+        {videoId && (
+          <section
+            id="video"
+            className="scroll-mt-20 py-12 sm:py-16 lg:py-24"
+          >
+            <div className="mx-auto max-w-4xl px-4">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  {content.video_title}
+                </h2>
+              </div>
+              <div className="mt-10 overflow-hidden rounded-2xl border bg-card shadow-sm">
+                <div className="aspect-video w-full">
+                  <iframe
+                    src={videoSrc}
+                    title={content.video_title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    loading="lazy"
+                    className="h-full w-full border-0"
+                  />
+                </div>
+              </div>
+              {content.video_autoplay && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  Video dimainkan automatik tanpa bunyi — tekan ikon bunyi pada
+                  video untuk mendengar.
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* Categories */}
-        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -418,7 +489,7 @@ export default async function HomePage() {
         </section>
 
         {/* Qada' vs Fidyah reference table */}
-        <section id="qada-fidyah" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="qada-fidyah" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-5xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -457,7 +528,7 @@ export default async function HomePage() {
         </section>
 
         {/* Cara Kira Fidyah */}
-        <section id="cara-kira" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="cara-kira" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-4xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -481,7 +552,7 @@ export default async function HomePage() {
             <div className="mt-12 overflow-hidden rounded-2xl border bg-card shadow-sm">
               <div className="grid md:grid-cols-2">
                 {/* Situasi 1 */}
-                <div className="p-8">
+                <div className="p-6 sm:p-8">
                   <div className="flex items-center gap-3">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary-strong">
                       1
@@ -505,7 +576,7 @@ export default async function HomePage() {
                 </div>
 
                 {/* Situasi 2 */}
-                <div className="border-t p-8 md:border-l md:border-t-0">
+                <div className="border-t p-6 sm:p-8 md:border-l md:border-t-0">
                   <div className="flex items-center gap-3">
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary-strong">
                       2
@@ -536,7 +607,7 @@ export default async function HomePage() {
         </section>
 
         {/* How it works */}
-        <section className="py-16 lg:py-24">
+        <section className="py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -575,7 +646,7 @@ export default async function HomePage() {
 
         {/* Galeri */}
         {gallery.length > 0 && (
-          <section id="galeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+          <section id="galeri" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
             <div className="mx-auto max-w-6xl px-4">
               <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -610,7 +681,7 @@ export default async function HomePage() {
         )}
 
         {/* Liputan Negeri */}
-        <section id="negeri" className="scroll-mt-20 bg-muted/30 py-16 lg:py-24">
+        <section id="negeri" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Bayar Fidyah Online di Semua Negeri di Malaysia
@@ -634,7 +705,7 @@ export default async function HomePage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-20 py-16 lg:py-24">
+        <section id="faq" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -664,7 +735,7 @@ export default async function HomePage() {
         {featuredGuides.length > 0 && (
           <section
             id="panduan"
-            className="scroll-mt-20 bg-muted/30 py-16 lg:py-24"
+            className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24"
           >
             <div className="mx-auto max-w-5xl px-4">
               <div className="mx-auto max-w-2xl text-center">
@@ -709,7 +780,7 @@ export default async function HomePage() {
         )}
 
         {/* CTA */}
-        <section className="py-16 lg:py-24">
+        <section className="py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-5xl px-4">
             <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-16">
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(50%_50%_at_50%_0%,rgba(255,255,255,.15),transparent)]" />

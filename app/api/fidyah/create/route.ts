@@ -30,6 +30,10 @@ const schema = z.object({
   utm_campaign: z.string().trim().max(100).optional().default(""),
   utm_term: z.string().trim().max(100).optional().default(""),
   utm_content: z.string().trim().max(100).optional().default(""),
+  // Google Ads click ids (auto-tagging) — enable offline conversion import.
+  gclid: z.string().trim().max(300).optional().default(""),
+  gbraid: z.string().trim().max(300).optional().default(""),
+  wbraid: z.string().trim().max(300).optional().default(""),
 });
 
 function makeReference(): string {
@@ -154,6 +158,9 @@ export async function POST(request: Request) {
       utm_campaign: input.utm_campaign || null,
       utm_term: input.utm_term || null,
       utm_content: input.utm_content || null,
+      gclid: input.gclid || null,
+      gbraid: input.gbraid || null,
+      wbraid: input.wbraid || null,
       ga_client_id: parseGaClientId(cookies["_ga"]),
       fbp: cookies["_fbp"] || null,
       fbc: cookies["_fbc"] || null,

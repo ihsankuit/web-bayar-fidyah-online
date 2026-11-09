@@ -21,17 +21,33 @@ export function formatRinggit(value: number): string {
   }).format(value);
 }
 
-export function formatDate(input: string | Date): string {
+// Timestamps are stored in UTC (Postgres timestamptz). We render them for a
+// Malaysian audience (UTC+8). Rather than pass timeZone:"Asia/Kuala_Lumpur"
+// — which silently falls back to UTC on any runtime whose ICU build lacks the
+// timezone database (a real Vercel/serverless gotcha, making every time show
+// 8 hours early) — shift the instant by a fixed +8h and format the shifted
+// value in UTC. Malaysia has no daylight saving, so +8 is always exact, and
+// timeZone:"UTC" needs no ICU tz data at all.
+const MY_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+function toMyt(input: string | Date): Date {
   const date = typeof input === "string" ? new Date(input) : input;
+  return new Date(date.getTime() + MY_OFFSET_MS);
+}
+
+export function formatDate(input: string | Date): string {
   return new Intl.DateTimeFormat("ms-MY", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date);
+    timeZone: "UTC",
+  }).format(toMyt(input));
 }
 
 export function formatDateOnly(input: string | Date): string {
-  const date = typeof input === "string" ? new Date(input) : input;
-  return new Intl.DateTimeFormat("ms-MY", { dateStyle: "long" }).format(date);
+  return new Intl.DateTimeFormat("ms-MY", {
+    dateStyle: "long",
+    timeZone: "UTC",
+  }).format(toMyt(input));
 }
 
 /** Malay relative time, e.g. "3 minit lalu", "2 hari lalu". Floors to "Baru sahaja" under 1 minute. */

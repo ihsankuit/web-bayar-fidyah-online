@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -17,9 +18,14 @@ export interface TrackingSettings {
   googleAdsId: string;
   googleAdsConversionLabel: string;
   gtmId: string;
+  /** Server-side GTM container URL. When set, server conversions are sent
+   *  here (GA4 Measurement Protocol) instead of directly to Google/Meta. */
+  sgtmUrl: string;
 }
 
-export async function getTrackingSettings(): Promise<TrackingSettings> {
+// Cached per request: the site layout and the status page both read this, and
+// dedup avoids a second admin-client round-trip in the same render.
+export const getTrackingSettings = cache(async function getTrackingSettings(): Promise<TrackingSettings> {
   const fallback: TrackingSettings = {
     gaId: process.env.NEXT_PUBLIC_GA_ID ?? "",
     gaApiSecret: process.env.GA_API_SECRET ?? "",
@@ -30,6 +36,7 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
     googleAdsConversionLabel:
       process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_LABEL ?? "",
     gtmId: process.env.NEXT_PUBLIC_GTM_ID ?? "",
+    sgtmUrl: process.env.SGTM_URL ?? "",
   };
 
   try {
@@ -37,7 +44,7 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
     const { data } = await supabase
       .from("integration_settings")
       .select(
-        "ga_measurement_id, ga_api_secret, fb_pixel_id, fb_capi_access_token, fb_test_event_code, google_ads_id, google_ads_conversion_label, gtm_id"
+        "ga_measurement_id, ga_api_secret, fb_pixel_id, fb_capi_access_token, fb_test_event_code, google_ads_id, google_ads_conversion_label, gtm_id, sgtm_url"
       )
       .eq("id", 1)
       .maybeSingle();
@@ -53,10 +60,11 @@ export async function getTrackingSettings(): Promise<TrackingSettings> {
         googleAdsConversionLabel:
           data.google_ads_conversion_label || fallback.googleAdsConversionLabel,
         gtmId: data.gtm_id || fallback.gtmId,
+        sgtmUrl: data.sgtm_url || fallback.sgtmUrl,
       };
     }
   } catch {
     // service role/table unavailable — use env fallback.
   }
   return fallback;
-}
+});

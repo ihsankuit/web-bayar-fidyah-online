@@ -300,6 +300,44 @@ export function LandingEditor({ content }: { content: LandingContent }) {
 
       <Card>
         <CardHeader>
+          <CardTitle>Video Penerangan</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Pautan video YouTube yang dipaparkan di laman utama. Kosongkan untuk
+            menyembunyikan bahagian video.
+          </p>
+          <Field
+            label="Pautan YouTube"
+            name="video_url"
+            defaultValue={content.video_url}
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+          <Field
+            label="Tajuk bahagian"
+            name="video_title"
+            defaultValue={content.video_title}
+            placeholder="Video Penerangan Fidyah"
+          />
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="video_autoplay"
+              defaultChecked={content.video_autoplay}
+              className="h-4 w-4 rounded border-input"
+            />
+            Main automatik apabila laman dibuka
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Nota: pelayar hanya benarkan main automatik jika video{" "}
+            <strong>disenyapkan</strong>. Jadi video akan mula tanpa bunyi —
+            pengunjung tekan ikon bunyi untuk mendengar.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Soalan Lazim & Footer</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

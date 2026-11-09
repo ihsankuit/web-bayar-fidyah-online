@@ -33,12 +33,18 @@ export interface Donation {
   utm_campaign: string | null;
   utm_term: string | null;
   utm_content: string | null;
+  /** Google Ads click ids for offline conversion import. */
+  gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
   /** Conversion attribution captured from the payer's browser at submission time. */
   ga_client_id: string | null;
   fbp: string | null;
   fbc: string | null;
   client_ip: string | null;
   user_agent: string | null;
+  /** Set once the server-side GA4/Facebook conversion has been fired. */
+  conversion_sent_at: string | null;
   landing_url: string | null;
   /** Upsell campaign accepted at checkout (combined into the same payment). */
   upsell_accepted: boolean;
@@ -139,6 +145,23 @@ export interface FidyahDistributionRecipient {
 
 export type GalleryType = "image" | "video";
 
+/** A public distribution-update timeline entry (Admin -> Update Agihan). */
+export interface AgihanUpdate {
+  id: string;
+  title: string | null;
+  location: string | null;
+  caption: string | null;
+  /** Up to 4 photos. */
+  image_urls: string[];
+  storage_paths: string[];
+  /** Legacy single-image fields (pre-multi-image); read as a fallback. */
+  image_url?: string | null;
+  storage_path?: string | null;
+  happened_on: string; // date (YYYY-MM-DD)
+  sort_order: number;
+  created_at: string;
+}
+
 export interface GalleryItem {
   id: string;
   type: GalleryType;
@@ -164,6 +187,12 @@ export interface LandingContent {
   hero_cta: string;
   /** Optional soft background image behind the hero section. */
   hero_image_url: string;
+  /** Explainer video (YouTube URL or id). Empty hides the video section. */
+  video_url: string;
+  video_title: string;
+  /** Autoplay the video. Browsers only allow autoplay while muted, so an
+   *  autoplaying video starts silent with an unmute control. */
+  video_autoplay: boolean;
   about_title: string;
   about_body: string;
   hukum_title: string;

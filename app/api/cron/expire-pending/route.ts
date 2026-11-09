@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { emitDonationEvent } from "@/lib/webhooks";
+import type { Donation } from "@/lib/database.types";
 
 const CHIP_TIMEOUT_HOURS = 24;
 const MANUAL_TIMEOUT_DAYS = 7;
@@ -40,7 +42,7 @@ export async function GET(request: Request) {
     .eq("status", "pending")
     .eq("payment_method", "chip")
     .lt("created_at", chipCutoff)
-    .select("id");
+    .select("*");
 
   const { data: expiredManual } = await supabase
     .from("donations")
@@ -49,10 +51,19 @@ export async function GET(request: Request) {
     .eq("payment_method", "manual")
     .is("proof_of_payment_path", null)
     .lt("created_at", manualCutoff)
-    .select("id");
+    .select("*");
 
+  const abandoned = [
+    ...((expiredChip as Donation[]) ?? []),
+    ...((expiredManual as Donation[]) ?? []),
+  ];
   const chipCount = expiredChip?.length ?? 0;
   const manualCount = expiredManual?.length ?? 0;
+
+  // Notify automations (e.g. n8n) so they can run abandoned-cart follow-ups.
+  await Promise.allSettled(
+    abandoned.map((d) => emitDonationEvent("donation.abandoned", d))
+  );
 
   if (chipCount + manualCount > 0) {
     await supabase.from("admin_activity_log").insert({

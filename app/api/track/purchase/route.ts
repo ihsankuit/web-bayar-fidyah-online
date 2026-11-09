@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendFacebookPurchase } from "@/lib/tracking/facebook";
-import { sendGa4Purchase, parseGaClientId } from "@/lib/tracking/google";
-import { parseCookieHeader } from "@/lib/tracking/cookies";
+import { sendServerConversion } from "@/lib/tracking/conversions";
 import { checkRateLimit, clientIp as getClientIp } from "@/lib/rate-limit";
 import type { Donation } from "@/lib/database.types";
 
@@ -52,35 +50,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 200 });
   }
 
-  const value = donation.amount_sen / 100;
-  const cookies = parseCookieHeader(request.headers.get("cookie"));
-
-  const clientIp =
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    request.headers.get("x-real-ip");
-  const userAgent = request.headers.get("user-agent");
-  const referer = request.headers.get("referer") ?? undefined;
-
-  await Promise.allSettled([
-    sendFacebookPurchase({
-      eventId: donation.reference,
-      eventSourceUrl: referer,
-      email: donation.payer_email,
-      phone: donation.payer_phone,
-      value,
-      currency: "MYR",
-      clientIp,
-      userAgent,
-      fbp: cookies["_fbp"] ?? null,
-      fbc: cookies["_fbc"] ?? null,
-    }),
-    sendGa4Purchase({
-      transactionId: donation.reference,
-      value,
-      currency: "MYR",
-      clientId: parseGaClientId(cookies["_ga"]) ?? `${Date.now()}.${Math.floor(Math.random() * 1e9)}`,
-    }),
-  ]);
+  // Route through the shared, idempotent sender. If the CHIP callback or an
+  // admin confirmation already fired the conversion for this donation, this
+  // is a no-op — no double counting. Uses attribution stored at submission.
+  await sendServerConversion(donation);
 
   return NextResponse.json({ ok: true });
 }

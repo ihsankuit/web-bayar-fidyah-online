@@ -33,6 +33,7 @@ export function TrackingSettingsForm({
   googleAdsId,
   googleAdsConversionLabel,
   gtmId,
+  sgtmUrl,
 }: {
   gaId: string;
   gaApiSecret: string;
@@ -42,6 +43,7 @@ export function TrackingSettingsForm({
   googleAdsId: string;
   googleAdsConversionLabel: string;
   gtmId: string;
+  sgtmUrl: string;
 }) {
   const [state, action] = useActionState<IntegrationState, FormData>(
     saveTracking,
@@ -140,6 +142,21 @@ export function TrackingSettingsForm({
                   Pilihan — jika diisi, container GTM dimuatkan tambahan
                   kepada tag di atas. Peristiwa <code>purchase</code>{" "}
                   dihantar ke <code>dataLayer</code> untuk trigger GTM anda.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sgtm_url">Server GTM (sGTM) URL</Label>
+                <Input
+                  id="sgtm_url"
+                  name="sgtm_url"
+                  defaultValue={sgtmUrl}
+                  placeholder="https://sgtm.domainanda.com"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Pilihan — jika diisi, conversion server-side (bila bayaran{" "}
+                  <code>paid</code>) dihantar ke sGTM anda (GA4 Measurement
+                  Protocol) untuk fan-out ke GA4/Meta/Ads, bukan terus ke
+                  Google/Meta. Memerlukan GA4 API Secret juga.
                 </p>
               </div>
             </div>

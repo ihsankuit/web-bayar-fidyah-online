@@ -105,6 +105,17 @@ alter table public.donations add column if not exists utm_content text;
 create index if not exists donations_utm_source_idx on public.donations (utm_source);
 
 -- ---------------------------------------------------------------------
+--  Google Ads click identifiers (auto-tagging): gclid, or gbraid/wbraid
+--  for iOS traffic. Captured from the landing URL so a conversion that is
+--  only confirmed later (e.g. a manual bank transfer) can be imported back
+--  into Google Ads (offline conversion import) against the original click.
+--  Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists gclid  text;
+alter table public.donations add column if not exists gbraid text;
+alter table public.donations add column if not exists wbraid text;
+
+-- ---------------------------------------------------------------------
 --  Conversion attribution, captured from the payer's own browser at
 --  submission time. Used to fire GA4/Facebook server-side conversion
 --  events reliably when a donation is later confirmed paid — including
@@ -118,6 +129,14 @@ alter table public.donations add column if not exists fbc          text;
 alter table public.donations add column if not exists client_ip    text;
 alter table public.donations add column if not exists user_agent   text;
 alter table public.donations add column if not exists landing_url  text;
+
+-- ---------------------------------------------------------------------
+--  Server-side conversion guard. Set the first time a paid donation's
+--  GA4/Facebook server conversion is sent, so the event fires exactly
+--  once no matter which path settles it (CHIP callback, admin confirm,
+--  or the /status page). Run this block if upgrading an existing database.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists conversion_sent_at timestamptz;
 
 -- ---------------------------------------------------------------------
 --  Upsell campaign accepted at checkout (combined into the same payment
@@ -319,6 +338,37 @@ create policy gallery_admin_all on public.gallery_items
   for all to authenticated using (true) with check (true);
 
 -- =====================================================================
+--  Agihan updates — public distribution timeline shown on the landing
+--  page (photo + date + place + short caption). Managed from Admin ->
+--  Update Agihan. Run this block if upgrading an existing database.
+-- =====================================================================
+create table if not exists public.agihan_updates (
+  id            uuid primary key default gen_random_uuid(),
+  title         text,
+  location      text,
+  caption       text,
+  image_urls    text[] not null default '{}',   -- up to 4 photos per update
+  storage_paths text[] not null default '{}',
+  happened_on   date not null default current_date,
+  sort_order    integer not null default 0,
+  created_at    timestamptz not null default now()
+);
+-- Upgrade path from an earlier single-image version of this table.
+alter table public.agihan_updates
+  add column if not exists image_urls    text[] not null default '{}',
+  add column if not exists storage_paths text[] not null default '{}';
+create index if not exists agihan_updates_order_idx
+  on public.agihan_updates (happened_on desc, created_at desc);
+
+alter table public.agihan_updates enable row level security;
+drop policy if exists agihan_updates_public_read on public.agihan_updates;
+create policy agihan_updates_public_read on public.agihan_updates
+  for select to anon, authenticated using (true);
+drop policy if exists agihan_updates_admin_all on public.agihan_updates;
+create policy agihan_updates_admin_all on public.agihan_updates
+  for all to authenticated using (true) with check (true);
+
+-- =====================================================================
 --  Admin activity log (audit trail for sensitive admin actions)
 --  Run this block if upgrading an existing database.
 -- =====================================================================
@@ -393,6 +443,12 @@ alter table public.integration_settings
 -- Google Tag Manager container (managed from Admin > Integrasi).
 alter table public.integration_settings
   add column if not exists gtm_id text;
+
+-- Server-side GTM container URL. When set, server conversions are sent here
+-- (GA4 Measurement Protocol) so sGTM fans them out to GA4/Meta/Ads, instead
+-- of the app posting directly to Google/Meta.
+alter table public.integration_settings
+  add column if not exists sgtm_url text;
 
 -- WhatsApp (Murpati) credentials, used to send fidyah distribution updates
 -- (managed from Admin > Integrasi).

@@ -27,6 +27,7 @@ import { useEffect, useRef } from "react";
  */
 export function PurchaseTracker({
   reference,
+  donationId,
   value,
   currency = "MYR",
   googleAdsId,
@@ -38,6 +39,8 @@ export function PurchaseTracker({
   negeri,
 }: {
   reference: string;
+  /** The donation row's UUID (`id`), exposed to GTM as `donation_id`. */
+  donationId?: string;
   value: number;
   currency?: string;
   googleAdsId?: string;
@@ -84,6 +87,7 @@ export function PurchaseTracker({
         event: "purchase",
         transaction_id: reference,
         event_id: reference,
+        donation_id: donationId,
         value,
         currency,
         name,
@@ -109,6 +113,7 @@ export function PurchaseTracker({
     }).catch(() => {});
   }, [
     reference,
+    donationId,
     value,
     currency,
     googleAdsId,

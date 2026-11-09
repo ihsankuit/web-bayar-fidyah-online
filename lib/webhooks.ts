@@ -13,7 +13,8 @@ import { getIntegrationSettings } from "@/lib/integrations";
 export type WebhookEvent =
   | "donation.created"
   | "donation.paid"
-  | "donation.failed";
+  | "donation.failed"
+  | "donation.abandoned";
 
 export async function sendWebhook(
   event: WebhookEvent,

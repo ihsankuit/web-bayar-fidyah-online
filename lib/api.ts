@@ -49,6 +49,17 @@ export function serializeDonation(d: Donation) {
     amount_sen: d.amount_sen,
     currency: "MYR",
     message: d.message,
+    // Attribution — lets automations (e.g. Hermes) reconcile payments against
+    // the campaign/source that drove them.
+    utm_source: d.utm_source,
+    utm_medium: d.utm_medium,
+    utm_campaign: d.utm_campaign,
+    utm_term: d.utm_term,
+    utm_content: d.utm_content,
+    // Google Ads click ids — for offline conversion import back to Ads.
+    gclid: d.gclid,
+    gbraid: d.gbraid,
+    wbraid: d.wbraid,
     paid_at: d.paid_at,
     created_at: d.created_at,
   };

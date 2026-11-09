@@ -5,9 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
+  Contact,
   FileText,
   GalleryHorizontalEnd,
   Gift,
+  HeartHandshake,
   History,
   Image as ImageIcon,
   LayoutDashboard,
@@ -37,7 +39,9 @@ import { Logo } from "@/components/site/logo";
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/sumbangan", label: "Sumbangan", icon: Wallet },
+  { href: "/admin/pembayar", label: "Pembayar", icon: Contact },
   { href: "/admin/agihan", label: "Agihan Fidyah", icon: MessageCircle },
+  { href: "/admin/update-agihan", label: "Update Agihan", icon: HeartHandshake },
   { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/galeri", label: "Galeri", icon: GalleryHorizontalEnd },
   { href: "/admin/media", label: "Media", icon: ImageIcon },

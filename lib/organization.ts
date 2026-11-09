@@ -14,6 +14,9 @@ export const ORG = {
   name: "Pertubuhan Ihsanku Malaysia",
   /** Registered non-profit — schema.org NGO is the precise Organization subtype. */
   schemaType: "NGO",
+  /** ROS (Registry of Societies) registration number — shown on the site for
+   *  legitimacy and to satisfy ad-platform (Google Ads) transparency policy. */
+  rosNumber: "PPM-019-10-06022023",
   streetAddress: "1-1, Jln Puteri 2A/1, Bandar Bukit Mahkota",
   locality: "Kajang",
   region: "Selangor",
@@ -27,13 +30,6 @@ export const ORG = {
   /** Google Maps plus code, a precise location identifier. */
   plusCode: "VQMW+22 Kajang, Selangor",
   logoPath: "/logo-ihsanku.png",
-  /**
-   * Societies registration number (ROS). Blank until filled — a charity's
-   * registration number is one of the strongest trust signals a donation
-   * page can carry, but an invented one is worse than none, so the Tentang
-   * Kami page simply omits the row while this is empty.
-   */
-  registrationNumber: "",
   /** Support inbox. Blank hides the email row on the Hubungi page. */
   email: "",
 } as const;
