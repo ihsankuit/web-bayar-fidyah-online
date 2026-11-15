@@ -1,5 +1,12 @@
 import crypto from "crypto";
 import { getTrackingSettings } from "@/lib/tracking/settings";
+import {
+  externalIdFor,
+  MATCH_COUNTRY,
+  normalizePhoneForMatching,
+  normalizeRegionForMatching,
+  splitNameForMatching,
+} from "@/lib/tracking/identity";
 
 const API_VERSION = "v19.0";
 
@@ -15,6 +22,10 @@ export interface CapiPurchaseInput {
   eventSourceUrl?: string;
   email?: string | null;
   phone?: string | null;
+  /** Payer's full name, split into fn/ln for matching. */
+  name?: string | null;
+  /** Malaysian state, sent as the `st` region parameter. */
+  state?: string | null;
   value: number; // in Ringgit (float)
   currency?: string;
   clientIp?: string | null;
@@ -35,9 +46,31 @@ export async function sendFacebookPurchase(
     await getTrackingSettings();
   if (!pixelId || !token) return false;
 
+  // Every parameter here is one more thing Meta can match on, and the Event
+  // Match Quality score is driven by how many of them land. fbp/fbc and the
+  // IP/user-agent pair are the strong signals; the hashed personal details
+  // are what lifts the score for payers who arrived without a click id.
   const userData: Record<string, unknown> = {};
   if (input.email) userData.em = [sha256(input.email)];
-  if (input.phone) userData.ph = [sha256(input.phone.replace(/[^0-9]/g, ""))];
+
+  const phone = normalizePhoneForMatching(input.phone);
+  if (phone) userData.ph = [sha256(phone)];
+
+  const { first, last } = splitNameForMatching(input.name);
+  if (first) userData.fn = [sha256(first)];
+  if (last) userData.ln = [sha256(last)];
+
+  const region = normalizeRegionForMatching(input.state);
+  if (region) userData.st = [sha256(region)];
+
+  // The country is a constant for this site — every payer is settling a
+  // Malaysian fidyah — but only worth asserting when something else about
+  // the payer is known, so it never stands alone as the sole "match".
+  if (userData.em || userData.ph) userData.country = [sha256(MATCH_COUNTRY)];
+
+  const externalId = externalIdFor(input.phone, input.email);
+  if (externalId) userData.external_id = [sha256(externalId)];
+
   if (input.clientIp) userData.client_ip_address = input.clientIp;
   if (input.userAgent) userData.client_user_agent = input.userAgent;
   if (input.fbp) userData.fbp = input.fbp;
