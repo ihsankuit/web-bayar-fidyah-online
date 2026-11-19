@@ -12,7 +12,7 @@ export const DEFAULT_SEO: SeoSettings = {
   // wins. Change it there too, or this default stays invisible.
   title: "Bayar Fidyah Online — Cara Bayar Fidyah Puasa & Kalkulator 2026/2027",
   description:
-    "Bayar fidyah puasa Ramadan online di seluruh Malaysia. Kiraan automatik, pembayaran selamat FPX, kad & QR, resit terus ke emel. Kadar RM4.00 sehari.",
+    "Bayar fidyah puasa Ramadan online di seluruh Malaysia. Kiraan automatik, bayaran selamat (FPX, kad & QR) dan resit ke emel — kadar RM4.00 sehari.",
   keywords: [
     "fidyah",
     "bayar fidyah",
