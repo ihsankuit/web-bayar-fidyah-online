@@ -18,6 +18,14 @@ export const metadata = {
   alternates: {
     canonical: "/blog",
   },
+  openGraph: {
+    title: "Blog — Panduan Fidyah, Puasa & Ibadah",
+    description:
+      "Artikel, panduan dan info terkini berkaitan fidyah puasa Ramadan, hukum fidyah, cara kira fidyah, dan ibadah di Malaysia.",
+    type: "website",
+    url: `${SITE_URL}/blog`,
+    siteName: "Bayar Fidyah Online",
+  },
 };
 
 export const revalidate = 60;
