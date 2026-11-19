@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/public";
 import type { BlogPost } from "@/lib/database.types";
 import { formatDateOnly } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site-url";
+import { DEFAULT_OG_IMAGE, openGraphFor } from "@/lib/og";
 import { RETIRED_BLOG_SLUGS } from "@/lib/blog-redirects";
 
 export const metadata = {
@@ -19,12 +20,8 @@ export const metadata = {
     canonical: "/blog",
   },
   openGraph: {
-    title: "Blog — Panduan Fidyah, Puasa & Ibadah",
-    description:
-      "Artikel, panduan dan info terkini berkaitan fidyah puasa Ramadan, hukum fidyah, cara kira fidyah, dan ibadah di Malaysia.",
-    type: "website",
-    url: `${SITE_URL}/blog`,
-    siteName: "Bayar Fidyah Online",
+    ...openGraphFor("/blog"),
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

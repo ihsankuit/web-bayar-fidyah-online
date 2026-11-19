@@ -8,11 +8,14 @@ export function Markdown({ children }: { children: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          // The page already renders the post title as the single <h1>, so a
-          // "# " in the article body must not become a second one — render it
-          // as an <h2> to keep one H1 per page (SEO).
+          // The page already has an H1 — the post title — so a "# " in the
+          // body would make a second one. Render it as an H2 instead of
+          // trusting every author to remember.
           h1: (props) => (
-            <h2 className="mt-10 text-3xl font-bold tracking-tight" {...props} />
+            <h2
+              className="mt-10 border-b border-border pb-2 text-2xl font-bold tracking-tight"
+              {...props}
+            />
           ),
           h2: (props) => (
             <h2

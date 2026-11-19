@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/public";
 import type { BlogPost } from "@/lib/database.types";
 import { formatDateOnly } from "@/lib/utils";
 import { SITE_URL } from "@/lib/site-url";
+import { DEFAULT_OG_IMAGE, openGraphFor } from "@/lib/og";
 import { RETIRED_BLOG_SLUGS } from "@/lib/blog-redirects";
 
 export const revalidate = 60;
@@ -86,17 +87,20 @@ export async function generateMetadata({
       canonical: `/blog/${post.slug}`,
     },
     openGraph: {
+      ...openGraphFor(`/blog/${post.slug}`),
       title: metaTitle,
       description: metaDescription,
       type: "article",
-      url: `${SITE_URL}/blog/${post.slug}`,
-      ...(post.cover_image ? { images: [post.cover_image] } : {}),
+      // An article without a cover still needs a share image: the root
+      // opengraph-image convention stops applying the moment a page
+      // declares its own openGraph block.
+      images: [post.cover_image ?? DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
-      ...(post.cover_image ? { images: [post.cover_image] } : {}),
+      images: [post.cover_image ?? DEFAULT_OG_IMAGE],
     },
   };
 }

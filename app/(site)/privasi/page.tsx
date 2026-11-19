@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
-import { SITE_URL } from "@/lib/site-url";
+import { DEFAULT_OG_IMAGE, openGraphFor } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Dasar Privasi",
@@ -12,12 +12,8 @@ export const metadata: Metadata = {
     "Bagaimana Pertubuhan Ihsanku Malaysia mengumpul, menggunakan dan melindungi data peribadi anda di Bayar Fidyah Online, selaras dengan PDPA 2010.",
   alternates: { canonical: "/privasi" },
   openGraph: {
-    title: "Dasar Privasi",
-    description:
-      "Bagaimana Pertubuhan Ihsanku Malaysia mengumpul, menggunakan dan melindungi data peribadi anda di Bayar Fidyah Online, selaras dengan PDPA 2010.",
-    type: "website",
-    url: `${SITE_URL}/privasi`,
-    siteName: "Bayar Fidyah Online",
+    ...openGraphFor("/privasi"),
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

@@ -10,6 +10,10 @@
  */
 import crypto from "crypto";
 import { getTrackingSettings } from "@/lib/tracking/settings";
+import {
+  normalizePhoneForMatching,
+  splitNameForMatching,
+} from "@/lib/tracking/identity";
 
 function sha256(value: string): string {
   return crypto
@@ -30,6 +34,8 @@ export interface Ga4PurchaseInput {
     eventId?: string;
     email?: string | null;
     phone?: string | null;
+    /** Payer's full name, split into first/last for matching. */
+    name?: string | null;
     fbp?: string | null;
     fbc?: string | null;
     clientIp?: string | null;
@@ -59,8 +65,15 @@ export async function sendGa4Purchase(
 
   const userData: Record<string, string> = {};
   if (m?.email) userData.sha256_email_address = sha256(m.email);
-  if (m?.phone)
-    userData.sha256_phone_number = sha256(m.phone.replace(/[^0-9]/g, ""));
+
+  // E.164 digits, no plus. A number hashed in its local "0123..." form
+  // matches nothing downstream.
+  const phone = normalizePhoneForMatching(m?.phone);
+  if (phone) userData.sha256_phone_number = sha256(phone);
+
+  const { first, last } = splitNameForMatching(m?.name);
+  if (first) userData.sha256_first_name = sha256(first);
+  if (last) userData.sha256_last_name = sha256(last);
 
   const body: Record<string, unknown> = {
     client_id: input.clientId,

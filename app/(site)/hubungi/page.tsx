@@ -7,12 +7,17 @@ import { Footer } from "@/components/site/footer";
 import { getLandingContent } from "@/lib/settings";
 import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
 import { SITE_URL } from "@/lib/site-url";
+import { DEFAULT_OG_IMAGE, openGraphFor } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Hubungi Kami",
   description:
-    "Hubungi Pertubuhan Ihsanku Malaysia untuk sebarang pertanyaan mengenai pembayaran fidyah, resit, atau pembayaran yang tidak berjaya. WhatsApp, telefon dan alamat pejabat.",
+    "Hubungi Pertubuhan Ihsanku Malaysia untuk pertanyaan tentang pembayaran fidyah, resit, atau bayaran yang tidak berjaya. WhatsApp, telefon dan alamat pejabat.",
   alternates: { canonical: "/hubungi" },
+  openGraph: {
+    ...openGraphFor("/hubungi"),
+    images: [DEFAULT_OG_IMAGE],
+  },
 };
 
 export const revalidate = 300;
