@@ -7,12 +7,17 @@ import { Footer } from "@/components/site/footer";
 import { Button } from "@/components/ui/button";
 import { ORG, ORG_ADDRESS_LINE, ORG_SAME_AS } from "@/lib/organization";
 import { SITE_URL } from "@/lib/site-url";
+import { DEFAULT_OG_IMAGE, openGraphFor } from "@/lib/og";
 
 export const metadata: Metadata = {
   title: "Tentang Kami — Pertubuhan Ihsanku Malaysia",
   description:
-    "Bayar Fidyah Online dikendalikan oleh Pertubuhan Ihsanku Malaysia. Ketahui siapa kami, ke mana fidyah anda disalurkan, dan bagaimana pembayaran anda dilindungi.",
+    "Bayar Fidyah Online dikendalikan oleh Pertubuhan Ihsanku Malaysia. Ketahui siapa kami, ke mana fidyah disalurkan, dan cara pembayaran anda dilindungi.",
   alternates: { canonical: "/tentang-kami" },
+  openGraph: {
+    ...openGraphFor("/tentang-kami"),
+    images: [DEFAULT_OG_IMAGE],
+  },
 };
 
 /**
