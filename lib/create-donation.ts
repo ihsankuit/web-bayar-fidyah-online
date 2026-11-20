@@ -10,6 +10,7 @@ import { getUpsellSettings } from "@/lib/upsell";
 import { isMissingColumnError } from "@/lib/db-errors";
 import {
   QADA_CATEGORY_ID,
+  QADA_REVIEW_THRESHOLD_SEN,
   resolveQadaOrder,
   type QadaOrder,
   type QadaRowInput,
@@ -43,6 +44,8 @@ export interface CreateDonationInput {
    * what is charged never depends on a figure the caller computed.
    */
   qada?: QadaRowInput[];
+  /** Lewat qada' without the delay multiplier (payer cannot afford it). */
+  qadaBasicOnly?: boolean;
   /**
    * The fidyah amount (sen, upsell excluded) the payer was shown. If the
    * server works out something different — a wrong device clock, or a page
@@ -113,6 +116,8 @@ export interface PriceInput {
   days: number;
   multiplier: number;
   qada?: QadaRowInput[];
+  /** Lewat qada' without the delay multiplier, for a payer who cannot afford it. */
+  qadaBasicOnly?: boolean;
   expectedFidyahSen?: number;
 }
 
@@ -147,7 +152,9 @@ function priceOrder(input: PriceInput, rateSen: number, now: Date): PricedOrder 
         error: "Pecahan tahun hanya untuk kategori Lewat qada'.",
       };
     }
-    const resolved = resolveQadaOrder(input.qada, rateSen, now);
+    const resolved = resolveQadaOrder(input.qada, rateSen, now, {
+      basicOnly: input.qadaBasicOnly,
+    });
     if (!resolved.ok) {
       return { ok: false, status: 400, error: resolved.error };
     }
@@ -198,6 +205,8 @@ export type QuoteResult =
       multiplier: number;
       rateSen: number;
       breakdown: QadaBreakdownRow[] | null;
+      /** Too large to charge online; needs bank transfer and staff checking. */
+      requiresReview: boolean;
     }
   | {
       ok: false;
@@ -218,6 +227,8 @@ export async function quoteDonation(input: PriceInput): Promise<QuoteResult> {
     multiplier: priced.calc.multiplier,
     rateSen: priced.calc.rateSen,
     breakdown: priced.qada?.breakdown ?? null,
+    requiresReview:
+      priced.qada !== null && priced.calc.totalSen >= QADA_REVIEW_THRESHOLD_SEN,
   };
 }
 
@@ -234,6 +245,20 @@ export async function createDonation(
   const priced = priceOrder(input, content.fidyah_rate_sen, new Date());
   if (!priced.ok) return priced;
   const { calc, qada } = priced;
+
+  if (
+    qada &&
+    input.method === "chip" &&
+    calc.totalSen >= QADA_REVIEW_THRESHOLD_SEN
+  ) {
+    return {
+      ok: false,
+      status: 422,
+      error:
+        "Jumlah ini besar, jadi bayaran dibuat melalui pindahan bank dan disahkan oleh pasukan kami. Sila pilih pindahan bank atau hubungi kami.",
+      details: { code: "REVIEW_REQUIRED", amountSen: calc.totalSen },
+    };
+  }
 
   // The upsell amount is caller-adjustable (like a tip), but only applies if
   // the campaign is actually enabled right now — never trust that alone.

@@ -277,14 +277,19 @@ export default async function HomePage() {
               <p className="max-w-lg text-pretty text-lg text-muted-foreground">
                 {content.hero_subtitle}
               </p>
-              <div className="flex flex-wrap gap-3">
-                <Button asChild size="lg">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button asChild size="lg" className="w-full sm:w-auto">
                   <Link href="#kira">
                     {content.hero_cta}
                     <ArrowRight />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline">
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
                   <Link href="#hukum">Ketahui Lebih Lanjut</Link>
                 </Button>
               </div>

@@ -11,6 +11,7 @@ import {
   ramadansPassedSince,
   formatQadaBreakdown,
   qadaYearsInfo,
+  QADA_REVIEW_THRESHOLD_SEN,
   resolveQadaOrder,
   validateQadaRows,
 } from "./ramadan";
@@ -228,7 +229,9 @@ describe("validateQadaRows", () => {
   });
   it("rejects nothing, too many rows, and duplicates", () => {
     expect(ok([])).toBe(false);
-    const many = Array.from({ length: 11 }, (_, i) => ({ hijriYear: 1447 - i, days: 1 }));
+    const forty = Array.from({ length: 40 }, (_, i) => ({ hijriYear: 1447 - i, days: 1 }));
+    expect(ok(forty)).toBe(true);
+    const many = [...forty, { hijriYear: 1406, days: 1 }];
     expect(ok(many)).toBe(false);
     expect(
       ok([
@@ -239,7 +242,8 @@ describe("validateQadaRows", () => {
   });
   it("rejects a Ramadan that has not begun, or one too far back", () => {
     expect(ok([{ hijriYear: 1448, days: 1 }])).toBe(false);
-    expect(ok([{ hijriYear: 1447 - 20, days: 1 }])).toBe(false);
+    expect(ok([{ hijriYear: 1447 - 39, days: 1 }])).toBe(true);
+    expect(ok([{ hijriYear: 1447 - 40, days: 1 }])).toBe(false);
   });
   it("rejects days outside 1-30 and non-integers", () => {
     expect(ok([{ hijriYear: 1446, days: 0 }])).toBe(false);
@@ -285,6 +289,51 @@ describe("qadaYearsInfo", () => {
     expect(info.years[0]).toMatchObject({ hijri_year: 1447, multiplier: 0 });
     expect(info.years[1]).toMatchObject({ hijri_year: 1446, multiplier: 1 });
     expect(info.next_ramadan.hijri_year).toBe(1448);
-    expect(info.max_years).toBe(10);
+    expect(info.max_years).toBe(40);
+    expect(info.years).toHaveLength(40);
+  });
+});
+
+describe("a long-owed qada'", () => {
+  it("prices 30 years of 30 days, one Ramadan more for each older year", () => {
+    const rows = Array.from({ length: 30 }, (_, i) => ({ hijriYear: 1446 - i, days: 30 }));
+    const r = resolveQadaOrder(rows, RATE, NOV_2026);
+    if (!r.ok) throw new Error(r.error);
+    // Multipliers 1..30, so 30 days x (1+2+...+30) x RM4.
+    expect(r.chargeableDays).toBe(30 * (30 * 31) / 2);
+    expect(r.totalSen).toBe(30 * 465 * RATE);
+    expect(r.totalSen).toBeGreaterThanOrEqual(QADA_REVIEW_THRESHOLD_SEN);
+  });
+  it("keeps an ordinary payment under the review threshold", () => {
+    const r = resolveQadaOrder([{ hijriYear: 1446, days: 12 }], RATE, NOV_2026);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.totalSen).toBeLessThan(QADA_REVIEW_THRESHOLD_SEN);
+  });
+});
+
+describe("basic-only qada' (cannot afford the multiplier)", () => {
+  it("charges days x rate with no multiplier and records what was waived", () => {
+    const rows = Array.from({ length: 40 }, (_, i) => ({ hijriYear: 1447 - i, days: 30 }));
+    const full = resolveQadaOrder(rows, RATE, NOV_2026);
+    const basic = resolveQadaOrder(rows, RATE, NOV_2026, { basicOnly: true });
+    if (!full.ok || !basic.ok) throw new Error("expected ok");
+    // 1447H is the latest Ramadan and owes nothing yet, so 39 years are charged.
+    expect(basic.totalSen).toBe(39 * 30 * RATE); // RM4,680
+    expect(basic.totalSen).toBeLessThan(QADA_REVIEW_THRESHOLD_SEN);
+    expect(full.totalSen).toBeGreaterThan(basic.totalSen);
+    // The oldest year was x39 and is now charged x1, with the real figure kept.
+    expect(basic.breakdown[39]).toMatchObject({ multiplier: 1, waived_multiplier: 39 });
+    // A year already at x1 has nothing waived.
+    expect(basic.breakdown[1].waived_multiplier).toBeUndefined();
+  });
+  it("still charges nothing for a year whose next Ramadan has not begun", () => {
+    const r = calculateQada([{ hijriYear: 1447, days: 10 }], RATE, NOV_2026, { basicOnly: true });
+    expect(r.totalSen).toBe(0);
+  });
+  it("shows what was waived in the one-line breakdown", () => {
+    const r = resolveQadaOrder([{ hijriYear: 1444, days: 5 }], RATE, NOV_2026, { basicOnly: true });
+    if (!r.ok) throw new Error(r.error);
+    expect(r.totalSen).toBe(5 * RATE);
+    expect(formatQadaBreakdown(r.breakdown)).toBe("2023 (1444H) 5 hari x1 (sebenar x3)");
   });
 });

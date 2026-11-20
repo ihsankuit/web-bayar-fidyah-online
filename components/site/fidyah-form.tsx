@@ -3,7 +3,16 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Check, Copy, Download, Loader2, Minus, Plus, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  Download,
+  Loader2,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -42,6 +51,7 @@ import {
   qadaYearOptions,
   QADA_CATEGORY_ID as QADA_CATEGORY,
   MAX_QADA_ROWS,
+  QADA_REVIEW_THRESHOLD_SEN,
 } from "@/lib/ramadan";
 import { formatMYR } from "@/lib/utils";
 import { getStoredUtm, getStoredClickIds } from "@/lib/utm";
@@ -88,7 +98,11 @@ export function FidyahForm({
     { id: 1, hijriYear: latestRamadanHijriYear(new Date()) - 1, days: 1 },
   ]);
   const [category, setCategory] = useState(FIDYAH_CATEGORIES[0].id as string);
-  const [method, setMethod] = useState<PaymentMethod>("chip");
+  const [chosenMethod, setMethod] = useState<PaymentMethod>("chip");
+  const [rangeFrom, setRangeFrom] = useState<number | null>(null);
+  const [rangeTo, setRangeTo] = useState<number | null>(null);
+  const [rangeDays, setRangeDays] = useState(30);
+  const [showRange, setShowRange] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -109,13 +123,39 @@ export function FidyahForm({
   );
 
   const isQada = category === QADA_CATEGORY;
+  const [basicOnly, setBasicOnly] = useState(false);
   const qada = useMemo(
-    () => calculateQada(qadaRows, rateSen, now),
-    [qadaRows, rateSen, now]
+    () => calculateQada(qadaRows, rateSen, now, { basicOnly }),
+    [qadaRows, rateSen, now, basicOnly]
   );
   const upcomingRamadan = useMemo(() => nextRamadan(now), [now]);
   // The one figure everything below charges, whichever mode is showing.
   const totalSen = isQada ? qada.totalSen : result.totalSen;
+  // A big lewat qada' total is not charged online: it goes by bank transfer
+  // and staff check the proof.
+  const requiresReview = isQada && totalSen >= QADA_REVIEW_THRESHOLD_SEN;
+  const method: PaymentMethod = requiresReview ? "manual" : chosenMethod;
+
+  function generateRange() {
+    if (rangeFrom === null || rangeTo === null) {
+      return toast.error("Sila pilih tahun mula dan tahun akhir.");
+    }
+    const lo = Math.min(rangeFrom, rangeTo);
+    const hi = Math.max(rangeFrom, rangeTo);
+    const years = yearOptions
+      .filter((o) => o.hijriYear >= lo && o.hijriYear <= hi)
+      .map((o) => o.hijriYear)
+      .sort((a, b) => b - a);
+    if (years.length === 0) return toast.error("Tiada tahun dalam julat itu.");
+    setQadaRows(
+      years.map((hijriYear) => ({
+        id: nextRowId.current++,
+        hijriYear,
+        days: rangeDays,
+      }))
+    );
+    setShowRange(false);
+  }
 
   function updateQadaRow(id: number, patch: Partial<QadaRowState>) {
     setQadaRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -145,6 +185,10 @@ export function FidyahForm({
       );
     if (totalSen < 100)
       return toast.error("Jumlah minimum pembayaran ialah RM1.00.");
+    if (requiresReview && !manualTransferAvailable)
+      return toast.error(
+        "Jumlah ini besar. Sila hubungi pasukan kami untuk menguruskan bayaran."
+      );
 
     if (upsell?.enabled) {
       setShowUpsell(true);
@@ -180,6 +224,7 @@ export function FidyahForm({
                   hijriYear: r.hijriYear,
                   days: r.days,
                 })),
+                qadaBasicOnly: basicOnly,
                 expectedFidyahSen: qada.totalSen,
               }
             : {}),
@@ -295,6 +340,89 @@ export function FidyahForm({
 
           {isQada && (
             <div className="space-y-4">
+              <div className="rounded-lg border border-dashed">
+                <button
+                  type="button"
+                  onClick={() => setShowRange((v) => !v)}
+                  aria-expanded={showRange}
+                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                >
+                  <span>
+                    <span className="block text-sm font-medium">
+                      Tertunggak banyak tahun?
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      Isi julat tahun sekaligus, sehingga {MAX_QADA_ROWS} tahun.
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 transition-transform ${
+                      showRange ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {showRange && (
+              <div className="space-y-3 border-t p-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                  <div className="space-y-2">
+                    <Label htmlFor="range-from">Dari tahun</Label>
+                    <Select
+                      value={rangeFrom === null ? "" : String(rangeFrom)}
+                      onValueChange={(v) => setRangeFrom(Number(v))}
+                    >
+                      <SelectTrigger id="range-from">
+                        <SelectValue placeholder="Pilih tahun" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map((o) => (
+                          <SelectItem key={o.hijriYear} value={String(o.hijriYear)}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="range-to">Hingga tahun</Label>
+                    <Select
+                      value={rangeTo === null ? "" : String(rangeTo)}
+                      onValueChange={(v) => setRangeTo(Number(v))}
+                    >
+                      <SelectTrigger id="range-to">
+                        <SelectValue placeholder="Pilih tahun" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map((o) => (
+                          <SelectItem key={o.hijriYear} value={String(o.hijriYear)}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2 space-y-2 sm:col-span-1">
+                    <Label>Hari setahun</Label>
+                    <Stepper
+                      value={rangeDays}
+                      onChange={setRangeDays}
+                      min={1}
+                      max={MAX_RAMADAN_DAYS}
+                      label="Purata hari ditinggalkan setahun"
+                    />
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={generateRange}
+                >
+                  Jana senarai tahun
+                </Button>
+              </div>
+                )}
+              </div>
+
               {qadaRows.map((row, i) => {
                 const computed = qada.rows[i];
                 const taken = new Set(
@@ -343,6 +471,7 @@ export function FidyahForm({
                         type="button"
                         variant="outline"
                         size="icon"
+                        className="h-11 w-11 sm:h-10 sm:w-10"
                         aria-label={`Buang ${computed.label}`}
                         onClick={() => removeQadaRow(row.id)}
                         disabled={qadaRows.length === 1}
@@ -351,9 +480,11 @@ export function FidyahForm({
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {computed.multiplier > 0
-                        ? `Telah melepasi ${computed.multiplier} Ramadan. Gandaan ${computed.multiplier}×.`
-                        : "Belum melepasi 1 Ramadan berikutnya. Gandaan belum dikenakan."}
+                      {computed.multiplier === 0
+                        ? "Belum melepasi 1 Ramadan berikutnya. Gandaan belum dikenakan."
+                        : computed.waivedMultiplier
+                          ? `Telah melepasi ${computed.waivedMultiplier} Ramadan. Gandaan ${computed.waivedMultiplier}× tidak dikenakan, bayaran asas sahaja.`
+                          : `Telah melepasi ${computed.multiplier} Ramadan. Gandaan ${computed.multiplier}×.`}
                     </p>
                   </div>
                 );
@@ -378,6 +509,28 @@ export function FidyahForm({
                 {upcomingRamadan.hijriYear}H dijangka sekitar{" "}
                 {formatCalendarDate(upcomingRamadan.start)}).
               </p>
+              <label
+                htmlFor="qada-basic-only"
+                className="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm"
+              >
+                <input
+                  id="qada-basic-only"
+                  type="checkbox"
+                  checked={basicOnly}
+                  onChange={(e) => setBasicOnly(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
+                />
+                <span>
+                  <span className="block font-medium">
+                    Saya tidak mampu membayar gandaan
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    Dikira bayaran asas sahaja (hari × {formatMYR(rateSen)}),
+                    tanpa gandaan. Qada&apos; puasa tetap wajib diganti jika
+                    mampu.
+                  </span>
+                </span>
+              </label>
             </div>
           )}
 
@@ -479,7 +632,16 @@ export function FidyahForm({
             />
           </div>
 
-          {manualTransferAvailable && (
+          {requiresReview && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              Jumlah ini besar (RM5,000 ke atas), jadi bayaran dibuat melalui
+              pindahan bank dan disahkan oleh pasukan kami.
+              {!manualTransferAvailable &&
+                " Sila hubungi kami untuk menguruskan bayaran."}
+            </p>
+          )}
+
+          {manualTransferAvailable && !requiresReview && (
             <div className="space-y-2">
               <Label>Kaedah pembayaran</Label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -806,6 +968,7 @@ function Stepper({
         type="button"
         variant="outline"
         size="icon"
+        className="h-11 w-11 shrink-0 sm:h-10 sm:w-10"
         aria-label={`Kurangkan ${label}`}
         onClick={() => onChange(clamp(value - 1))}
       >
@@ -818,12 +981,13 @@ function Stepper({
         value={value}
         aria-label={label}
         onChange={(e) => onChange(clamp(Number(e.target.value) || min))}
-        className="text-center"
+        className="h-11 text-center sm:h-10"
       />
       <Button
         type="button"
         variant="outline"
         size="icon"
+        className="h-11 w-11 shrink-0 sm:h-10 sm:w-10"
         aria-label={`Tambah ${label}`}
         disabled={max !== undefined && value >= max}
         onClick={() => onChange(clamp(value + 1))}

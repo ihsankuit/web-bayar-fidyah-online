@@ -71,6 +71,12 @@ export interface QadaBreakdownRow {
   /** Ramadans that had begun since, when the payment was made. */
   multiplier: number;
   subtotal_sen: number;
+  /**
+   * Set when the payer asked for no multiplier (cannot afford it): the real
+   * multiplier for this year, which was not charged. `multiplier` then holds
+   * what was charged, at most 1.
+   */
+  waived_multiplier?: number;
 }
 
 export interface BlogPost {

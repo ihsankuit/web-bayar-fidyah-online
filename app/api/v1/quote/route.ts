@@ -16,6 +16,7 @@ const schema = z
       .min(1)
       .max(MAX_QADA_ROWS)
       .optional(),
+    qada_basic_only: z.boolean().optional(),
   })
   .refine((v) => v.qada !== undefined || v.days !== undefined, {
     path: ["days"],
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
     days: input.days ?? 1,
     multiplier: input.multiplier,
     qada: input.qada?.map((r) => ({ hijriYear: r.hijri_year, days: r.days })),
+    qadaBasicOnly: input.qada_basic_only,
   });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
@@ -72,6 +74,9 @@ export async function POST(request: Request) {
       chargeable_days: result.days * result.multiplier,
       rate_sen: result.rateSen,
       breakdown: result.breakdown,
+      // true: too large to charge online (RM5,000 and over). Send the payer
+      // to bank transfer or staff instead of creating a payment link.
+      requires_staff_review: result.requiresReview,
     },
   });
 }
