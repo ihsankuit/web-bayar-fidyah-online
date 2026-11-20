@@ -1,7 +1,7 @@
 ---
 tajuk: FAQ Fidyah - Pertubuhan Ihsanku Malaysia (bayarfidyahonline.com)
 dikemas_kini: 2026-11-20 (lewat qada' ikut tahun)
-sumber: bayarfidyahonline.com dan mesej pelanggan WhatsApp
+sumber: llms.txt bayarfidyahonline.com + analisis 72 mesej pelanggan WhatsApp (12-19 Nov 2026)
 ---
 
 # FAQ Fidyah (satu fail rujukan untuk Aida)
@@ -109,6 +109,7 @@ Fidyah ialah denda ke atas orang Islam yang sudah baligh kerana meninggalkan pua
 5. Bayar melalui FPX, kad kredit/debit atau QR.
 6. Resit rasmi dihantar terus ke emel.
 
+- Proses ambil masa kurang 3 minit.
 - Laman tidak menyimpan butiran kad atau maklumat bank. Semuanya di pihak gerbang pembayaran CHIP.
 
 ### Bayar melalui DuitNow QR (Bank Islam)
@@ -120,6 +121,7 @@ Fidyah ialah denda ke atas orang Islam yang sudah baligh kerana meninggalkan pua
 - Pelanggan perlu sebut jumlah dan nama (atau nama arwah jika bayar bagi pihak arwah) supaya resit tepat.
 - Jika pelanggan minta QR, bot boleh hantar gambar QR DuitNow terus dalam chat (guna tool hantar_qr, SEKALI sahaja), kemudian ingatkan pelanggan untuk bayar dan hantar bukti bayaran.
 - Fidyah boleh dibayar bila-bila masa selepas puasa ditinggalkan. Digalakkan selesai secepat mungkin sebelum Ramadan berikutnya.
+- Pembayaran boleh dibuat dari semua negeri di Malaysia.
 
 ### Pelanggan mahu kita uruskan bayaran melalui QR
 
@@ -184,6 +186,7 @@ Fidyah ialah denda ke atas orang Islam yang sudah baligh kerana meninggalkan pua
 | Warga emas atau uzur, 3 hari | 3 x RM4 | RM12 |
 | Hamil/menyusu, 7 hari | 7 x RM4 | RM28 |
 | Bagi pihak arwah, 30 hari | 30 x RM4 | RM120 |
+| 30 hari, kategori biasa | 30 x RM4 | RM120 |
 | Hutang lama 240 hari (kategori biasa) | 240 x RM4 | RM960 |
 | Lewat qada' (Nov 2026): 12 hari 2025 + 13 hari 2026 | (12 x 1 + 13 x 0) x RM4 | RM48 |
 | Lewat qada' (Nov 2026): 5 hari 2023 | 5 x 3 x RM4 | RM60 |
@@ -194,12 +197,13 @@ Gaya jawapan yang pelanggan faham: "7 hari x RM4 = RM28". Lepas kira, JANGAN ter
 
 ## 13. Singkatan pelanggan (untuk faham sahaja)
 
-x/tk = tidak, sy = saya, nk = nak, utk = untuk, dgn = dengan, sdh = sudah, blm = belum, sbb = sebab, byr = bayar, dpt = dapat, thn = tahun, hr = hari, msh = masih, mcm = macam, jd = jadi, slm = salam, qada' = ganti puasa.
+x/tk = tidak, sy = saya, nk = nak, utk = untuk, dlm = dalam, dgn = dengan, sdh = sudah, blm = belum, bkn = bukan, sbb = sebab, klau = kalau, byr = bayar, dpt = dapat, igt = ingat, thn = tahun, hr = hari, bln = bulan, org = orang, cth = contoh, msh = masih, dri = dari, kpd = kepada, mcm = macam, jd = jadi, slm = salam, t.kasih = terima kasih, qada' = ganti puasa, baliq = baligh, uzur = tidak berupaya.
 
 ## Hubungi
 
 - Pertubuhan Ihsanku Malaysia (ROS: PPM-019-10-06022023)
-- Telefon: +601113190312
+- Telefon: 011-2700 2003
+- WhatsApp staf: +601113190312
 - Alamat: 1-1, Jln Puteri 2A/1, Bandar Bukit Mahkota, 43000 Kajang, Selangor
 - Hubungi: https://www.bayarfidyahonline.com/hubungi
 - Laman organisasi: https://ihsanku.org
