@@ -159,6 +159,16 @@ alter table public.donations add column if not exists followup_count integer not
 alter table public.donations add column if not exists last_followup_at timestamptz;
 
 -- ---------------------------------------------------------------------
+--  Lewat qada' breakdown: one {hijri_year, label, days, multiplier,
+--  subtotal_sen} entry per missed year, so a total built from several years
+--  with different multipliers stays recoverable on receipts and in Admin.
+--  Run this block if upgrading an existing database. The app keeps working
+--  without it (the working falls back into the donation note), but receipts
+--  and Admin only show the per-year table once it exists.
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists qada_breakdown jsonb;
+
+-- ---------------------------------------------------------------------
 --  Blog posts
 -- ---------------------------------------------------------------------
 create table if not exists public.blog_posts (

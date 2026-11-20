@@ -1,0 +1,13 @@
+-- Per-year breakdown for lewat qada' donations.
+--
+-- Stores one {hijri_year, label, days, multiplier, subtotal_sen} entry per
+-- missed year, so a total built from several years with different
+-- multipliers can be shown on receipts and in Admin instead of being
+-- flattened to a single days figure.
+--
+-- Safe to run repeatedly (idempotent). Run once in Supabase SQL Editor.
+--
+-- Deploy order does not matter: if the app is live before this runs, a
+-- lewat qada' donation is still created and its working is written into the
+-- donation note instead. Run this to get the proper table on receipts.
+alter table public.donations add column if not exists qada_breakdown jsonb;

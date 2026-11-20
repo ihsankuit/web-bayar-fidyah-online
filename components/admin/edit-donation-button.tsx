@@ -1,5 +1,6 @@
 "use client";
 
+import { formatQadaBreakdown } from "@/lib/ramadan";
 import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Loader2, Pencil, Trash2, Upload } from "lucide-react";
@@ -260,7 +261,7 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
                 name="days"
                 type="number"
                 min="1"
-                max="365"
+                max="10000"
                 defaultValue={String(donation.days)}
                 required
               />
@@ -283,6 +284,14 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
                 required
               />
             </div>
+
+            {donation.qada_breakdown && donation.qada_breakdown.length > 0 && (
+              <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                Pecahan lewat qada&apos;: {formatQadaBreakdown(donation.qada_breakdown)}.
+                Mengubah hari, gandaan atau jumlah di sini tidak mengubah
+                pecahan tahun ini.
+              </p>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor={`message-${donation.id}`}>Catatan / doa</Label>

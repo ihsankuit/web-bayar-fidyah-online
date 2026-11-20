@@ -1,9 +1,20 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPurchase } from "@/lib/chip";
-import { calculateFidyah, getCategory } from "@/lib/fidyah";
+import {
+  calculateFidyah,
+  getCategory,
+  type FidyahCalculationResult,
+} from "@/lib/fidyah";
 import { getLandingContent } from "@/lib/settings";
 import { getUpsellSettings } from "@/lib/upsell";
-import type { Donation } from "@/lib/database.types";
+import { isMissingColumnError } from "@/lib/db-errors";
+import {
+  QADA_CATEGORY_ID,
+  resolveQadaOrder,
+  type QadaOrder,
+  type QadaRowInput,
+} from "@/lib/ramadan";
+import type { Donation, QadaBreakdownRow } from "@/lib/database.types";
 
 /**
  * Creating a fidyah donation, shared by the browser checkout and the REST
@@ -26,6 +37,19 @@ export interface CreateDonationInput {
   category: string;
   days: number;
   multiplier: number;
+  /**
+   * For lewat qada': the years the payer chose. When present the amount is
+   * worked out here from the calendar and `days`/`multiplier` are ignored, so
+   * what is charged never depends on a figure the caller computed.
+   */
+  qada?: QadaRowInput[];
+  /**
+   * The fidyah amount (sen, upsell excluded) the payer was shown. If the
+   * server works out something different — a wrong device clock, or a page
+   * left open across the day a Ramadan begins — the request is refused with
+   * the current figure, rather than charging a sum the payer never saw.
+   */
+  expectedFidyahSen?: number;
   message: string;
   method: "chip" | "manual";
   upsellAccepted: boolean;
@@ -63,6 +87,7 @@ export type CreateDonationResult =
         accountNumber: string;
         qrImageUrl: string;
       };
+      breakdown: QadaBreakdownRow[] | null;
       donation: Donation;
     }
   | {
@@ -71,9 +96,130 @@ export type CreateDonationResult =
       reference: string;
       amountSen: number;
       checkoutUrl: string;
+      breakdown: QadaBreakdownRow[] | null;
       donation: Donation;
     }
-  | { ok: false; status: number; error: string };
+  | {
+      ok: false;
+      status: number;
+      error: string;
+      /** Extra fields for the response body, e.g. the current amount. */
+      details?: Record<string, unknown>;
+    };
+
+/** What an amount depends on — everything except who is paying. */
+export interface PriceInput {
+  category: string;
+  days: number;
+  multiplier: number;
+  qada?: QadaRowInput[];
+  expectedFidyahSen?: number;
+}
+
+type PricedOrder =
+  | {
+      ok: true;
+      calc: FidyahCalculationResult;
+      qada: Extract<QadaOrder, { ok: true }> | null;
+    }
+  | {
+      ok: false;
+      status: number;
+      error: string;
+      details?: Record<string, unknown>;
+    };
+
+/**
+ * Work out what an order costs. The one place that does, for creating a
+ * donation and for quoting one, so a quote can never differ from the charge.
+ */
+function priceOrder(input: PriceInput, rateSen: number, now: Date): PricedOrder {
+  if (!getCategory(input.category)) {
+    return { ok: false, status: 400, error: "Kategori tidak sah." };
+  }
+
+  let qada: Extract<QadaOrder, { ok: true }> | null = null;
+  if (input.qada && input.qada.length > 0) {
+    if (input.category !== QADA_CATEGORY_ID) {
+      return {
+        ok: false,
+        status: 400,
+        error: "Pecahan tahun hanya untuk kategori Lewat qada'.",
+      };
+    }
+    const resolved = resolveQadaOrder(input.qada, rateSen, now);
+    if (!resolved.ok) {
+      return { ok: false, status: 400, error: resolved.error };
+    }
+    if (
+      input.expectedFidyahSen !== undefined &&
+      input.expectedFidyahSen !== resolved.totalSen
+    ) {
+      return {
+        ok: false,
+        status: 409,
+        error:
+          "Jumlah telah dikemas kini mengikut tarikh semasa. Sila semak semula sebelum membayar.",
+        details: {
+          code: "AMOUNT_CHANGED",
+          amountSen: resolved.totalSen,
+          // Lets the form recalculate on the server's clock and show the
+          // same figure, instead of arguing with it.
+          serverTime: now.toISOString(),
+        },
+      };
+    }
+    qada = resolved;
+  }
+
+  const calc = qada
+    ? calculateFidyah({ days: qada.chargeableDays, multiplier: 1, rateSen })
+    : calculateFidyah({
+        days: input.days,
+        multiplier: input.multiplier,
+        rateSen,
+      });
+
+  if (calc.totalSen < 100) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Jumlah minimum pembayaran ialah RM1.00.",
+    };
+  }
+  return { ok: true, calc, qada };
+}
+
+export type QuoteResult =
+  | {
+      ok: true;
+      amountSen: number;
+      days: number;
+      multiplier: number;
+      rateSen: number;
+      breakdown: QadaBreakdownRow[] | null;
+    }
+  | {
+      ok: false;
+      status: number;
+      error: string;
+      details?: Record<string, unknown>;
+    };
+
+/** What a donation would cost right now, without creating anything. */
+export async function quoteDonation(input: PriceInput): Promise<QuoteResult> {
+  const content = await getLandingContent();
+  const priced = priceOrder(input, content.fidyah_rate_sen, new Date());
+  if (!priced.ok) return priced;
+  return {
+    ok: true,
+    amountSen: priced.calc.totalSen,
+    days: priced.calc.days,
+    multiplier: priced.calc.multiplier,
+    rateSen: priced.calc.rateSen,
+    breakdown: priced.qada?.breakdown ?? null,
+  };
+}
 
 function makeReference(): string {
   const stamp = Date.now().toString(36).toUpperCase().slice(-6);
@@ -84,24 +230,10 @@ function makeReference(): string {
 export async function createDonation(
   input: CreateDonationInput
 ): Promise<CreateDonationResult> {
-  if (!getCategory(input.category)) {
-    return { ok: false, status: 400, error: "Kategori tidak sah." };
-  }
-
   const content = await getLandingContent();
-  const calc = calculateFidyah({
-    days: input.days,
-    multiplier: input.multiplier,
-    rateSen: content.fidyah_rate_sen,
-  });
-
-  if (calc.totalSen < 100) {
-    return {
-      ok: false,
-      status: 400,
-      error: "Jumlah minimum pembayaran ialah RM1.00.",
-    };
-  }
+  const priced = priceOrder(input, content.fidyah_rate_sen, new Date());
+  if (!priced.ok) return priced;
+  const { calc, qada } = priced;
 
   // The upsell amount is caller-adjustable (like a tip), but only applies if
   // the campaign is actually enabled right now — never trust that alone.
@@ -134,9 +266,7 @@ export async function createDonation(
 
   const reference = makeReference();
 
-  const { data: donation, error: insertError } = await supabase
-    .from("donations")
-    .insert({
+  const row = {
       reference,
       payment_method: input.method,
       payer_name: input.name,
@@ -167,9 +297,37 @@ export async function createDonation(
       client_ip: input.tracking.clientIp,
       user_agent: input.tracking.userAgent,
       landing_url: input.tracking.landingUrl,
-    })
+  };
+
+  // Only a lewat qada' order names the new column, so every other kind of
+  // donation is untouched by it — it cannot fail a payment that has no
+  // breakdown to store.
+  const firstAttempt: Record<string, unknown> = qada
+    ? { ...row, qada_breakdown: qada.breakdown }
+    : row;
+  let { data: donation, error: insertError } = await supabase
+    .from("donations")
+    .insert(firstAttempt)
     .select()
     .single<Donation>();
+
+  // The code can go live before supabase/add-qada-breakdown.sql is run. A
+  // payment is not worth losing over missing bookkeeping, so retry without
+  // the column and put the working in the note instead, where it is still
+  // readable. The warning says what to do about it.
+  if (qada && isMissingColumnError(insertError, "qada_breakdown")) {
+    console.warn(
+      "[create-donation] qada_breakdown column is missing — run supabase/add-qada-breakdown.sql. Storing the working in the note instead."
+    );
+    ({ data: donation, error: insertError } = await supabase
+      .from("donations")
+      .insert({
+        ...row,
+        message: [qada.note, input.message].filter(Boolean).join("\n"),
+      })
+      .select()
+      .single<Donation>());
+  }
 
   if (insertError || !donation) {
     console.error("[create-donation] insert failed:", insertError);
@@ -192,6 +350,7 @@ export async function createDonation(
         accountNumber: content.bank_account_number,
         qrImageUrl: content.bank_qr_image_url,
       },
+      breakdown: qada?.breakdown ?? null,
       donation,
     };
   }
@@ -229,6 +388,7 @@ export async function createDonation(
       reference,
       amountSen: totalSen,
       checkoutUrl: purchase.checkout_url,
+      breakdown: qada?.breakdown ?? null,
       donation,
     };
   } catch (err) {

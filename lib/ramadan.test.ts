@@ -9,6 +9,10 @@ import {
   qadaYearOptions,
   ramadanStart,
   ramadansPassedSince,
+  formatQadaBreakdown,
+  qadaYearsInfo,
+  resolveQadaOrder,
+  validateQadaRows,
 } from "./ramadan";
 
 /** A fixed "today" inside Malaysia: 20 Nov 2026, after Ramadan 1447H. */
@@ -212,5 +216,75 @@ describe("formatCalendarDate", () => {
   it("writes the Malay month", () => {
     expect(formatCalendarDate({ year: 2027, month: 2, day: 8 })).toBe("8 Feb 2027");
     expect(formatCalendarDate({ year: 2025, month: 3, day: 1 })).toBe("1 Mac 2025");
+  });
+});
+
+describe("validateQadaRows", () => {
+  const ok = (rows: { hijriYear: number; days: number }[]) =>
+    validateQadaRows(rows, NOV_2026).ok;
+
+  it("accepts a normal selection", () => {
+    expect(ok([{ hijriYear: 1446, days: 12 }])).toBe(true);
+  });
+  it("rejects nothing, too many rows, and duplicates", () => {
+    expect(ok([])).toBe(false);
+    const many = Array.from({ length: 11 }, (_, i) => ({ hijriYear: 1447 - i, days: 1 }));
+    expect(ok(many)).toBe(false);
+    expect(
+      ok([
+        { hijriYear: 1446, days: 1 },
+        { hijriYear: 1446, days: 2 },
+      ])
+    ).toBe(false);
+  });
+  it("rejects a Ramadan that has not begun, or one too far back", () => {
+    expect(ok([{ hijriYear: 1448, days: 1 }])).toBe(false);
+    expect(ok([{ hijriYear: 1447 - 20, days: 1 }])).toBe(false);
+  });
+  it("rejects days outside 1-30 and non-integers", () => {
+    expect(ok([{ hijriYear: 1446, days: 0 }])).toBe(false);
+    expect(ok([{ hijriYear: 1446, days: 31 }])).toBe(false);
+    expect(ok([{ hijriYear: 1446, days: 2.5 }])).toBe(false);
+    expect(ok([{ hijriYear: 1446.5, days: 2 }])).toBe(false);
+  });
+});
+
+describe("resolveQadaOrder", () => {
+  it("prices the worked example and freezes the breakdown", () => {
+    const r = resolveQadaOrder(
+      [
+        { hijriYear: 1446, days: 12 },
+        { hijriYear: 1447, days: 13 },
+      ],
+      RATE,
+      NOV_2026
+    );
+    if (!r.ok) throw new Error(r.error);
+    expect(r.totalSen).toBe(4800);
+    expect(r.chargeableDays).toBe(12);
+    expect(r.breakdown).toEqual([
+      { hijri_year: 1446, label: "2025 (1446H)", days: 12, multiplier: 1, subtotal_sen: 4800 },
+      { hijri_year: 1447, label: "2026 (1447H)", days: 13, multiplier: 0, subtotal_sen: 0 },
+    ]);
+    expect(formatQadaBreakdown(r.breakdown)).toBe(
+      "2025 (1446H) 12 hari x1; 2026 (1447H) 13 hari x0"
+    );
+  });
+  it("fails when nothing is chargeable yet", () => {
+    const r = resolveQadaOrder([{ hijriYear: 1447, days: 5 }], RATE, NOV_2026);
+    expect(r.ok).toBe(false);
+  });
+  it("passes validation errors through", () => {
+    expect(resolveQadaOrder([], RATE, NOV_2026).ok).toBe(false);
+  });
+});
+
+describe("qadaYearsInfo", () => {
+  it("lists years newest first with today's multipliers", () => {
+    const info = qadaYearsInfo(NOV_2026, RATE);
+    expect(info.years[0]).toMatchObject({ hijri_year: 1447, multiplier: 0 });
+    expect(info.years[1]).toMatchObject({ hijri_year: 1446, multiplier: 1 });
+    expect(info.next_ramadan.hijri_year).toBe(1448);
+    expect(info.max_years).toBe(10);
   });
 });

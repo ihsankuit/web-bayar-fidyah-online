@@ -72,8 +72,9 @@ minutes (one server address would burn that allowance across all its users).
 }
 ```
 
-Required: `name`, `email`, `category`, `days`. Everything else is optional.
-`multiplier` defaults to 1 (use it for years of delayed qada'), `method`
+Required: `name`, `email`, `category`, and `days` (not needed for
+`lewat_qada` with `qada` rows, below). Everything else is optional.
+`multiplier` defaults to 1 and is only for the non-qada categories, `method`
 defaults to `"chip"`, and `utm_source` defaults to `"api"` so these rows can
 be told apart from payers who came through the site.
 
@@ -82,6 +83,33 @@ Valid `category` values: `uzur_tua`, `sakit_kronik`, `hamil_menyusu`,
 
 The amount is NOT caller-settable — it is computed from `days × multiplier ×
 the current rate`, so a bot cannot charge an arbitrary figure.
+
+**Lewat qada' (delayed makeup fasts) — send the years, not a multiplier.**
+For `category: "lewat_qada"` pass `qada`, one entry per missed year, where
+`hijri_year` is the Hijri year of that Ramadan and `days` is how many days
+of it were missed (1–30). The server works out the multiplier itself: the
+number of Ramadans that have *begun* since the missed one (a year whose next
+Ramadan has not begun yet counts ×0). Do not compute it yourself.
+
+```json
+{
+  "name": "Ali", "email": "ali@example.com", "category": "lewat_qada",
+  "qada": [
+    { "hijri_year": 1446, "days": 12 },
+    { "hijri_year": 1447, "days": 13 }
+  ]
+}
+```
+
+Rules: 1–10 rows, no duplicate years, only years whose Ramadan has begun
+(and at most 20 back). If every chosen year is still within its qada'
+window the total is RM0 and the call fails with `400`. The response includes
+`breakdown` (per-year `days`, `multiplier`, `subtotal_sen`) and the same
+breakdown is stored on the donation (`qada_breakdown`) and printed on the
+receipt. Optionally send `expected_amount_sen` (from an earlier quote): if the
+figure has since changed (a Ramadan began meanwhile) the call fails with
+`409`, `code: "AMOUNT_CHANGED"` and the new `amountSen`, so re-quote and
+confirm with the payer again.
 
 **Response `201`:**
 
@@ -111,6 +139,29 @@ wait for the `donation.paid` webhook.
 Errors: `400` with an `issues` array on validation failure, `401` on a bad
 key, `429` past 60 per minute per key, `502` if the payment gateway is
 unreachable.
+
+### `POST /quote`
+
+What an order would cost right now, creating nothing. Same body as
+`POST /donations` for the pricing fields only (`category`, `days` /
+`multiplier`, or `qada`). Uses the same code as the real charge, so the
+quote is the charge. Use it to tell the payer the total before sending a link.
+
+```json
+{ "data": { "amount": 48, "amount_sen": 4800, "currency": "MYR",
+  "chargeable_days": 12, "rate_sen": 400,
+  "breakdown": [ { "hijri_year": 1446, "label": "2025 (1446H)", "days": 12,
+                   "multiplier": 1,
+      "qada_breakdown": null, "subtotal_sen": 4800 } ] } }
+```
+
+### `GET /qada-years`
+
+The years a payer can pick for lewat qada' today, newest first, each with the
+multiplier it carries now (`years[].multiplier`), the rate, limits
+(`max_days_per_year`, `max_years`) and `next_ramadan` (when the multipliers
+step up next). Ask this instead of reasoning about Hijri dates. Ramadan dates
+come from the Umm al-Qura calendar and can differ from JAKIM by a day.
 
 ### `GET /donations`
 

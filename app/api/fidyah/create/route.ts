@@ -7,6 +7,7 @@ import { emitDonationEvent } from "@/lib/webhooks";
 import { parseCookieHeader } from "@/lib/tracking/cookies";
 import { parseGaClientId } from "@/lib/tracking/google";
 import { normalizeOrigin } from "@/lib/site-url";
+import { MAX_QADA_ROWS } from "@/lib/ramadan";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -19,9 +20,19 @@ const schema = z.object({
   // can run well past a year's worth of days for someone owing many years.
   days: z.number().int().min(1).max(10_000),
   multiplier: z.number().int().min(1).max(20),
-  // The payer's own note is capped at 500 by the form; the rest is room for
-  // the lewat qada' working the form appends to it.
-  message: z.string().trim().max(1000).optional().default(""),
+  message: z.string().trim().max(500).optional().default(""),
+  // Lewat qada': the years chosen. When present the server works the amount
+  // out itself and ignores days/multiplier above.
+  qada: z
+    .array(
+      z.object({
+        hijriYear: z.number().int(),
+        days: z.number().int(),
+      })
+    )
+    .max(MAX_QADA_ROWS)
+    .optional(),
+  expectedFidyahSen: z.number().int().optional(),
   method: z.enum(["chip", "manual"]).optional().default("chip"),
   upsellAccepted: z.boolean().optional().default(false),
   upsellAmountSen: z.number().int().min(100).max(100_000_00).optional(),
@@ -89,6 +100,8 @@ export async function POST(request: Request) {
     category: input.category,
     days: input.days,
     multiplier: input.multiplier,
+    qada: input.qada,
+    expectedFidyahSen: input.expectedFidyahSen,
     message: input.message,
     method: input.method,
     upsellAccepted: input.upsellAccepted,
@@ -115,7 +128,10 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json(
+      { error: result.error, ...(result.details ?? {}) },
+      { status: result.status }
+    );
   }
 
   // Notify automations that a new (pending) donation was created. Runs after

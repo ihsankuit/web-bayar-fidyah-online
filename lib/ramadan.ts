@@ -1,3 +1,5 @@
+import type { QadaBreakdownRow } from "@/lib/database.types";
+
 /**
  * When Ramadan begins, and how many have begun since a given year.
  *
@@ -39,6 +41,12 @@ const HIJRI_EPOCH_UNIX_DAYS = 1948439.5 - 2440587.5;
 const MYT_OFFSET_MS = 8 * 3_600_000;
 /** Longest a Ramadan can run, and so the most days a year can owe. */
 export const MAX_RAMADAN_DAYS = 30;
+/** The category whose fidyah is owed per Ramadan that passed unmade. */
+export const QADA_CATEGORY_ID = "lewat_qada";
+/** How many Ramadans back a payer can say they missed. */
+export const QADA_YEAR_SPAN = 20;
+/** One row per missed year; more than this is not a realistic payer. */
+export const MAX_QADA_ROWS = 10;
 
 const hijriFormatter = (() => {
   try {
@@ -165,7 +173,7 @@ export interface QadaYearOption {
  * Only Ramadans that have already begun are offered: a fast cannot have been
  * missed in a Ramadan that has not happened.
  */
-export function qadaYearOptions(now: Date, count = 20): QadaYearOption[] {
+export function qadaYearOptions(now: Date, count = QADA_YEAR_SPAN): QadaYearOption[] {
   const latest = latestRamadanHijriYear(now);
   return Array.from({ length: count }, (_, i) => {
     const hijriYear = latest - i;
@@ -240,6 +248,147 @@ export function calculateQada(
 export function qadaBreakdownNote(result: QadaResult): string {
   const parts = result.rows.map((r) => `${r.label} ${r.days} hari x${r.multiplier}`);
   return `Lewat qada': ${parts.join("; ")}. Hari dikenakan: ${result.chargeableDays}.`;
+}
+
+export type QadaValidation =
+  | { ok: true; rows: QadaRowInput[] }
+  | { ok: false; error: string };
+
+/**
+ * Whether a set of rows is something a payer could really owe.
+ *
+ * The form can only produce valid rows, so on the form's own requests this
+ * guards against a stale tab or a hand-built request. For the API it is the
+ * actual check: a bot can send anything. Unlike calculateQada, which clamps
+ * so the form never shows a broken figure, this rejects, because a payment
+ * should never be taken for a number nobody asked for.
+ */
+export function validateQadaRows(rows: QadaRowInput[], now: Date): QadaValidation {
+  if (rows.length === 0) {
+    return { ok: false, error: "Sila pilih sekurang-kurangnya satu tahun." };
+  }
+  if (rows.length > MAX_QADA_ROWS) {
+    return { ok: false, error: `Paling banyak ${MAX_QADA_ROWS} tahun sekali bayar.` };
+  }
+
+  const latest = latestRamadanHijriYear(now);
+  const oldest = latest - (QADA_YEAR_SPAN - 1);
+  const seen = new Set<number>();
+
+  for (const row of rows) {
+    if (!Number.isInteger(row.hijriYear)) {
+      return { ok: false, error: "Tahun Hijrah tidak sah." };
+    }
+    if (row.hijriYear > latest) {
+      return {
+        ok: false,
+        error: `Ramadan ${row.hijriYear}H belum bermula, jadi tiada puasa yang boleh ditinggalkan.`,
+      };
+    }
+    if (row.hijriYear < oldest) {
+      return {
+        ok: false,
+        error: `Tahun ${row.hijriYear}H terlalu lama. Pilih ${oldest}H hingga ${latest}H.`,
+      };
+    }
+    if (seen.has(row.hijriYear)) {
+      return { ok: false, error: `Tahun ${row.hijriYear}H dipilih lebih sekali.` };
+    }
+    seen.add(row.hijriYear);
+
+    if (!Number.isInteger(row.days) || row.days < 1 || row.days > MAX_RAMADAN_DAYS) {
+      return {
+        ok: false,
+        error: `Bilangan hari bagi ${row.hijriYear}H mesti antara 1 dan ${MAX_RAMADAN_DAYS}.`,
+      };
+    }
+  }
+  return { ok: true, rows };
+}
+
+export type QadaOrder =
+  | {
+      ok: true;
+      /** Days x multiplier summed: what is charged for. */
+      chargeableDays: number;
+      totalSen: number;
+      breakdown: QadaBreakdownRow[];
+      /** The same working as one line, for where a table will not fit. */
+      note: string;
+    }
+  | { ok: false; error: string };
+
+/**
+ * Turn the years a payer chose into an amount, the way the server does it.
+ *
+ * Everything that charges for lewat qada' goes through here, so the form, the
+ * API and the chatbot cannot disagree about what a set of years costs.
+ */
+export function resolveQadaOrder(
+  rows: QadaRowInput[],
+  rateSen: number,
+  now: Date
+): QadaOrder {
+  const valid = validateQadaRows(rows, now);
+  if (!valid.ok) return valid;
+
+  const result = calculateQada(valid.rows, rateSen, now);
+  if (result.totalSen === 0) {
+    return {
+      ok: false,
+      error:
+        "Tiada fidyah kelewatan bagi tahun yang dipilih lagi. Qada' puasa sebelum Ramadan berikutnya.",
+    };
+  }
+
+  return {
+    ok: true,
+    chargeableDays: result.chargeableDays,
+    totalSen: result.totalSen,
+    breakdown: result.rows.map((r) => ({
+      hijri_year: r.hijriYear,
+      label: r.label,
+      days: r.days,
+      multiplier: r.multiplier,
+      subtotal_sen: r.subtotalSen,
+    })),
+    note: qadaBreakdownNote(result),
+  };
+}
+
+/** A stored breakdown as one line: "2025 (1446H) 12 hari x1; ...". */
+export function formatQadaBreakdown(rows: QadaBreakdownRow[]): string {
+  return rows.map((r) => `${r.label} ${r.days} hari x${r.multiplier}`).join("; ");
+}
+
+function isoDate(d: CalendarDate): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.year}-${pad(d.month)}-${pad(d.day)}`;
+}
+
+/**
+ * What a caller needs to choose years without doing any calendar work: the
+ * years on offer, what each is multiplied by today, and when that next
+ * changes. For the API, so a chatbot never has to reason about Hijri dates.
+ */
+export function qadaYearsInfo(now: Date, rateSen: number) {
+  const upcoming = nextRamadan(now);
+  return {
+    rate_sen: rateSen,
+    max_days_per_year: MAX_RAMADAN_DAYS,
+    max_years: MAX_QADA_ROWS,
+    years: qadaYearOptions(now).map((o) => ({
+      hijri_year: o.hijriYear,
+      gregorian_year: o.gregorianYear,
+      label: o.label,
+      multiplier: ramadansPassedSince(o.hijriYear, now),
+    })),
+    next_ramadan: {
+      hijri_year: upcoming.hijriYear,
+      approx_start: isoDate(upcoming.start),
+      note: "Gandaan setiap tahun bertambah satu apabila Ramadan ini bermula.",
+    },
+  };
 }
 
 const MONTHS_MS = [
