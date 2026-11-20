@@ -14,9 +14,14 @@ const schema = z.object({
   phone: z.string().trim().max(30).optional().default(""),
   negeri: z.string().trim().max(60).optional().default(""),
   category: z.string().trim().min(1),
-  days: z.number().int().min(1).max(365),
+  // Lewat qada' across several years is flattened to one figure by the form:
+  // each year's days times the Ramadans that have passed since, summed. That
+  // can run well past a year's worth of days for someone owing many years.
+  days: z.number().int().min(1).max(10_000),
   multiplier: z.number().int().min(1).max(20),
-  message: z.string().trim().max(500).optional().default(""),
+  // The payer's own note is capped at 500 by the form; the rest is room for
+  // the lewat qada' working the form appends to it.
+  message: z.string().trim().max(1000).optional().default(""),
   method: z.enum(["chip", "manual"]).optional().default("chip"),
   upsellAccepted: z.boolean().optional().default(false),
   upsellAmountSen: z.number().int().min(100).max(100_000_00).optional(),
