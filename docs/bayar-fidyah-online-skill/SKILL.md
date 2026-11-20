@@ -1,6 +1,6 @@
 ---
 name: bayar-fidyah-online
-description: Use this skill when the user wants to interact with their Bayar Fidyah Online donation platform (bayarfidyahonline.com) via its REST API. Tasks include listing or filtering donations, looking up a donation by reference, pulling aggregate stats (totals, counts, category breakdown), explaining or verifying incoming webhook events (donation.created, donation.paid), and reading/writing blog posts (list, create, update, publish, delete) on the platform's blog. Requires an API key issued from Dashboard > Integrasi in the admin panel.
+description: Use this skill when the user wants to interact with their Bayar Fidyah Online donation platform (bayarfidyahonline.com) via its REST API. Tasks include creating a donation and getting a payment link, listing or filtering donations, looking up a donation by reference, pulling aggregate stats (totals, counts, category breakdown), explaining or verifying incoming webhook events (donation.created, donation.paid), and reading/writing blog posts (list, create, update, publish, delete) on the platform's blog. Requires an API key issued from Dashboard > Integrasi in the admin panel.
 ---
 
 # Bayar Fidyah Online API
@@ -47,6 +47,70 @@ Authorization: Bearer <API_KEY>
 - If asked to hardcode the key into a script, write the script to read it from an environment variable instead (`BAYAR_FIDYAH_API_KEY`), not a literal.
 
 ## Endpoint reference
+
+### `POST /donations`
+
+Create a fidyah donation and get back a payment link. Use this for a chatbot
+or automation that needs to take a payment — not `POST /api/fidyah/create`,
+which is the browser's own endpoint and is throttled per IP at 15 per 10
+minutes (one server address would burn that allowance across all its users).
+
+**Body:**
+
+```json
+{
+  "name": "Ahmad bin Abdullah",
+  "email": "ahmad@contoh.com",
+  "phone": "0123456789",
+  "negeri": "Selangor",
+  "category": "uzur_tua",
+  "days": 7,
+  "multiplier": 1,
+  "message": "Bagi pihak arwah ayah",
+  "method": "chip",
+  "utm_source": "chatbot-wa"
+}
+```
+
+Required: `name`, `email`, `category`, `days`. Everything else is optional.
+`multiplier` defaults to 1 (use it for years of delayed qada'), `method`
+defaults to `"chip"`, and `utm_source` defaults to `"api"` so these rows can
+be told apart from payers who came through the site.
+
+Valid `category` values: `uzur_tua`, `sakit_kronik`, `hamil_menyusu`,
+`lewat_qada`, `meninggal_dunia`, `lain`.
+
+The amount is NOT caller-settable — it is computed from `days × multiplier ×
+the current rate`, so a bot cannot charge an arbitrary figure.
+
+**Response `201`:**
+
+```json
+{
+  "data": {
+    "reference": "FID-ABC123",
+    "status": "pending",
+    "amount": 28,
+    "amount_sen": 2800,
+    "currency": "MYR",
+    "method": "chip",
+    "payment_url": "https://gate.chip-in.asia/p/...",
+    "status_url": "https://www.bayarfidyahonline.com/status?ref=FID-ABC123"
+  }
+}
+```
+
+Send `payment_url` to the payer. With `"method": "manual"` the response
+carries a `bank` object instead of `payment_url`.
+
+**Important:** the donation starts `pending` and creating it moves no money.
+It becomes `paid` only once CHIP confirms. Never tell the user their fidyah
+is settled off the back of a `201` — poll `GET /donations/{reference}` or
+wait for the `donation.paid` webhook.
+
+Errors: `400` with an `issues` array on validation failure, `401` on a bad
+key, `429` past 60 per minute per key, `502` if the payment gateway is
+unreachable.
 
 ### `GET /donations`
 
@@ -211,7 +275,8 @@ All error responses are `{"error": "<message>"}`.
 - Confirm with the user before `DELETE`ing a post — it's not recoverable through the API.
 
 **DON'T**
-- Don't call `POST /api/chip/callback`, `POST /api/fidyah/create`, `POST /api/fidyah/upload-proof`, or `POST /api/track/purchase` — these are internal endpoints for the payment flow and CHIP's own webhook, not part of this public API, and are protected differently (or not meant for third-party calls at all).
+- Don't call `POST /api/chip/callback`, `POST /api/fidyah/create`, `POST /api/fidyah/upload-proof`, or `POST /api/track/purchase` — these are internal endpoints for the browser checkout and CHIP's own webhook, protected differently and not meant for third-party calls. To create a donation, use `POST /donations` on this API instead.
+- Don't report a donation as paid because `POST /donations` returned `201`. That only means the record and the payment link exist; confirm with `GET /donations/{reference}` or the `donation.paid` webhook.
 - Don't hardcode or echo the API key in output.
 - Don't retry 401/404 — they mean "wrong key" / "wrong reference", not transient failures.
 - Don't poll `GET /stats` faster than needed (30 req/min cap) — for near-real-time updates, prefer the `donation.paid` webhook instead of polling.

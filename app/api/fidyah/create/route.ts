@@ -1,16 +1,11 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
 
-import { createAdminClient } from "@/lib/supabase/admin";
-import { createPurchase } from "@/lib/chip";
-import { calculateFidyah, getCategory } from "@/lib/fidyah";
-import { getLandingContent } from "@/lib/settings";
-import { getUpsellSettings } from "@/lib/upsell";
+import { createDonation } from "@/lib/create-donation";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { emitDonationEvent } from "@/lib/webhooks";
 import { parseCookieHeader } from "@/lib/tracking/cookies";
 import { parseGaClientId } from "@/lib/tracking/google";
-import type { Donation } from "@/lib/database.types";
 import { normalizeOrigin } from "@/lib/site-url";
 
 const schema = z.object({
@@ -36,12 +31,14 @@ const schema = z.object({
   wbraid: z.string().trim().max(300).optional().default(""),
 });
 
-function makeReference(): string {
-  const stamp = Date.now().toString(36).toUpperCase().slice(-6);
-  const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
-  return `FID-${stamp}${rand}`;
-}
-
+/**
+ * The payer's own checkout request, from the form on the landing page.
+ *
+ * The creation itself lives in lib/create-donation so this and the REST API
+ * cannot drift on the rate, the minimum or how the upsell is charged. What
+ * stays here is what only a browser request has: the IP rate limit and the
+ * tracking cookies.
+ */
 export async function POST(request: Request) {
   const allowed = await checkRateLimit(
     `fidyah-create:${clientIp(request)}`,
@@ -74,172 +71,65 @@ export async function POST(request: Request) {
   }
   const input = parsed.data;
 
-  if (!getCategory(input.category)) {
-    return NextResponse.json({ error: "Kategori tidak sah." }, { status: 400 });
-  }
-
-  const content = await getLandingContent();
-  const calc = calculateFidyah({
-    days: input.days,
-    multiplier: input.multiplier,
-    rateSen: content.fidyah_rate_sen,
-  });
-
-  if (calc.totalSen < 100) {
-    return NextResponse.json(
-      { error: "Jumlah minimum pembayaran ialah RM1.00." },
-      { status: 400 }
-    );
-  }
-
-  // The upsell amount is payer-adjustable (like a tip), but only applies if
-  // the campaign is actually enabled right now — never trust that alone.
-  // The schema already bounds upsellAmountSen to [RM1, RM100,000]; fall back
-  // to the campaign's own default if the payer didn't supply one.
-  const upsell = await getUpsellSettings();
-  const upsellApplied = input.upsellAccepted && upsell.enabled;
-  const upsellAmountSen = upsellApplied
-    ? input.upsellAmountSen ?? upsell.amount_sen
-    : 0;
-  const totalSen = calc.totalSen + upsellAmountSen;
-
-  if (input.method === "manual" && !content.bank_account_number) {
-    return NextResponse.json(
-      {
-        error:
-          "Kaedah pemindahan bank manual belum dikonfigurasi. Sila hubungi pentadbir.",
-      },
-      { status: 503 }
-    );
-  }
-
-  const reference = makeReference();
-  const siteUrl = normalizeOrigin(
-    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
-  );
-
-  let supabase;
-  try {
-    supabase = createAdminClient();
-  } catch {
-    return NextResponse.json(
-      { error: "Pangkalan data belum dikonfigurasi. Sila hubungi pentadbir." },
-      { status: 503 }
-    );
-  }
-
   // Capture conversion attribution from the payer's own browser now, while
   // it's actually here — a manual bank transfer is only confirmed later by
   // an admin, with no browser around to fire the pixel at that point.
   const cookies = parseCookieHeader(request.headers.get("cookie"));
 
-  // 1. Record the pending donation.
-  const { data: donation, error: insertError } = await supabase
-    .from("donations")
-    .insert({
-      reference,
-      payment_method: input.method,
-      payer_name: input.name,
-      payer_email: input.email,
-      payer_phone: input.phone || null,
-      negeri: input.negeri || null,
-      category: input.category,
-      days: calc.days,
-      multiplier: calc.multiplier,
-      rate_sen: calc.rateSen,
-      amount_sen: totalSen,
-      message: input.message || null,
-      status: "pending",
-      upsell_accepted: upsellApplied,
-      upsell_title: upsellApplied ? upsell.title : null,
-      upsell_amount_sen: upsellAmountSen,
-      utm_source: input.utm_source || null,
-      utm_medium: input.utm_medium || null,
-      utm_campaign: input.utm_campaign || null,
-      utm_term: input.utm_term || null,
-      utm_content: input.utm_content || null,
-      gclid: input.gclid || null,
-      gbraid: input.gbraid || null,
-      wbraid: input.wbraid || null,
-      ga_client_id: parseGaClientId(cookies["_ga"]),
+  const result = await createDonation({
+    name: input.name,
+    email: input.email,
+    phone: input.phone,
+    negeri: input.negeri,
+    category: input.category,
+    days: input.days,
+    multiplier: input.multiplier,
+    message: input.message,
+    method: input.method,
+    upsellAccepted: input.upsellAccepted,
+    upsellAmountSen: input.upsellAmountSen,
+    utm: {
+      source: input.utm_source,
+      medium: input.utm_medium,
+      campaign: input.utm_campaign,
+      term: input.utm_term,
+      content: input.utm_content,
+    },
+    ads: { gclid: input.gclid, gbraid: input.gbraid, wbraid: input.wbraid },
+    tracking: {
+      gaClientId: parseGaClientId(cookies["_ga"]),
       fbp: cookies["_fbp"] || null,
       fbc: cookies["_fbc"] || null,
-      client_ip: clientIp(request),
-      user_agent: request.headers.get("user-agent") || null,
-      landing_url: request.headers.get("referer") || null,
-    })
-    .select()
-    .single();
+      clientIp: clientIp(request),
+      userAgent: request.headers.get("user-agent") || null,
+      landingUrl: request.headers.get("referer") || null,
+    },
+    siteUrl: normalizeOrigin(
+      process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
+    ),
+  });
 
-  if (insertError || !donation) {
-    console.error("[fidyah/create] insert failed:", insertError);
-    return NextResponse.json(
-      { error: "Gagal merekod pembayaran. Sila cuba lagi." },
-      { status: 500 }
-    );
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
   // Notify automations that a new (pending) donation was created. Runs after
   // the response is sent — a slow/unconfigured webhook receiver should never
   // add latency to the payer's checkout request.
-  after(() => emitDonationEvent("donation.created", donation as Donation));
+  after(() => emitDonationEvent("donation.created", result.donation));
 
-  // 2a. Manual bank transfer — hand back the account details and wait for
-  // the payer to upload proof and an admin to confirm.
-  if (input.method === "manual") {
+  if (result.method === "manual") {
     return NextResponse.json({
       method: "manual",
-      reference,
-      amountSen: totalSen,
-      bank: {
-        name: content.bank_name,
-        accountName: content.bank_account_name,
-        accountNumber: content.bank_account_number,
-        qrImageUrl: content.bank_qr_image_url,
-      },
+      reference: result.reference,
+      amountSen: result.amountSen,
+      bank: result.bank,
     });
   }
 
-  // 2b. FPX/card/QR via CHIP.
-  try {
-    const encodedRef = encodeURIComponent(reference);
-    const purchase = await createPurchase({
-      email: input.email,
-      name: input.name,
-      phone: input.phone,
-      amountSen: calc.totalSen,
-      description: `Fidyah ${calc.days} hari — ${reference}`,
-      extraLineItem: upsellApplied
-        ? { description: upsell.title || "Kempen Tambahan", amountSen: upsellAmountSen }
-        : undefined,
-      successCallbackUrl: `${siteUrl}/api/chip/callback`,
-      successRedirectUrl: `${siteUrl}/api/chip/redirect?ref=${encodedRef}&result=success`,
-      failureRedirectUrl: `${siteUrl}/api/chip/redirect?ref=${encodedRef}&result=failure`,
-      reference,
-    });
-
-    await supabase
-      .from("donations")
-      .update({ chip_purchase_id: purchase.id })
-      .eq("id", donation.id);
-
-    return NextResponse.json({
-      method: "chip",
-      url: purchase.checkout_url,
-      reference,
-    });
-  } catch (err) {
-    console.error("[fidyah/create] chip failed:", err);
-    await supabase
-      .from("donations")
-      .update({ status: "failed" })
-      .eq("id", donation.id);
-    return NextResponse.json(
-      {
-        error:
-          "Gerbang pembayaran belum dikonfigurasi atau tidak tersedia. Sila hubungi pentadbir.",
-      },
-      { status: 502 }
-    );
-  }
+  return NextResponse.json({
+    method: "chip",
+    url: result.checkoutUrl,
+    reference: result.reference,
+  });
 }

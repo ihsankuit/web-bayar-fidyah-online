@@ -1,7 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { z } from "zod";
+
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isAuthorized, unauthorized, serializeDonation } from "@/lib/api";
+import {
+  apiKeyFingerprint,
+  isAuthorized,
+  serializeDonation,
+  unauthorized,
+} from "@/lib/api";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { createDonation } from "@/lib/create-donation";
+import { emitDonationEvent } from "@/lib/webhooks";
+import { SITE_URL } from "@/lib/site-url";
 import type { Donation, DonationStatus } from "@/lib/database.types";
 
 /**
@@ -79,4 +89,140 @@ export async function GET(request: Request) {
     console.error("[api/v1/donations]", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
+}
+
+/** Marks a row as API-created. Not caller-settable, unlike utm_source. */
+const API_USER_AGENT = "bayarfidyahonline-api/v1";
+
+const createSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(160),
+  phone: z.string().trim().max(30).optional().default(""),
+  negeri: z.string().trim().max(60).optional().default(""),
+  category: z.string().trim().min(1),
+  days: z.number().int().min(1).max(365),
+  multiplier: z.number().int().min(1).max(20).optional().default(1),
+  message: z.string().trim().max(500).optional().default(""),
+  method: z.enum(["chip", "manual"]).optional().default("chip"),
+  // Attribution. Defaults to "api" so these rows can be told apart from
+  // payers who came through the site; pass your own to be more specific.
+  utm_source: z.string().trim().max(100).optional().default("api"),
+  utm_medium: z.string().trim().max(100).optional().default(""),
+  utm_campaign: z.string().trim().max(100).optional().default(""),
+  utm_term: z.string().trim().max(100).optional().default(""),
+  utm_content: z.string().trim().max(100).optional().default(""),
+});
+
+/**
+ * POST /api/v1/donations
+ * Create a fidyah donation and get back a payment link. Auth: API key.
+ *
+ * Built for chatbots and automations, which cannot use the browser
+ * checkout: that endpoint is throttled per IP at 15 per 10 minutes, which
+ * for a bot calling from one server means 15 donations across all of its
+ * users. This one is throttled per API key instead.
+ *
+ * The donation starts `pending`. It becomes `paid` only when CHIP confirms
+ * the payment — creating one here does not move any money, and the caller
+ * should poll GET /api/v1/donations/{reference} or listen for the
+ * `donation.paid` webhook rather than assume success.
+ */
+export async function POST(request: Request) {
+  if (!(await isAuthorized(request))) return unauthorized();
+
+  if (
+    !(await checkRateLimit(
+      `api-v1-donations-create:${apiKeyFingerprint(request)}`,
+      60,
+      60
+    ))
+  ) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Max 60 donations per minute per key." },
+      { status: 429 }
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parsed = createSchema.safeParse(payload);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        issues: parsed.error.issues.map((i) => ({
+          field: i.path.join("."),
+          message: i.message,
+        })),
+      },
+      { status: 400 }
+    );
+  }
+  const input = parsed.data;
+
+  const result = await createDonation({
+    name: input.name,
+    email: input.email,
+    phone: input.phone,
+    negeri: input.negeri,
+    category: input.category,
+    days: input.days,
+    multiplier: input.multiplier,
+    message: input.message,
+    method: input.method,
+    // No upsell over the API: it is a prompt shown to a human mid-checkout,
+    // and an automation accepting it on someone's behalf would be charging
+    // them for something they were never asked about.
+    upsellAccepted: false,
+    utm: {
+      source: input.utm_source,
+      medium: input.utm_medium,
+      campaign: input.utm_campaign,
+      term: input.utm_term,
+      content: input.utm_content,
+    },
+    ads: { gclid: "", gbraid: "", wbraid: "" },
+    tracking: {
+      // No browser, so no advertising cookies. The server-side conversion
+      // still matches on the hashed email, phone and name.
+      gaClientId: null,
+      fbp: null,
+      fbc: null,
+      clientIp: clientIp(request),
+      userAgent: API_USER_AGENT,
+      landingUrl: null,
+    },
+    siteUrl: SITE_URL,
+  });
+
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  after(() => emitDonationEvent("donation.created", result.donation));
+
+  return NextResponse.json(
+    {
+      data: {
+        reference: result.reference,
+        status: "pending",
+        amount: result.amountSen / 100,
+        amount_sen: result.amountSen,
+        currency: "MYR",
+        method: result.method,
+        ...(result.method === "chip"
+          ? { payment_url: result.checkoutUrl }
+          : { bank: result.bank }),
+        status_url: `${SITE_URL}/status?ref=${encodeURIComponent(
+          result.reference
+        )}`,
+      },
+    },
+    { status: 201 }
+  );
 }
