@@ -116,6 +116,9 @@ const createSchema = z.object({
     .min(1)
     .max(MAX_QADA_ROWS)
     .optional(),
+  // Lewat qada' only: charge days x rate without the delay multiplier, for a
+  // payer who says they cannot afford it.
+  qada_basic_only: z.boolean().optional(),
   expected_amount_sen: z.number().int().optional(),
   message: z.string().trim().max(500).optional().default(""),
   method: z.enum(["chip", "manual"]).optional().default("chip"),
@@ -192,6 +195,7 @@ export async function POST(request: Request) {
     days: input.days ?? 1,
     multiplier: input.multiplier,
     qada: input.qada?.map((r) => ({ hijriYear: r.hijri_year, days: r.days })),
+    qadaBasicOnly: input.qada_basic_only,
     expectedFidyahSen: input.expected_amount_sen,
     message: input.message,
     method: input.method,

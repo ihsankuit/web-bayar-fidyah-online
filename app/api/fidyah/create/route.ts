@@ -32,6 +32,7 @@ const schema = z.object({
     )
     .max(MAX_QADA_ROWS)
     .optional(),
+  qadaBasicOnly: z.boolean().optional(),
   expectedFidyahSen: z.number().int().optional(),
   method: z.enum(["chip", "manual"]).optional().default("chip"),
   upsellAccepted: z.boolean().optional().default(false),
@@ -101,6 +102,7 @@ export async function POST(request: Request) {
     days: input.days,
     multiplier: input.multiplier,
     qada: input.qada,
+    qadaBasicOnly: input.qadaBasicOnly,
     expectedFidyahSen: input.expectedFidyahSen,
     message: input.message,
     method: input.method,

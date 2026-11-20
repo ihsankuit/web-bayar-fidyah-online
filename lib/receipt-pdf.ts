@@ -301,8 +301,11 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
   y -= 34;
 
   if (donation.qada_breakdown && donation.qada_breakdown.length > 0) {
+    const waived = donation.qada_breakdown.some((r) => r.waived_multiplier);
     page.drawText(
-      "Kuantiti = bilangan hari x gandaan, iaitu bilangan Ramadan yang telah bermula sejak tahun puasa ditinggalkan.",
+      waived
+        ? "Dikira bayaran asas sahaja, tanpa gandaan, atas permohonan pembayar."
+        : "Kuantiti = bilangan hari x gandaan, iaitu bilangan Ramadan yang telah bermula sejak tahun puasa ditinggalkan.",
       { x: MARGIN, y: y - 22, size: 8, font, color: MUTED }
     );
     y -= 14;

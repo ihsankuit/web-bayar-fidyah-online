@@ -123,9 +123,10 @@ export function FidyahForm({
   );
 
   const isQada = category === QADA_CATEGORY;
+  const [basicOnly, setBasicOnly] = useState(false);
   const qada = useMemo(
-    () => calculateQada(qadaRows, rateSen, now),
-    [qadaRows, rateSen, now]
+    () => calculateQada(qadaRows, rateSen, now, { basicOnly }),
+    [qadaRows, rateSen, now, basicOnly]
   );
   const upcomingRamadan = useMemo(() => nextRamadan(now), [now]);
   // The one figure everything below charges, whichever mode is showing.
@@ -223,6 +224,7 @@ export function FidyahForm({
                   hijriYear: r.hijriYear,
                   days: r.days,
                 })),
+                qadaBasicOnly: basicOnly,
                 expectedFidyahSen: qada.totalSen,
               }
             : {}),
@@ -478,9 +480,11 @@ export function FidyahForm({
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {computed.multiplier > 0
-                        ? `Telah melepasi ${computed.multiplier} Ramadan. Gandaan ${computed.multiplier}×.`
-                        : "Belum melepasi 1 Ramadan berikutnya. Gandaan belum dikenakan."}
+                      {computed.multiplier === 0
+                        ? "Belum melepasi 1 Ramadan berikutnya. Gandaan belum dikenakan."
+                        : computed.waivedMultiplier
+                          ? `Telah melepasi ${computed.waivedMultiplier} Ramadan. Gandaan ${computed.waivedMultiplier}× tidak dikenakan, bayaran asas sahaja.`
+                          : `Telah melepasi ${computed.multiplier} Ramadan. Gandaan ${computed.multiplier}×.`}
                     </p>
                   </div>
                 );
@@ -505,6 +509,28 @@ export function FidyahForm({
                 {upcomingRamadan.hijriYear}H dijangka sekitar{" "}
                 {formatCalendarDate(upcomingRamadan.start)}).
               </p>
+              <label
+                htmlFor="qada-basic-only"
+                className="flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm"
+              >
+                <input
+                  id="qada-basic-only"
+                  type="checkbox"
+                  checked={basicOnly}
+                  onChange={(e) => setBasicOnly(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
+                />
+                <span>
+                  <span className="block font-medium">
+                    Saya tidak mampu membayar gandaan
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    Dikira bayaran asas sahaja (hari × {formatMYR(rateSen)}),
+                    tanpa gandaan. Qada&apos; puasa tetap wajib diganti jika
+                    mampu.
+                  </span>
+                </span>
+              </label>
             </div>
           )}
 

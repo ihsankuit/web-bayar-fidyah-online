@@ -44,6 +44,8 @@ export interface CreateDonationInput {
    * what is charged never depends on a figure the caller computed.
    */
   qada?: QadaRowInput[];
+  /** Lewat qada' without the delay multiplier (payer cannot afford it). */
+  qadaBasicOnly?: boolean;
   /**
    * The fidyah amount (sen, upsell excluded) the payer was shown. If the
    * server works out something different — a wrong device clock, or a page
@@ -114,6 +116,8 @@ export interface PriceInput {
   days: number;
   multiplier: number;
   qada?: QadaRowInput[];
+  /** Lewat qada' without the delay multiplier, for a payer who cannot afford it. */
+  qadaBasicOnly?: boolean;
   expectedFidyahSen?: number;
 }
 
@@ -148,7 +152,9 @@ function priceOrder(input: PriceInput, rateSen: number, now: Date): PricedOrder 
         error: "Pecahan tahun hanya untuk kategori Lewat qada'.",
       };
     }
-    const resolved = resolveQadaOrder(input.qada, rateSen, now);
+    const resolved = resolveQadaOrder(input.qada, rateSen, now, {
+      basicOnly: input.qadaBasicOnly,
+    });
     if (!resolved.ok) {
       return { ok: false, status: 400, error: resolved.error };
     }

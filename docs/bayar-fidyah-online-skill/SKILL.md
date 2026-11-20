@@ -106,7 +106,7 @@ Rules: 1–40 rows, no duplicate years, only years whose Ramadan has begun
 window the total is RM0 and the call fails with `400`. The response includes
 `breakdown` (per-year `days`, `multiplier`, `subtotal_sen`) and the same
 breakdown is stored on the donation (`qada_breakdown`) and printed on the
-receipt. A lewat qada' total of RM5,000 or more is not charged online: `POST /donations` with `method: "chip"` fails with `422`, `code: "REVIEW_REQUIRED"`; refer the payer to staff or bank transfer. `POST /quote` returns `requires_staff_review: true` for these. Optionally send `expected_amount_sen` (from an earlier quote): if the
+receipt. A lewat qada' total of RM5,000 or more is not charged online: `POST /donations` with `method: "chip"` fails with `422`, `code: "REVIEW_REQUIRED"`; refer the payer to staff or bank transfer. `POST /quote` returns `requires_staff_review: true` for these. For a payer who says they cannot afford the multiplier, send `qada_basic_only: true` (also accepted by `POST /quote`): each year is then charged days × rate with no multiplier, and `breakdown` rows carry `waived_multiplier` with the real figure. Only offer this if the payer says so; never apply it on your own. Optionally send `expected_amount_sen` (from an earlier quote): if the
 figure has since changed (a Ramadan began meanwhile) the call fails with
 `409`, `code: "AMOUNT_CHANGED"` and the new `amountSen`, so re-quote and
 confirm with the payer again.

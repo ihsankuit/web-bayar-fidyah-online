@@ -200,7 +200,18 @@ export interface QadaRowResult {
   days: number;
   /** Ramadans that have begun since — what the days are multiplied by. */
   multiplier: number;
+  /** Real multiplier when it was waived down to what was charged. */
+  waivedMultiplier?: number;
   subtotalSen: number;
+}
+
+export interface QadaOptions {
+  /**
+   * Charge the base fidyah only, days x rate, without the delay multiplier
+   * (for a payer who cannot afford it). A year still owes nothing until the
+   * Ramadan after it has begun.
+   */
+  basicOnly?: boolean;
 }
 
 export interface QadaResult {
@@ -217,19 +228,22 @@ export interface QadaResult {
 export function calculateQada(
   rows: QadaRowInput[],
   rateSen: number,
-  now: Date
+  now: Date,
+  options: QadaOptions = {}
 ): QadaResult {
   const results: QadaRowResult[] = rows.map((row) => {
     const days = Math.min(
       MAX_RAMADAN_DAYS,
       Math.max(0, Math.floor(row.days || 0))
     );
-    const multiplier = ramadansPassedSince(row.hijriYear, now);
+    const real = ramadansPassedSince(row.hijriYear, now);
+    const multiplier = options.basicOnly ? Math.min(1, real) : real;
     return {
       hijriYear: row.hijriYear,
       label: `${ramadanStart(row.hijriYear).year} (${row.hijriYear}H)`,
       days,
       multiplier,
+      ...(multiplier !== real ? { waivedMultiplier: real } : {}),
       subtotalSen: days * multiplier * rateSen,
     };
   });
@@ -252,7 +266,11 @@ export function calculateQada(
  * keeps the arithmetic recoverable by whoever reads the record afterwards.
  */
 export function qadaBreakdownNote(result: QadaResult): string {
-  const parts = result.rows.map((r) => `${r.label} ${r.days} hari x${r.multiplier}`);
+  const parts = result.rows.map(
+    (r) =>
+      `${r.label} ${r.days} hari x${r.multiplier}` +
+      (r.waivedMultiplier ? ` (gandaan sebenar x${r.waivedMultiplier} tidak dikenakan)` : "")
+  );
   return `Lewat qada': ${parts.join("; ")}. Hari dikenakan: ${result.chargeableDays}.`;
 }
 
@@ -333,12 +351,13 @@ export type QadaOrder =
 export function resolveQadaOrder(
   rows: QadaRowInput[],
   rateSen: number,
-  now: Date
+  now: Date,
+  options: QadaOptions = {}
 ): QadaOrder {
   const valid = validateQadaRows(rows, now);
   if (!valid.ok) return valid;
 
-  const result = calculateQada(valid.rows, rateSen, now);
+  const result = calculateQada(valid.rows, rateSen, now, options);
   if (result.totalSen === 0) {
     return {
       ok: false,
@@ -357,6 +376,7 @@ export function resolveQadaOrder(
       days: r.days,
       multiplier: r.multiplier,
       subtotal_sen: r.subtotalSen,
+      ...(r.waivedMultiplier ? { waived_multiplier: r.waivedMultiplier } : {}),
     })),
     note: qadaBreakdownNote(result),
   };
@@ -364,7 +384,13 @@ export function resolveQadaOrder(
 
 /** A stored breakdown as one line: "2025 (1446H) 12 hari x1; ...". */
 export function formatQadaBreakdown(rows: QadaBreakdownRow[]): string {
-  return rows.map((r) => `${r.label} ${r.days} hari x${r.multiplier}`).join("; ");
+  return rows
+    .map(
+      (r) =>
+        `${r.label} ${r.days} hari x${r.multiplier}` +
+        (r.waived_multiplier ? ` (sebenar x${r.waived_multiplier})` : "")
+    )
+    .join("; ");
 }
 
 function isoDate(d: CalendarDate): string {
