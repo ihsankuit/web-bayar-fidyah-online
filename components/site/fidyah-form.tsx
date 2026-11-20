@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Check, Copy, Download, Loader2, Minus, Plus } from "lucide-react";
+import { Check, Copy, Download, Loader2, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -33,9 +33,30 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { calculateFidyah, FIDYAH_CATEGORIES, NEGERI } from "@/lib/fidyah";
+import {
+  calculateQada,
+  formatCalendarDate,
+  latestRamadanHijriYear,
+  MAX_RAMADAN_DAYS,
+  nextRamadan,
+  qadaBreakdownNote,
+  qadaYearOptions,
+} from "@/lib/ramadan";
 import { formatMYR } from "@/lib/utils";
 import { getStoredUtm, getStoredClickIds } from "@/lib/utm";
 import type { PaymentMethod, UpsellSettings } from "@/lib/database.types";
+
+/** The category whose fidyah is owed per Ramadan that passed unmade. */
+const QADA_CATEGORY = "lewat_qada";
+/** One row per missed year; more than this is not a realistic payer. */
+const MAX_QADA_ROWS = 10;
+
+interface QadaRowState {
+  /** Stable key, so removing a row does not shift what is typed into the rest. */
+  id: number;
+  hijriYear: number;
+  days: number;
+}
 
 interface ManualTransferData {
   reference: string;
@@ -59,6 +80,17 @@ export function FidyahForm({
 }) {
   const [days, setDays] = useState(1);
   const [multiplier, setMultiplier] = useState(1);
+  // "Today" is fixed when the form mounts. Lewat qada' depends on the date
+  // (a row's multiplier steps up the day a new Ramadan begins), and holding
+  // it steady keeps the figure from shifting under someone mid-form.
+  const [now] = useState(() => new Date());
+  const yearOptions = useMemo(() => qadaYearOptions(now), [now]);
+  const nextRowId = useRef(2);
+  const [qadaRows, setQadaRows] = useState<QadaRowState[]>(() => [
+    // Lewat qada' means a Ramadan has gone by, so open on last year's rather
+    // than on the most recent one, which would start the payer at RM0.
+    { id: 1, hijriYear: latestRamadanHijriYear(new Date()) - 1, days: 1 },
+  ]);
   const [category, setCategory] = useState(FIDYAH_CATEGORIES[0].id as string);
   const [method, setMethod] = useState<PaymentMethod>("chip");
   const [name, setName] = useState("");
@@ -80,11 +112,42 @@ export function FidyahForm({
     [days, multiplier, rateSen]
   );
 
+  const isQada = category === QADA_CATEGORY;
+  const qada = useMemo(
+    () => calculateQada(qadaRows, rateSen, now),
+    [qadaRows, rateSen, now]
+  );
+  const upcomingRamadan = useMemo(() => nextRamadan(now), [now]);
+  // The one figure everything below charges, whichever mode is showing.
+  const totalSen = isQada ? qada.totalSen : result.totalSen;
+
+  function updateQadaRow(id: number, patch: Partial<QadaRowState>) {
+    setQadaRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  }
+
+  function addQadaRow() {
+    const used = new Set(qadaRows.map((r) => r.hijriYear));
+    const free = yearOptions.find((o) => !used.has(o.hijriYear));
+    if (!free || qadaRows.length >= MAX_QADA_ROWS) return;
+    setQadaRows((rows) => [
+      ...rows,
+      { id: nextRowId.current++, hijriYear: free.hijriYear, days: 1 },
+    ]);
+  }
+
+  function removeQadaRow(id: number) {
+    setQadaRows((rows) => (rows.length > 1 ? rows.filter((r) => r.id !== id) : rows));
+  }
+
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return toast.error("Sila masukkan nama anda.");
     if (!email.trim()) return toast.error("Sila masukkan alamat emel anda.");
-    if (result.totalSen < 100)
+    if (isQada && qada.totalSen === 0)
+      return toast.error(
+        "Tiada fidyah kelewatan bagi tahun yang dipilih lagi. Qada' puasa anda sebelum Ramadan berikutnya."
+      );
+    if (totalSen < 100)
       return toast.error("Jumlah minimum pembayaran ialah RM1.00.");
 
     if (upsell?.enabled) {
@@ -109,9 +172,14 @@ export function FidyahForm({
           phone,
           negeri,
           category,
-          days: result.days,
-          multiplier: result.multiplier,
-          message,
+          // Several years with different multipliers cannot be stored as one
+          // days x multiplier pair, so the days charged are flattened into
+          // one figure and the working goes into the note.
+          days: isQada ? qada.chargeableDays : result.days,
+          multiplier: isQada ? 1 : result.multiplier,
+          message: isQada
+            ? [qadaBreakdownNote(qada), message.trim()].filter(Boolean).join("\n")
+            : message,
           method,
           upsellAccepted,
           upsellAmountSen: upsellAccepted
@@ -130,7 +198,7 @@ export function FidyahForm({
       // can't run on, so this is the last point we control. Uses sendBeacon
       // under the hood (gtag/fbq), which survives the redirect that follows.
       const checkoutValue =
-        result.totalSen / 100 +
+        totalSen / 100 +
         (upsellAccepted ? Math.max(1, upsellAmount) : 0);
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
@@ -198,44 +266,157 @@ export function FidyahForm({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Bilangan hari ditinggalkan</Label>
-              <Stepper
-                value={days}
-                onChange={setDays}
-                min={1}
-                label="Bilangan hari ditinggalkan"
-              />
-            </div>
+            {!isQada && (
+              <div className="space-y-2">
+                <Label>Bilangan hari ditinggalkan</Label>
+                <Stepper
+                  value={days}
+                  onChange={setDays}
+                  min={1}
+                  label="Bilangan hari ditinggalkan"
+                />
+              </div>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label>Gandaan (jika lewat qada&apos;)</Label>
-            <Stepper
-              value={multiplier}
-              onChange={setMultiplier}
-              min={1}
-              label="Gandaan tahun qada"
-            />
-            <p className="text-xs text-muted-foreground">
-              1 = dibayar dalam tempoh. Tambah gandaan bagi setiap tahun qada&apos;
-              yang dilewatkan.
-            </p>
-          </div>
+          {isQada ? (
+            <div className="space-y-4">
+              {qadaRows.map((row, i) => {
+                const computed = qada.rows[i];
+                const taken = new Set(
+                  qadaRows.filter((r) => r.id !== row.id).map((r) => r.hijriYear)
+                );
+                return (
+                  <div key={row.id} className="space-y-1.5">
+                    <div className="grid grid-cols-[1fr_auto] items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                      <div className="col-span-2 space-y-2 sm:col-span-1">
+                        <Label htmlFor={`qada-year-${row.id}`}>
+                          Tahun puasa ditinggalkan
+                        </Label>
+                        <Select
+                          value={String(row.hijriYear)}
+                          onValueChange={(v) =>
+                            updateQadaRow(row.id, { hijriYear: Number(v) })
+                          }
+                        >
+                          <SelectTrigger id={`qada-year-${row.id}`}>
+                            <SelectValue placeholder="Pilih tahun" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {yearOptions.map((o) => (
+                              <SelectItem
+                                key={o.hijriYear}
+                                value={String(o.hijriYear)}
+                                disabled={taken.has(o.hijriYear)}
+                              >
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Bilangan hari</Label>
+                        <Stepper
+                          value={row.days}
+                          onChange={(v) => updateQadaRow(row.id, { days: v })}
+                          min={1}
+                          max={MAX_RAMADAN_DAYS}
+                          label={`Bilangan hari ditinggalkan, ${computed.label}`}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        aria-label={`Buang ${computed.label}`}
+                        onClick={() => removeQadaRow(row.id)}
+                        disabled={qadaRows.length === 1}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {computed.multiplier > 0
+                        ? `Telah melepasi ${computed.multiplier} Ramadan. Gandaan ${computed.multiplier}×.`
+                        : "Belum melepasi 1 Ramadan berikutnya. Gandaan belum dikenakan."}
+                    </p>
+                  </div>
+                );
+              })}
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={addQadaRow}
+                disabled={
+                  qadaRows.length >= MAX_QADA_ROWS ||
+                  qadaRows.length >= yearOptions.length
+                }
+              >
+                <Plus /> Tambah tahun
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Kadar tetap {formatMYR(rateSen)} sehari. Gandaan bermula selepas
+                1 Ramadan berikutnya, iaitu tarikh ganti puasa sepatutnya
+                dibuat, dan bertambah apabila Ramadan baharu bermula (
+                {upcomingRamadan.hijriYear}H dijangka sekitar{" "}
+                {formatCalendarDate(upcomingRamadan.start)}).
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Gandaan (jika lewat qada&apos;)</Label>
+              <Stepper
+                value={multiplier}
+                onChange={setMultiplier}
+                min={1}
+                label="Gandaan tahun qada"
+              />
+              <p className="text-xs text-muted-foreground">
+                1 = dibayar dalam tempoh. Tambah gandaan bagi setiap tahun
+                qada&apos; yang dilewatkan.
+              </p>
+            </div>
+          )}
 
           {/* Summary */}
           <div className="rounded-lg border bg-muted/40 p-4">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>
-                {result.days} hari × {formatMYR(result.rateSen)} ×{" "}
-                {result.multiplier}
-              </span>
-              <span>Jumlah</span>
-            </div>
+            {isQada ? (
+              <div className="space-y-1.5 text-sm text-muted-foreground">
+                {qada.rows.map((r) => (
+                  <div key={r.hijriYear} className="flex items-center justify-between">
+                    <span>
+                      {r.label} · {r.days} hari × {r.multiplier}
+                    </span>
+                    <span>{formatMYR(r.subtotalSen)}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between border-t pt-1.5">
+                  <span>Jumlah hari dikenakan</span>
+                  <span>{qada.chargeableDays} hari</span>
+                </div>
+                {qada.totalSen === 0 && (
+                  <p className="pt-1 text-xs">
+                    Tiada fidyah kelewatan lagi bagi tahun yang dipilih. Qada&apos;
+                    puasa anda sebelum Ramadan {upcomingRamadan.hijriYear}H bermula.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>
+                  {result.days} hari × {formatMYR(result.rateSen)} ×{" "}
+                  {result.multiplier}
+                </span>
+                <span>Jumlah</span>
+              </div>
+            )}
             <div className="mt-1 flex items-end justify-between">
               <span className="text-sm text-muted-foreground">Perlu dibayar</span>
               <span className="text-3xl font-bold text-primary">
-                {formatMYR(result.totalSen)}
+                {formatMYR(totalSen)}
               </span>
             </div>
           </div>
@@ -294,6 +475,7 @@ export function FidyahForm({
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              maxLength={500}
               placeholder="Contoh: Bayaran bagi pihak arwah ayah."
             />
           </div>
@@ -349,7 +531,7 @@ export function FidyahForm({
             disabled={submitting}
           >
             {submitting && <Loader2 className="animate-spin" />}
-            Bayar {formatMYR(result.totalSen)} Sekarang
+            Bayar {formatMYR(totalSen)} Sekarang
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             {method === "manual"
@@ -395,7 +577,7 @@ export function FidyahForm({
           <div className="rounded-lg border bg-muted/40 p-4 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Fidyah</span>
-              <span>{formatMYR(result.totalSen)}</span>
+              <span>{formatMYR(totalSen)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Kempen tambahan</span>
@@ -405,7 +587,7 @@ export function FidyahForm({
               <span>Jumlah jika sertai</span>
               <span className="text-primary-strong">
                 {formatMYR(
-                  result.totalSen + Math.round(Math.max(1, upsellAmount) * 100)
+                  totalSen + Math.round(Math.max(1, upsellAmount) * 100)
                 )}
               </span>
             </div>
@@ -609,13 +791,16 @@ function Stepper({
   value,
   onChange,
   min = 0,
+  max,
   label,
 }: {
   value: number;
   onChange: (v: number) => void;
   min?: number;
+  max?: number;
   label: string;
 }) {
+  const clamp = (v: number) => Math.min(max ?? Infinity, Math.max(min, v));
   return (
     <div className="flex items-center gap-2">
       <Button
@@ -623,16 +808,17 @@ function Stepper({
         variant="outline"
         size="icon"
         aria-label={`Kurangkan ${label}`}
-        onClick={() => onChange(Math.max(min, value - 1))}
+        onClick={() => onChange(clamp(value - 1))}
       >
         <Minus />
       </Button>
       <Input
         type="number"
         min={min}
+        max={max}
         value={value}
         aria-label={label}
-        onChange={(e) => onChange(Math.max(min, Number(e.target.value) || min))}
+        onChange={(e) => onChange(clamp(Number(e.target.value) || min))}
         className="text-center"
       />
       <Button
@@ -640,7 +826,8 @@ function Stepper({
         variant="outline"
         size="icon"
         aria-label={`Tambah ${label}`}
-        onClick={() => onChange(value + 1)}
+        disabled={max !== undefined && value >= max}
+        onClick={() => onChange(clamp(value + 1))}
       >
         <Plus />
       </Button>
