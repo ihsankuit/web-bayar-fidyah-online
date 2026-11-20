@@ -76,7 +76,6 @@ export function FidyahForm({
   upsell?: UpsellSettings;
 }) {
   const [days, setDays] = useState(1);
-  const [multiplier, setMultiplier] = useState(1);
   // "Today" is fixed when the form mounts. Lewat qada' depends on the date
   // (a row's multiplier steps up the day a new Ramadan begins), and holding
   // it steady keeps the figure from shifting under someone mid-form.
@@ -105,8 +104,8 @@ export function FidyahForm({
   );
 
   const result = useMemo(
-    () => calculateFidyah({ days, multiplier, rateSen }),
-    [days, multiplier, rateSen]
+    () => calculateFidyah({ days, rateSen }),
+    [days, rateSen]
   );
 
   const isQada = category === QADA_CATEGORY;
@@ -294,7 +293,7 @@ export function FidyahForm({
             )}
           </div>
 
-          {isQada ? (
+          {isQada && (
             <div className="space-y-4">
               {qadaRows.map((row, i) => {
                 const computed = qada.rows[i];
@@ -380,20 +379,6 @@ export function FidyahForm({
                 {formatCalendarDate(upcomingRamadan.start)}).
               </p>
             </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Gandaan (jika lewat qada&apos;)</Label>
-              <Stepper
-                value={multiplier}
-                onChange={setMultiplier}
-                min={1}
-                label="Gandaan tahun qada"
-              />
-              <p className="text-xs text-muted-foreground">
-                1 = dibayar dalam tempoh. Tambah gandaan bagi setiap tahun
-                qada&apos; yang dilewatkan.
-              </p>
-            </div>
           )}
 
           {/* Summary */}
@@ -422,8 +407,7 @@ export function FidyahForm({
             ) : (
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
-                  {result.days} hari × {formatMYR(result.rateSen)} ×{" "}
-                  {result.multiplier}
+                  {result.days} hari × {formatMYR(result.rateSen)}
                 </span>
                 <span>Jumlah</span>
               </div>
