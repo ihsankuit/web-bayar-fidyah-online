@@ -10,6 +10,7 @@ import { getUpsellSettings } from "@/lib/upsell";
 import { isMissingColumnError } from "@/lib/db-errors";
 import {
   QADA_CATEGORY_ID,
+  QADA_REVIEW_THRESHOLD_SEN,
   resolveQadaOrder,
   type QadaOrder,
   type QadaRowInput,
@@ -198,6 +199,8 @@ export type QuoteResult =
       multiplier: number;
       rateSen: number;
       breakdown: QadaBreakdownRow[] | null;
+      /** Too large to charge online; needs bank transfer and staff checking. */
+      requiresReview: boolean;
     }
   | {
       ok: false;
@@ -218,6 +221,8 @@ export async function quoteDonation(input: PriceInput): Promise<QuoteResult> {
     multiplier: priced.calc.multiplier,
     rateSen: priced.calc.rateSen,
     breakdown: priced.qada?.breakdown ?? null,
+    requiresReview:
+      priced.qada !== null && priced.calc.totalSen >= QADA_REVIEW_THRESHOLD_SEN,
   };
 }
 
@@ -234,6 +239,20 @@ export async function createDonation(
   const priced = priceOrder(input, content.fidyah_rate_sen, new Date());
   if (!priced.ok) return priced;
   const { calc, qada } = priced;
+
+  if (
+    qada &&
+    input.method === "chip" &&
+    calc.totalSen >= QADA_REVIEW_THRESHOLD_SEN
+  ) {
+    return {
+      ok: false,
+      status: 422,
+      error:
+        "Jumlah ini besar, jadi bayaran dibuat melalui pindahan bank dan disahkan oleh pasukan kami. Sila pilih pindahan bank atau hubungi kami.",
+      details: { code: "REVIEW_REQUIRED", amountSen: calc.totalSen },
+    };
+  }
 
   // The upsell amount is caller-adjustable (like a tip), but only applies if
   // the campaign is actually enabled right now — never trust that alone.

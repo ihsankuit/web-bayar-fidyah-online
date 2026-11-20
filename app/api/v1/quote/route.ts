@@ -72,6 +72,9 @@ export async function POST(request: Request) {
       chargeable_days: result.days * result.multiplier,
       rate_sen: result.rateSen,
       breakdown: result.breakdown,
+      // true: too large to charge online (RM5,000 and over). Send the payer
+      // to bank transfer or staff instead of creating a payment link.
+      requires_staff_review: result.requiresReview,
     },
   });
 }

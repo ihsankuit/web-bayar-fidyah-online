@@ -42,6 +42,7 @@ import {
   qadaYearOptions,
   QADA_CATEGORY_ID as QADA_CATEGORY,
   MAX_QADA_ROWS,
+  QADA_REVIEW_THRESHOLD_SEN,
 } from "@/lib/ramadan";
 import { formatMYR } from "@/lib/utils";
 import { getStoredUtm, getStoredClickIds } from "@/lib/utm";
@@ -88,7 +89,10 @@ export function FidyahForm({
     { id: 1, hijriYear: latestRamadanHijriYear(new Date()) - 1, days: 1 },
   ]);
   const [category, setCategory] = useState(FIDYAH_CATEGORIES[0].id as string);
-  const [method, setMethod] = useState<PaymentMethod>("chip");
+  const [chosenMethod, setMethod] = useState<PaymentMethod>("chip");
+  const [rangeFrom, setRangeFrom] = useState<number | null>(null);
+  const [rangeTo, setRangeTo] = useState<number | null>(null);
+  const [rangeDays, setRangeDays] = useState(30);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -116,6 +120,30 @@ export function FidyahForm({
   const upcomingRamadan = useMemo(() => nextRamadan(now), [now]);
   // The one figure everything below charges, whichever mode is showing.
   const totalSen = isQada ? qada.totalSen : result.totalSen;
+  // A big lewat qada' total is not charged online: it goes by bank transfer
+  // and staff check the proof.
+  const requiresReview = isQada && totalSen >= QADA_REVIEW_THRESHOLD_SEN;
+  const method: PaymentMethod = requiresReview ? "manual" : chosenMethod;
+
+  function generateRange() {
+    if (rangeFrom === null || rangeTo === null) {
+      return toast.error("Sila pilih tahun mula dan tahun akhir.");
+    }
+    const lo = Math.min(rangeFrom, rangeTo);
+    const hi = Math.max(rangeFrom, rangeTo);
+    const years = yearOptions
+      .filter((o) => o.hijriYear >= lo && o.hijriYear <= hi)
+      .map((o) => o.hijriYear)
+      .sort((a, b) => b - a);
+    if (years.length === 0) return toast.error("Tiada tahun dalam julat itu.");
+    setQadaRows(
+      years.map((hijriYear) => ({
+        id: nextRowId.current++,
+        hijriYear,
+        days: rangeDays,
+      }))
+    );
+  }
 
   function updateQadaRow(id: number, patch: Partial<QadaRowState>) {
     setQadaRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -145,6 +173,10 @@ export function FidyahForm({
       );
     if (totalSen < 100)
       return toast.error("Jumlah minimum pembayaran ialah RM1.00.");
+    if (requiresReview && !manualTransferAvailable)
+      return toast.error(
+        "Jumlah ini besar. Sila hubungi pasukan kami untuk menguruskan bayaran."
+      );
 
     if (upsell?.enabled) {
       setShowUpsell(true);
@@ -295,6 +327,67 @@ export function FidyahForm({
 
           {isQada && (
             <div className="space-y-4">
+              <div className="space-y-3 rounded-lg border border-dashed p-4">
+                <div>
+                  <p className="text-sm font-medium">Tertunggak banyak tahun?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Isi julat tahun dan purata hari setahun, kemudian ubah
+                    mana-mana tahun jika perlu. Sehingga {MAX_QADA_ROWS} tahun.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+                  <div className="space-y-2">
+                    <Label htmlFor="range-from">Dari tahun</Label>
+                    <Select
+                      value={rangeFrom === null ? "" : String(rangeFrom)}
+                      onValueChange={(v) => setRangeFrom(Number(v))}
+                    >
+                      <SelectTrigger id="range-from">
+                        <SelectValue placeholder="Tahun paling lama" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map((o) => (
+                          <SelectItem key={o.hijriYear} value={String(o.hijriYear)}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="range-to">Hingga tahun</Label>
+                    <Select
+                      value={rangeTo === null ? "" : String(rangeTo)}
+                      onValueChange={(v) => setRangeTo(Number(v))}
+                    >
+                      <SelectTrigger id="range-to">
+                        <SelectValue placeholder="Tahun terkini" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map((o) => (
+                          <SelectItem key={o.hijriYear} value={String(o.hijriYear)}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hari setahun</Label>
+                    <Stepper
+                      value={rangeDays}
+                      onChange={setRangeDays}
+                      min={1}
+                      max={MAX_RAMADAN_DAYS}
+                      label="Purata hari ditinggalkan setahun"
+                    />
+                  </div>
+                </div>
+                <Button type="button" variant="outline" onClick={generateRange}>
+                  Jana senarai tahun
+                </Button>
+              </div>
+
               {qadaRows.map((row, i) => {
                 const computed = qada.rows[i];
                 const taken = new Set(
@@ -479,7 +572,16 @@ export function FidyahForm({
             />
           </div>
 
-          {manualTransferAvailable && (
+          {requiresReview && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              Jumlah ini besar (RM5,000 ke atas), jadi bayaran dibuat melalui
+              pindahan bank dan disahkan oleh pasukan kami.
+              {!manualTransferAvailable &&
+                " Sila hubungi kami untuk menguruskan bayaran."}
+            </p>
+          )}
+
+          {manualTransferAvailable && !requiresReview && (
             <div className="space-y-2">
               <Label>Kaedah pembayaran</Label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

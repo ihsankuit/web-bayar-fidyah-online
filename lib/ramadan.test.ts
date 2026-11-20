@@ -11,6 +11,7 @@ import {
   ramadansPassedSince,
   formatQadaBreakdown,
   qadaYearsInfo,
+  QADA_REVIEW_THRESHOLD_SEN,
   resolveQadaOrder,
   validateQadaRows,
 } from "./ramadan";
@@ -228,7 +229,9 @@ describe("validateQadaRows", () => {
   });
   it("rejects nothing, too many rows, and duplicates", () => {
     expect(ok([])).toBe(false);
-    const many = Array.from({ length: 11 }, (_, i) => ({ hijriYear: 1447 - i, days: 1 }));
+    const forty = Array.from({ length: 40 }, (_, i) => ({ hijriYear: 1447 - i, days: 1 }));
+    expect(ok(forty)).toBe(true);
+    const many = [...forty, { hijriYear: 1406, days: 1 }];
     expect(ok(many)).toBe(false);
     expect(
       ok([
@@ -239,7 +242,8 @@ describe("validateQadaRows", () => {
   });
   it("rejects a Ramadan that has not begun, or one too far back", () => {
     expect(ok([{ hijriYear: 1448, days: 1 }])).toBe(false);
-    expect(ok([{ hijriYear: 1447 - 20, days: 1 }])).toBe(false);
+    expect(ok([{ hijriYear: 1447 - 39, days: 1 }])).toBe(true);
+    expect(ok([{ hijriYear: 1447 - 40, days: 1 }])).toBe(false);
   });
   it("rejects days outside 1-30 and non-integers", () => {
     expect(ok([{ hijriYear: 1446, days: 0 }])).toBe(false);
@@ -285,6 +289,24 @@ describe("qadaYearsInfo", () => {
     expect(info.years[0]).toMatchObject({ hijri_year: 1447, multiplier: 0 });
     expect(info.years[1]).toMatchObject({ hijri_year: 1446, multiplier: 1 });
     expect(info.next_ramadan.hijri_year).toBe(1448);
-    expect(info.max_years).toBe(10);
+    expect(info.max_years).toBe(40);
+    expect(info.years).toHaveLength(40);
+  });
+});
+
+describe("a long-owed qada'", () => {
+  it("prices 30 years of 30 days, one Ramadan more for each older year", () => {
+    const rows = Array.from({ length: 30 }, (_, i) => ({ hijriYear: 1446 - i, days: 30 }));
+    const r = resolveQadaOrder(rows, RATE, NOV_2026);
+    if (!r.ok) throw new Error(r.error);
+    // Multipliers 1..30, so 30 days x (1+2+...+30) x RM4.
+    expect(r.chargeableDays).toBe(30 * (30 * 31) / 2);
+    expect(r.totalSen).toBe(30 * 465 * RATE);
+    expect(r.totalSen).toBeGreaterThanOrEqual(QADA_REVIEW_THRESHOLD_SEN);
+  });
+  it("keeps an ordinary payment under the review threshold", () => {
+    const r = resolveQadaOrder([{ hijriYear: 1446, days: 12 }], RATE, NOV_2026);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.totalSen).toBeLessThan(QADA_REVIEW_THRESHOLD_SEN);
   });
 });
