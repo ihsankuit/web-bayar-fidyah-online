@@ -33,6 +33,24 @@ export function unauthorized() {
   );
 }
 
+/**
+ * A short, non-reversible fingerprint of the caller's key, for rate-limit
+ * buckets.
+ *
+ * Write endpoints throttle per key rather than per IP. A chatbot or
+ * automation calls from one server address, so an IP bucket would make every
+ * one of its users share a single allowance — and the real unit of trust
+ * here is the key, not where it happens to be hosted.
+ */
+export function apiKeyFingerprint(request: Request): string {
+  const auth = request.headers.get("authorization");
+  const bearer = auth?.toLowerCase().startsWith("bearer ")
+    ? auth.slice(7).trim()
+    : null;
+  const provided = bearer ?? request.headers.get("x-api-key") ?? "";
+  return crypto.createHash("sha256").update(provided).digest("hex").slice(0, 16);
+}
+
 /** Shape a donation row for API responses (Ringgit amount, no internal noise). */
 export function serializeDonation(d: Donation) {
   return {
