@@ -1,13 +1,20 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { Donation } from "@/lib/database.types";
-import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
-import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
+import { ORG } from "@/lib/organization";
+import {
+  RECEIPT_LOGO_ASPECT,
+  RECEIPT_LOGO_PNG_BASE64,
+} from "@/lib/receipt-logo";
 
 /**
  * Official receipt PDF for a settled fidyah payment, generated on demand from
  * the donation record (there is nothing stored per-receipt — the donation row
  * is the source of truth, so a re-download always reflects it).
+ *
+ * Plain black-and-white invoice layout: logo and RESIT heading, issuer and
+ * payer blocks, a product table (one row per missed year for lewat qada'),
+ * totals, and a footer note.
  *
  * Uses pdf-lib with the built-in Helvetica family: no font files to ship and
  * no native dependencies, which keeps this runnable inside a serverless
@@ -16,15 +23,29 @@ import { ORG, ORG_ADDRESS_LINE } from "@/lib/organization";
  * from the database is sanitised before being drawn.
  */
 
-const BRAND = rgb(0.145, 0.388, 0.921); // matches the site's primary blue
-const PAID = rgb(0.086, 0.639, 0.29); // green-600, for the LUNAS badge
-const INK = rgb(0.102, 0.137, 0.2);
-const MUTED = rgb(0.353, 0.392, 0.471);
-const HAIRLINE = rgb(0.886, 0.902, 0.937);
+const BLACK = rgb(0, 0, 0);
+const WHITE = rgb(1, 1, 1);
+const GREY = rgb(0.35, 0.35, 0.35);
+const RED = rgb(0.86, 0.1, 0.1);
+const BORDER = rgb(0.2, 0.2, 0.2);
 
 const PAGE_W = 595.28; // A4 portrait, in points
 const PAGE_H = 841.89;
-const MARGIN = 56;
+const MARGIN = 36;
+const RIGHT = PAGE_W - MARGIN;
+const TABLE_W = RIGHT - MARGIN;
+const ROW_H = 26;
+const FOOTER_TOP = 90; // nothing in the table may be drawn below this
+
+// Issuer details as they should appear on a receipt.
+const ISSUER_SITE = "www.ihsanku.org";
+const ISSUER_EMAIL = "salam@ihsanku.org";
+const ISSUER_PHONE = "+601113190312";
+
+// Table columns: Produk | Harga | Kuantiti | Subjumlah
+const COL_PRICE = MARGIN + 262;
+const COL_QTY = COL_PRICE + 72;
+const COL_SUB = RIGHT - 104;
 
 /**
  * Drops characters the standard WinAnsi encoding can't represent (emoji,
@@ -40,303 +61,403 @@ function sanitize(text: string): string {
   );
 }
 
-interface RowOptions {
-  bold?: boolean;
-  color?: ReturnType<typeof rgb>;
+const MYT = "Asia/Kuala_Lumpur";
+
+/** 20-11-2026, in Malaysia time. */
+function receiptDate(input: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: MYT,
+  })
+    .format(new Date(input))
+    .replace(/\//g, "-");
+}
+
+/** 9:40:48 AM, in Malaysia time. */
+function receiptTime(input: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+    timeZone: MYT,
+  }).format(new Date(input));
+}
+
+function money(sen: number): string {
+  return (sen / 100).toFixed(2);
+}
+
+interface Fonts {
+  font: PDFFont;
+  bold: PDFFont;
+}
+
+interface TableRow {
+  label: string;
+  priceSen: number;
+  qty: number;
+  subtotalSen: number;
+}
+
+function rowsFor(donation: Donation): TableRow[] {
+  const upsellSen = donation.upsell_accepted ? donation.upsell_amount_sen : 0;
+  const category = sanitize(
+    getCategory(donation.category)?.title ?? donation.category
+  );
+  const rows: TableRow[] = [];
+
+  if (donation.qada_breakdown && donation.qada_breakdown.length > 0) {
+    // One line per missed year, so the payer can see how the total was built.
+    for (const r of donation.qada_breakdown) {
+      const qty = r.days * r.multiplier;
+      rows.push({
+        label: sanitize(
+          `Fidyah lewat qada' ${r.label}, ${r.days} hari x ${r.multiplier}`
+        ),
+        priceSen: donation.rate_sen,
+        qty,
+        subtotalSen: r.subtotal_sen,
+      });
+    }
+  } else {
+    const qty = donation.days * Math.max(1, donation.multiplier);
+    rows.push({
+      label: sanitize(
+        donation.multiplier > 1
+          ? `Fidyah ${category}, ${donation.days} hari x ${donation.multiplier}`
+          : `Fidyah ${category}, ${donation.days} hari`
+      ),
+      priceSen: donation.rate_sen,
+      qty,
+      subtotalSen: donation.amount_sen - upsellSen,
+    });
+  }
+
+  if (upsellSen > 0) {
+    rows.push({
+      label: sanitize(donation.upsell_title || "Kempen Tambahan"),
+      priceSen: upsellSen,
+      qty: 1,
+      subtotalSen: upsellSen,
+    });
+  }
+  return rows;
 }
 
 export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  const page = pdf.addPage([PAGE_W, PAGE_H]);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const fonts: Fonts = { font, bold };
+  const logo = await pdf.embedPng(
+    Buffer.from(RECEIPT_LOGO_PNG_BASE64, "base64")
+  );
 
   pdf.setTitle(`Resit Fidyah ${donation.reference}`);
   pdf.setSubject("Resit pembayaran fidyah");
   pdf.setProducer("Bayar Fidyah Online");
 
-  // ---- Header band -------------------------------------------------------
-  page.drawRectangle({
-    x: 0,
-    y: PAGE_H - 132,
-    width: PAGE_W,
-    height: 132,
-    color: BRAND,
-  });
-  page.drawText("Bayar Fidyah Online", {
-    x: MARGIN,
-    y: PAGE_H - 62,
-    size: 20,
-    font: bold,
-    color: rgb(1, 1, 1),
-  });
-  page.drawText("Resit Pembayaran Fidyah", {
-    x: MARGIN,
-    y: PAGE_H - 86,
-    size: 12,
-    font,
-    color: rgb(1, 1, 1),
-  });
-  page.drawText(sanitize(`Dikuasakan oleh ${ORG.name}`), {
-    x: MARGIN,
-    y: PAGE_H - 106,
-    size: 9.5,
-    font,
-    color: rgb(1, 1, 1),
-    opacity: 0.9,
-  });
-
-  const paidLabel = "LUNAS";
-  const paidWidth = bold.widthOfTextAtSize(paidLabel, 11);
-  page.drawRectangle({
-    x: PAGE_W - MARGIN - paidWidth - 20,
-    y: PAGE_H - 74,
-    width: paidWidth + 20,
-    height: 24,
-    color: PAID,
-  });
-  page.drawText(paidLabel, {
-    x: PAGE_W - MARGIN - paidWidth - 10,
-    y: PAGE_H - 67,
-    size: 11,
-    font: bold,
-    color: rgb(1, 1, 1),
-  });
-
-  // ---- Meta --------------------------------------------------------------
-  let y = PAGE_H - 172;
-
+  let page = pdf.addPage([PAGE_W, PAGE_H]);
   const paidAt = donation.paid_at ?? donation.created_at;
-  y = drawMetaPair(
-    page,
-    { font, bold },
-    y,
-    "No. Rujukan",
-    sanitize(donation.reference),
-    "Tarikh Bayaran",
-    sanitize(formatDate(paidAt))
-  );
-  y = drawMetaPair(
-    page,
-    { font, bold },
-    y,
-    "Nama Pembayar",
-    sanitize(donation.payer_name),
-    "Negeri",
-    sanitize(donation.negeri ?? "-")
-  );
-  y = drawMetaPair(
-    page,
-    { font, bold },
-    y,
-    "Emel",
-    sanitize(donation.payer_email),
-    "Kaedah Bayaran",
-    donation.payment_method === "manual" ? "Pindahan Bank" : "CHIP (FPX/Kad)"
-  );
 
-  // ---- Breakdown ---------------------------------------------------------
-  y -= 16;
-  page.drawText("Butiran", {
-    x: MARGIN,
-    y,
-    size: 12,
-    font: bold,
-    color: INK,
+  // ---- Heading: logo left, RESIT + number/date right ---------------------
+  const logoW = 100;
+  const logoH = logoW / RECEIPT_LOGO_ASPECT;
+  page.drawImage(logo, {
+    x: MARGIN + 28,
+    y: PAGE_H - 52 - logoH,
+    width: logoW,
+    height: logoH,
   });
-  y -= 14;
-  line(page, y);
-  y -= 22;
 
-  const upsellSen = donation.upsell_accepted ? donation.upsell_amount_sen : 0;
-  const fidyahSen = donation.amount_sen - upsellSen;
+  const title = "RESIT";
+  page.drawText(title, {
+    x: RIGHT - bold.widthOfTextAtSize(title, 22),
+    y: PAGE_H - 62,
+    size: 22,
+    font: bold,
+    color: BLACK,
+  });
+  metaLine(page, fonts, PAGE_H - 88, "No. Resit :", sanitize(donation.reference));
+  metaLine(page, fonts, PAGE_H - 106, "Tarikh :", receiptDate(paidAt));
 
-  y = drawRow(
-    page,
-    { font, bold },
+  // ---- Issuer ------------------------------------------------------------
+  let y = PAGE_H - 175;
+  page.drawText(sanitize(ORG.name.replace("Ihsanku", "IhsanKu")), {
+    x: MARGIN + 12,
     y,
-    "Kategori",
-    sanitize(getCategory(donation.category)?.title ?? donation.category)
-  );
-  if (donation.qada_breakdown && donation.qada_breakdown.length > 0) {
-    // One line per missed year, so the payer can see how the total was built.
-    for (const r of donation.qada_breakdown) {
-      y = drawRow(
-        page,
-        { font, bold },
-        y,
-        sanitize(r.label),
-        `${r.days} hari x ${r.multiplier} = ${formatMYR(r.subtotal_sen)}`
-      );
-    }
-  } else {
-    y = drawRow(
-      page,
-      { font, bold },
-      y,
-      "Bilangan hari",
-      `${donation.days} hari`
-    );
-    if (donation.multiplier > 1) {
-      y = drawRow(page, { font, bold }, y, "Gandaan", `x ${donation.multiplier}`);
-    }
-  }
-  y = drawRow(
-    page,
-    { font, bold },
-    y,
-    "Kadar sehari",
-    formatMYR(donation.rate_sen)
-  );
-  y = drawRow(page, { font, bold }, y, "Jumlah fidyah", formatMYR(fidyahSen));
-
-  if (upsellSen > 0) {
-    y = drawRow(
-      page,
-      { font, bold },
-      y,
-      sanitize(donation.upsell_title || "Kempen Tambahan"),
-      formatMYR(upsellSen)
-    );
+    size: 14,
+    font: bold,
+    color: BLACK,
+  });
+  for (const text of [ISSUER_SITE, ISSUER_EMAIL, ISSUER_PHONE]) {
+    y -= 16;
+    page.drawText(text, { x: MARGIN + 12, y, size: 10, font, color: BLACK });
   }
 
-  y -= 6;
-  line(page, y);
-  y -= 26;
-  page.drawText("JUMLAH DIBAYAR", {
-    x: MARGIN,
-    y,
-    size: 12,
-    font: bold,
-    color: INK,
+  // LUNAS badge, outlined in red.
+  const badge = "LUNAS";
+  const badgeW = 86;
+  const badgeH = 46;
+  const badgeX = RIGHT - badgeW;
+  const badgeY = PAGE_H - 175 - badgeH + 14;
+  page.drawRectangle({
+    x: badgeX,
+    y: badgeY,
+    width: badgeW,
+    height: badgeH,
+    borderColor: RED,
+    borderWidth: 1.5,
+    color: WHITE,
   });
-  const total = formatMYR(donation.amount_sen);
-  page.drawText(total, {
-    x: PAGE_W - MARGIN - bold.widthOfTextAtSize(total, 16),
-    y: y - 3,
-    size: 16,
+  page.drawText(badge, {
+    x: badgeX + (badgeW - bold.widthOfTextAtSize(badge, 14)) / 2,
+    y: badgeY + (badgeH - 14) / 2 + 3,
+    size: 14,
     font: bold,
-    color: BRAND,
+    color: RED,
   });
 
-  // ---- Issuer (organisation) --------------------------------------------
-  let fy = 182;
-  line(page, fy + 18);
-  page.drawText("Dikeluarkan oleh", {
-    x: MARGIN,
-    y: fy,
-    size: 8,
-    font,
-    color: MUTED,
-  });
-  fy -= 15;
-  page.drawText(sanitize(ORG.name), {
-    x: MARGIN,
-    y: fy,
-    size: 11,
+  // ---- Payer -------------------------------------------------------------
+  y -= 38;
+  page.drawText("KEPADA :", { x: MARGIN + 12, y, size: 10, font: bold, color: BLACK });
+  const payer: [string, string][] = [
+    ["Nama", sanitize(donation.payer_name)],
+    ["Emel", sanitize(donation.payer_email)],
+    ["No. Telefon", donation.payer_phone ? sanitize(donation.payer_phone) : "-"],
+  ];
+  if (donation.negeri) payer.push(["Negeri", sanitize(donation.negeri)]);
+  for (const [label, value] of payer) {
+    y -= 17;
+    page.drawText(label, { x: MARGIN + 12, y, size: 10, font: bold, color: BLACK });
+    page.drawText(":", { x: MARGIN + 92, y, size: 10, font: bold, color: BLACK });
+    page.drawText(value, { x: MARGIN + 102, y, size: 10, font, color: BLACK });
+  }
+
+  // ---- Table -------------------------------------------------------------
+  y -= 36;
+  const rows = rowsFor(donation);
+
+  const drawHeader = (pg: PDFPage, top: number): number => {
+    pg.drawRectangle({
+      x: MARGIN,
+      y: top - 30,
+      width: TABLE_W,
+      height: 30,
+      color: BLACK,
+    });
+    const h = { size: 10, font: bold, color: WHITE };
+    pg.drawText("Produk", { x: MARGIN + 10, y: top - 19, ...h });
+    centeredText(pg, "Harga (RM)", COL_PRICE, COL_QTY, top - 19, h);
+    centeredText(pg, "Kuantiti", COL_QTY, COL_SUB, top - 19, h);
+    rightText(pg, "Subjumlah (RM)", RIGHT - 10, top - 19, h);
+    return top - 30;
+  };
+
+  y = drawHeader(page, y);
+
+  for (const row of rows) {
+    if (y - ROW_H < FOOTER_TOP) {
+      // Continue the table on a fresh page (a long lewat qada' list).
+      page = pdf.addPage([PAGE_W, PAGE_H]);
+      y = drawHeader(page, PAGE_H - 56);
+    }
+    y = drawRow(page, fonts, y, row);
+  }
+
+  if (y - ROW_H * 4 < FOOTER_TOP) {
+    page = pdf.addPage([PAGE_W, PAGE_H]);
+    y = PAGE_H - 56;
+  }
+
+  // Jumlah (units) row.
+  const totalQty = rows.reduce((n, r) => n + r.qty, 0);
+  y = totalRow(page, fonts, y, "Jumlah", String(totalQty), money(donation.amount_sen));
+
+  // Spacer row, then the grand total.
+  box(page, MARGIN, y - 30, TABLE_W, 30);
+  y -= 30;
+  box(page, MARGIN, y - ROW_H, TABLE_W, ROW_H);
+  box(page, COL_SUB, y - ROW_H, RIGHT - COL_SUB, ROW_H);
+  rightText(page, "JUMLAH KESELURUHAN (RM)", COL_SUB - 10, y - 17, {
+    size: 10,
     font: bold,
-    color: INK,
+    color: BLACK,
   });
-  fy -= 14;
-  page.drawText(sanitize(ORG_ADDRESS_LINE), {
-    x: MARGIN,
-    y: fy,
-    size: 9,
-    font,
-    color: MUTED,
+  rightText(page, money(donation.amount_sen), RIGHT - 10, y - 17, {
+    size: 10,
+    font: bold,
+    color: BLACK,
   });
-  fy -= 13;
+  y -= ROW_H;
+
+  const via =
+    donation.payment_method === "manual" ? "pindahan bank" : "CHIP (FPX/kad)";
+  page.drawText("*", { x: MARGIN, y: y - 14, size: 14, font: bold, color: RED });
   page.drawText(
     sanitize(
-      `Tel: ${ORG.phoneDisplay}     ${ORG.website.replace(/^https?:\/\//, "")}     bayarfidyahonline.com`
+      `Dibayar melalui ${via} pada ${receiptTime(paidAt)}, ${receiptDate(paidAt)}`
     ),
-    { x: MARGIN, y: fy, size: 9, font, color: MUTED }
+    { x: MARGIN + 8, y: y - 14, size: 10, font, color: BLACK }
   );
-
-  // ---- Notes / doa -------------------------------------------------------
-  const notes = [
-    "Resit ini dijana secara automatik dan sah tanpa tandatangan.",
-    "Semoga Allah SWT menerima amalan anda dan memberi ganjaran berlipat ganda. Aamiin.",
-  ];
-  let ny = 108;
-  for (const note of notes) {
-    page.drawText(note, { x: MARGIN, y: ny, size: 9, font, color: MUTED });
-    ny -= 14;
+  if (donation.qada_breakdown && donation.qada_breakdown.length > 0) {
+    page.drawText(
+      sanitize(
+        "Kuantiti = bilangan hari x gandaan (Ramadan yang telah bermula sejak tahun puasa ditinggalkan)."
+      ),
+      { x: MARGIN + 8, y: y - 30, size: 8.5, font, color: GREY }
+    );
   }
-  line(page, 74);
-  page.drawText("Terima kasih atas sumbangan fidyah anda.", {
+
+  // ---- Footer (last page) ------------------------------------------------
+  page.drawLine({
+    start: { x: MARGIN, y: 72 },
+    end: { x: RIGHT, y: 72 },
+    thickness: 0.8,
+    color: GREY,
+    dashArray: [2, 2],
+  });
+  page.drawText("- Resit ini dijana dengan komputer dan tidak memerlukan tandatangan.", {
     x: MARGIN,
-    y: 58,
-    size: 9,
+    y: 60,
+    size: 8,
+    font,
+    color: GREY,
+  });
+  page.drawText(
+    `- Jika anda mempunyai sebarang pertanyaan, anda boleh menghubungi kami melalui ${ISSUER_EMAIL} atau ${ISSUER_PHONE}`,
+    { x: MARGIN, y: 48, size: 8, font, color: GREY }
+  );
+  const gen = `Dijana oleh bayarfidyahonline.com © ${new Date().getFullYear()}`;
+  page.drawText(gen, {
+    x: (PAGE_W - bold.widthOfTextAtSize(gen, 8.5)) / 2,
+    y: 28,
+    size: 8.5,
     font: bold,
-    color: MUTED,
+    color: BLACK,
   });
 
   return pdf.save();
 }
 
-function line(page: PDFPage, y: number) {
-  page.drawLine({
-    start: { x: MARGIN, y },
-    end: { x: PAGE_W - MARGIN, y },
-    thickness: 1,
-    color: HAIRLINE,
-  });
-}
-
-/** Two label/value columns side by side. Returns the next y position. */
-function drawMetaPair(
+function metaLine(
   page: PDFPage,
-  fonts: { font: PDFFont; bold: PDFFont },
-  y: number,
-  leftLabel: string,
-  leftValue: string,
-  rightLabel: string,
-  rightValue: string
-): number {
-  const colX = PAGE_W / 2 + 10;
-  page.drawText(leftLabel, { x: MARGIN, y, size: 9, font: fonts.font, color: MUTED });
-  page.drawText(rightLabel, { x: colX, y, size: 9, font: fonts.font, color: MUTED });
-  page.drawText(leftValue, {
-    x: MARGIN,
-    y: y - 15,
-    size: 11,
-    font: fonts.bold,
-    color: INK,
-  });
-  page.drawText(rightValue, {
-    x: colX,
-    y: y - 15,
-    size: 11,
-    font: fonts.bold,
-    color: INK,
-  });
-  return y - 42;
-}
-
-/** A label-left / value-right breakdown row. Returns the next y position. */
-function drawRow(
-  page: PDFPage,
-  fonts: { font: PDFFont; bold: PDFFont },
+  fonts: Fonts,
   y: number,
   label: string,
-  value: string,
-  options: RowOptions = {}
-): number {
-  const valueFont = options.bold ? fonts.bold : fonts.font;
+  value: string
+) {
+  // Labels end at a fixed column so the values line up beneath each other.
   page.drawText(label, {
-    x: MARGIN,
+    x: RIGHT - 130 - fonts.bold.widthOfTextAtSize(label, 10),
     y,
-    size: 11,
-    font: fonts.font,
-    color: MUTED,
+    size: 10,
+    font: fonts.bold,
+    color: BLACK,
   });
   page.drawText(value, {
-    x: PAGE_W - MARGIN - valueFont.widthOfTextAtSize(value, 11),
+    x: RIGHT - fonts.font.widthOfTextAtSize(value, 10),
     y,
-    size: 11,
-    font: valueFont,
-    color: options.color ?? INK,
+    size: 10,
+    font: fonts.font,
+    color: BLACK,
   });
-  return y - 24;
+}
+
+function rightText(
+  page: PDFPage,
+  text: string,
+  right: number,
+  y: number,
+  style: { size: number; font: PDFFont; color: ReturnType<typeof rgb> }
+) {
+  page.drawText(text, {
+    x: right - style.font.widthOfTextAtSize(text, style.size),
+    y,
+    ...style,
+  });
+}
+
+function centeredText(
+  page: PDFPage,
+  text: string,
+  left: number,
+  right: number,
+  y: number,
+  style: { size: number; font: PDFFont; color: ReturnType<typeof rgb> }
+) {
+  page.drawText(text, {
+    x: left + (right - left - style.font.widthOfTextAtSize(text, style.size)) / 2,
+    y,
+    ...style,
+  });
+}
+
+function box(page: PDFPage, x: number, y: number, w: number, h: number) {
+  page.drawRectangle({
+    x,
+    y,
+    width: w,
+    height: h,
+    borderColor: BORDER,
+    borderWidth: 0.8,
+  });
+}
+
+/** One product row; truncates the label to fit its column. */
+function drawRow(page: PDFPage, fonts: Fonts, y: number, row: TableRow): number {
+  const top = y;
+  box(page, MARGIN, top - ROW_H, COL_PRICE - MARGIN, ROW_H);
+  box(page, COL_PRICE, top - ROW_H, COL_QTY - COL_PRICE, ROW_H);
+  box(page, COL_QTY, top - ROW_H, COL_SUB - COL_QTY, ROW_H);
+  box(page, COL_SUB, top - ROW_H, RIGHT - COL_SUB, ROW_H);
+
+  let label = row.label;
+  const maxW = COL_PRICE - MARGIN - 20;
+  while (label.length > 4 && fonts.font.widthOfTextAtSize(label, 10) > maxW) {
+    label = label.slice(0, -1);
+  }
+  if (label !== row.label) label = `${label.trimEnd()}...`;
+
+  const style = { size: 10, font: fonts.font, color: BLACK };
+  page.drawText(label, { x: MARGIN + 10, y: top - 17, ...style });
+  const priceText = money(row.priceSen);
+  page.drawText(priceText, {
+    x: COL_PRICE + (COL_QTY - COL_PRICE - fonts.font.widthOfTextAtSize(priceText, 10)) / 2,
+    y: top - 17,
+    ...style,
+  });
+  const qtyText = String(row.qty);
+  page.drawText(qtyText, {
+    x: COL_QTY + (COL_SUB - COL_QTY - fonts.font.widthOfTextAtSize(qtyText, 10)) / 2,
+    y: top - 17,
+    ...style,
+  });
+  rightText(page, money(row.subtotalSen), RIGHT - 10, top - 17, style);
+  return top - ROW_H;
+}
+
+function totalRow(
+  page: PDFPage,
+  fonts: Fonts,
+  y: number,
+  label: string,
+  qty: string,
+  subtotal: string
+): number {
+  box(page, MARGIN, y - ROW_H, COL_QTY - MARGIN, ROW_H);
+  box(page, COL_QTY, y - ROW_H, COL_SUB - COL_QTY, ROW_H);
+  box(page, COL_SUB, y - ROW_H, RIGHT - COL_SUB, ROW_H);
+  const style = { size: 10, font: fonts.bold, color: BLACK };
+  rightText(page, label, COL_QTY - 12, y - 17, style);
+  page.drawText(qty, {
+    x: COL_QTY + (COL_SUB - COL_QTY - fonts.bold.widthOfTextAtSize(qty, 10)) / 2,
+    y: y - 17,
+    ...style,
+  });
+  rightText(page, subtotal, RIGHT - 10, y - 17, style);
+  return y - ROW_H;
 }
