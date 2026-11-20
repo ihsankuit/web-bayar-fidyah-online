@@ -63,6 +63,8 @@ export function serializeDonation(d: Donation) {
     category: d.category,
     days: d.days,
     multiplier: d.multiplier,
+    // Per-year working for lewat qada'; null for other categories.
+    qada_breakdown: d.qada_breakdown ?? null,
     amount: d.amount_sen / 100,
     amount_sen: d.amount_sen,
     currency: "MYR",

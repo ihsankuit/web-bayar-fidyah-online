@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { formatQadaBreakdown } from "@/lib/ramadan";
 import { createClient } from "@/lib/supabase/server";
 import { getCategory } from "@/lib/fidyah";
 import { formatDate } from "@/lib/utils";
@@ -14,6 +15,7 @@ const HEADERS = [
   "Kategori",
   "Hari",
   "Gandaan",
+  "Pecahan Qada'",
   "Kadar (RM)",
   "Jumlah (RM)",
   "Kaedah",
@@ -45,6 +47,7 @@ function toRow(d: Donation): string {
     getCategory(d.category)?.title ?? d.category,
     String(d.days),
     String(d.multiplier),
+    d.qada_breakdown?.length ? formatQadaBreakdown(d.qada_breakdown) : "",
     (d.rate_sen / 100).toFixed(2),
     (d.amount_sen / 100).toFixed(2),
     d.payment_method === "manual" ? "Pindahan Manual" : "CHIP",

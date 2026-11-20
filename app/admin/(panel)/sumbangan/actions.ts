@@ -258,7 +258,9 @@ const editSchema = z.object({
     .number()
     .int()
     .min(1, "Bilangan hari mesti sekurang-kurangnya 1.")
-    .max(365, "Bilangan hari tidak boleh melebihi 365."),
+    // Lewat qada' stores the days charged across all years, which can
+    // run well past a year's worth.
+    .max(10_000, "Bilangan hari tidak boleh melebihi 10,000."),
   multiplier: z.coerce
     .number()
     .int()

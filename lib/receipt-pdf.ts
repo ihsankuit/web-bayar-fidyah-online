@@ -158,15 +158,28 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
     "Kategori",
     sanitize(getCategory(donation.category)?.title ?? donation.category)
   );
-  y = drawRow(
-    page,
-    { font, bold },
-    y,
-    "Bilangan hari",
-    `${donation.days} hari`
-  );
-  if (donation.multiplier > 1) {
-    y = drawRow(page, { font, bold }, y, "Gandaan", `x ${donation.multiplier}`);
+  if (donation.qada_breakdown && donation.qada_breakdown.length > 0) {
+    // One line per missed year, so the payer can see how the total was built.
+    for (const r of donation.qada_breakdown) {
+      y = drawRow(
+        page,
+        { font, bold },
+        y,
+        sanitize(r.label),
+        `${r.days} hari x ${r.multiplier} = ${formatMYR(r.subtotal_sen)}`
+      );
+    }
+  } else {
+    y = drawRow(
+      page,
+      { font, bold },
+      y,
+      "Bilangan hari",
+      `${donation.days} hari`
+    );
+    if (donation.multiplier > 1) {
+      y = drawRow(page, { font, bold }, y, "Gandaan", `x ${donation.multiplier}`);
+    }
   }
   y = drawRow(
     page,

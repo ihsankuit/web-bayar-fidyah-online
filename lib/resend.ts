@@ -46,8 +46,19 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         ${row("No. Rujukan", donation.reference)}
         ${row("Kategori", categoryTitle)}
-        ${row("Bilangan hari", String(donation.days))}
-        ${row("Gandaan", `× ${donation.multiplier}`)}
+        ${
+          donation.qada_breakdown && donation.qada_breakdown.length > 0
+            ? donation.qada_breakdown
+                .map((r) =>
+                  row(
+                    escapeHtml(r.label),
+                    `${r.days} hari × ${r.multiplier} = ${formatMYR(r.subtotal_sen)}`
+                  )
+                )
+                .join("")
+            : row("Bilangan hari", String(donation.days)) +
+              row("Gandaan", `× ${donation.multiplier}`)
+        }
         ${row("Kadar sehari", formatMYR(donation.rate_sen))}
         ${
           donation.upsell_accepted && donation.upsell_title

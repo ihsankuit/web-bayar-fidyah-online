@@ -39,17 +39,14 @@ import {
   latestRamadanHijriYear,
   MAX_RAMADAN_DAYS,
   nextRamadan,
-  qadaBreakdownNote,
   qadaYearOptions,
+  QADA_CATEGORY_ID as QADA_CATEGORY,
+  MAX_QADA_ROWS,
 } from "@/lib/ramadan";
 import { formatMYR } from "@/lib/utils";
 import { getStoredUtm, getStoredClickIds } from "@/lib/utm";
 import type { PaymentMethod, UpsellSettings } from "@/lib/database.types";
 
-/** The category whose fidyah is owed per Ramadan that passed unmade. */
-const QADA_CATEGORY = "lewat_qada";
-/** One row per missed year; more than this is not a realistic payer. */
-const MAX_QADA_ROWS = 10;
 
 interface QadaRowState {
   /** Stable key, so removing a row does not shift what is typed into the rest. */
@@ -83,7 +80,7 @@ export function FidyahForm({
   // "Today" is fixed when the form mounts. Lewat qada' depends on the date
   // (a row's multiplier steps up the day a new Ramadan begins), and holding
   // it steady keeps the figure from shifting under someone mid-form.
-  const [now] = useState(() => new Date());
+  const [now, setNow] = useState(() => new Date());
   const yearOptions = useMemo(() => qadaYearOptions(now), [now]);
   const nextRowId = useRef(2);
   const [qadaRows, setQadaRows] = useState<QadaRowState[]>(() => [
@@ -172,14 +169,22 @@ export function FidyahForm({
           phone,
           negeri,
           category,
-          // Several years with different multipliers cannot be stored as one
-          // days x multiplier pair, so the days charged are flattened into
-          // one figure and the working goes into the note.
-          days: isQada ? qada.chargeableDays : result.days,
+          // Lewat qada': send the years and let the server work the amount
+          // out; days/multiplier are only the legacy shape for other
+          // categories. expectedFidyahSen lets the server tell us if the
+          // date has moved the figure since it was shown.
+          days: isQada ? 1 : result.days,
           multiplier: isQada ? 1 : result.multiplier,
-          message: isQada
-            ? [qadaBreakdownNote(qada), message.trim()].filter(Boolean).join("\n")
-            : message,
+          ...(isQada
+            ? {
+                qada: qadaRows.map((r) => ({
+                  hijriYear: r.hijriYear,
+                  days: r.days,
+                })),
+                expectedFidyahSen: qada.totalSen,
+              }
+            : {}),
+          message,
           method,
           upsellAccepted,
           upsellAmountSen: upsellAccepted
@@ -190,7 +195,17 @@ export function FidyahForm({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Ralat tidak dijangka.");
+      if (!res.ok) {
+        if (res.status === 409 && data.code === "AMOUNT_CHANGED") {
+          // A Ramadan began while the form was open. Recalculate on the
+          // server's clock so the screen shows what we would charge.
+          if (data.serverTime) setNow(new Date(data.serverTime));
+          toast.error(data.error);
+          setSubmitting(false);
+          return;
+        }
+        throw new Error(data.error ?? "Ralat tidak dijangka.");
+      }
 
       // Checkout initiated: the donation row exists and we're about to hand
       // the payer over to CHIP (or show the bank-transfer card). Fire it here

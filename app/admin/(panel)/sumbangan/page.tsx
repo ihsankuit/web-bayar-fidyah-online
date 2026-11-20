@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatQadaBreakdown } from "@/lib/ramadan";
 import { Download, RefreshCw, Send } from "lucide-react";
 
 import {
@@ -223,7 +224,14 @@ export default async function SumbanganPage({
                       {getCategory(d.category)?.title ?? d.category}
                     </TableCell>
                     <TableCell className="hidden text-sm lg:table-cell">
-                      {d.days} × {d.multiplier}
+                      {d.qada_breakdown?.length
+                        ? `${d.qada_breakdown.length} tahun`
+                        : `${d.days} × ${d.multiplier}`}
+                      {d.qada_breakdown?.length ? (
+                        <div className="text-xs text-muted-foreground">
+                          {formatQadaBreakdown(d.qada_breakdown)}
+                        </div>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatMYR(d.amount_sen)}

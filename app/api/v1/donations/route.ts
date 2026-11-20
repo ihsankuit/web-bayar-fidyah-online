@@ -12,6 +12,7 @@ import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { createDonation } from "@/lib/create-donation";
 import { emitDonationEvent } from "@/lib/webhooks";
 import { SITE_URL } from "@/lib/site-url";
+import { MAX_QADA_ROWS } from "@/lib/ramadan";
 import type { Donation, DonationStatus } from "@/lib/database.types";
 
 /**
@@ -100,8 +101,22 @@ const createSchema = z.object({
   phone: z.string().trim().max(30).optional().default(""),
   negeri: z.string().trim().max(60).optional().default(""),
   category: z.string().trim().min(1),
-  days: z.number().int().min(1).max(365),
+  // Not needed for lewat_qada with `qada` rows: the amount is then worked out
+  // from the years, and anything sent here is ignored.
+  days: z.number().int().min(1).max(365).optional(),
   multiplier: z.number().int().min(1).max(20).optional().default(1),
+  // Lewat qada': one entry per missed year (Hijri year of that Ramadan).
+  qada: z
+    .array(
+      z.object({
+        hijri_year: z.number().int(),
+        days: z.number().int(),
+      })
+    )
+    .min(1)
+    .max(MAX_QADA_ROWS)
+    .optional(),
+  expected_amount_sen: z.number().int().optional(),
   message: z.string().trim().max(500).optional().default(""),
   method: z.enum(["chip", "manual"]).optional().default("chip"),
   // Attribution. Defaults to "api" so these rows can be told apart from
@@ -111,6 +126,9 @@ const createSchema = z.object({
   utm_campaign: z.string().trim().max(100).optional().default(""),
   utm_term: z.string().trim().max(100).optional().default(""),
   utm_content: z.string().trim().max(100).optional().default(""),
+}).refine((v) => v.qada !== undefined || v.days !== undefined, {
+  path: ["days"],
+  message: "Required unless `qada` is given",
 });
 
 /**
@@ -171,8 +189,10 @@ export async function POST(request: Request) {
     phone: input.phone,
     negeri: input.negeri,
     category: input.category,
-    days: input.days,
+    days: input.days ?? 1,
     multiplier: input.multiplier,
+    qada: input.qada?.map((r) => ({ hijriYear: r.hijri_year, days: r.days })),
+    expectedFidyahSen: input.expected_amount_sen,
     message: input.message,
     method: input.method,
     // No upsell over the API: it is a prompt shown to a human mid-checkout,
@@ -201,7 +221,10 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return NextResponse.json(
+      { error: result.error, ...(result.details ?? {}) },
+      { status: result.status }
+    );
   }
 
   after(() => emitDonationEvent("donation.created", result.donation));
@@ -214,6 +237,7 @@ export async function POST(request: Request) {
         amount: result.amountSen / 100,
         amount_sen: result.amountSen,
         currency: "MYR",
+        breakdown: result.breakdown ?? null,
         method: result.method,
         ...(result.method === "chip"
           ? { payment_url: result.checkoutUrl }

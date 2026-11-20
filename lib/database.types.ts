@@ -53,6 +53,24 @@ export interface Donation {
   /** Manual follow-up reminders sent for an unpaid/failed payment. */
   followup_count: number;
   last_followup_at: string | null;
+  /**
+   * How a lewat qada' total was reached, one entry per missed year. Null for
+   * every other category and for payments made before this existed — their
+   * working, if any, is in `message`. Optional because the column is added
+   * by a migration, so a row read before it runs simply lacks the key.
+   */
+  qada_breakdown?: QadaBreakdownRow[] | null;
+}
+
+/** One missed Ramadan within a lewat qada' donation. */
+export interface QadaBreakdownRow {
+  hijri_year: number;
+  /** "2025 (1446H)", frozen at payment time so a receipt never changes. */
+  label: string;
+  days: number;
+  /** Ramadans that had begun since, when the payment was made. */
+  multiplier: number;
+  subtotal_sen: number;
 }
 
 export interface BlogPost {

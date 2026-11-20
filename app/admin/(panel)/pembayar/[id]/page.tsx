@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatQadaBreakdown } from "@/lib/ramadan";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
 
@@ -149,7 +150,9 @@ export default async function PayerProfilePage({
                   <TableCell className="text-sm">
                     {getCategory(d.category)?.title ?? d.category}
                     <div className="text-xs text-muted-foreground">
-                      {d.days} × {d.multiplier}
+                      {d.qada_breakdown?.length
+                        ? formatQadaBreakdown(d.qada_breakdown)
+                        : `${d.days} × ${d.multiplier}`}
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-medium">
