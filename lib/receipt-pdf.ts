@@ -23,29 +23,31 @@ import {
  * from the database is sanitised before being drawn.
  */
 
-const BLACK = rgb(0, 0, 0);
+const BRAND = rgb(0.145, 0.388, 0.921); // the site's primary blue
+const BRAND_SOFT = rgb(0.937, 0.961, 1);
+const PAID = rgb(0.086, 0.639, 0.29);
+const INK = rgb(0.102, 0.137, 0.2);
+const MUTED = rgb(0.4, 0.44, 0.52);
+const HAIRLINE = rgb(0.87, 0.89, 0.93);
 const WHITE = rgb(1, 1, 1);
-const GREY = rgb(0.35, 0.35, 0.35);
-const RED = rgb(0.86, 0.1, 0.1);
-const BORDER = rgb(0.2, 0.2, 0.2);
 
 const PAGE_W = 595.28; // A4 portrait, in points
 const PAGE_H = 841.89;
-const MARGIN = 36;
+const MARGIN = 40;
 const RIGHT = PAGE_W - MARGIN;
-const TABLE_W = RIGHT - MARGIN;
+const CONTENT_W = RIGHT - MARGIN;
 const ROW_H = 26;
-const FOOTER_TOP = 90; // nothing in the table may be drawn below this
+const FOOTER_TOP = 96; // nothing in the table may be drawn below this
 
 // Issuer details as they should appear on a receipt.
 const ISSUER_SITE = "www.ihsanku.org";
 const ISSUER_EMAIL = "salam@ihsanku.org";
 const ISSUER_PHONE = "+601113190312";
 
-// Table columns: Produk | Harga | Kuantiti | Subjumlah
-const COL_PRICE = MARGIN + 262;
-const COL_QTY = COL_PRICE + 72;
-const COL_SUB = RIGHT - 104;
+// Table column right edges (numbers are right-aligned to these).
+const COL_RATE = RIGHT - 160;
+const COL_QTY = RIGHT - 84;
+const COL_TOTAL = RIGHT - 12;
 
 /**
  * Drops characters the standard WinAnsi encoding can't represent (emoji,
@@ -87,7 +89,10 @@ function receiptTime(input: string): string {
 }
 
 function money(sen: number): string {
-  return (sen / 100).toFixed(2);
+  return (sen / 100).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 interface Fonts {
@@ -160,211 +165,179 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
   pdf.setSubject("Resit pembayaran fidyah");
   pdf.setProducer("Bayar Fidyah Online");
 
-  let page = pdf.addPage([PAGE_W, PAGE_H]);
+  const newPage = (): PDFPage => {
+    const pg = pdf.addPage([PAGE_W, PAGE_H]);
+    pg.drawRectangle({ x: 0, y: PAGE_H - 8, width: PAGE_W, height: 8, color: BRAND });
+    return pg;
+  };
+  let page = newPage();
   const paidAt = donation.paid_at ?? donation.created_at;
 
-  // ---- Heading: logo left, RESIT + number/date right ---------------------
-  const logoW = 100;
+  // ---- Header ------------------------------------------------------------
+  const logoW = 108;
   const logoH = logoW / RECEIPT_LOGO_ASPECT;
-  page.drawImage(logo, {
-    x: MARGIN + 28,
-    y: PAGE_H - 52 - logoH,
-    width: logoW,
-    height: logoH,
-  });
+  page.drawImage(logo, { x: MARGIN, y: PAGE_H - 36 - logoH, width: logoW, height: logoH });
 
-  const title = "RESIT";
-  page.drawText(title, {
-    x: RIGHT - bold.widthOfTextAtSize(title, 22),
-    y: PAGE_H - 62,
-    size: 22,
+  rightText(page, "RESIT PEMBAYARAN FIDYAH", RIGHT, PAGE_H - 44, {
+    size: 8.5,
     font: bold,
-    color: BLACK,
+    color: BRAND,
   });
-  metaLine(page, fonts, PAGE_H - 88, "No. Resit :", sanitize(donation.reference));
-  metaLine(page, fonts, PAGE_H - 106, "Tarikh :", receiptDate(paidAt));
-
-  // ---- Issuer ------------------------------------------------------------
-  let y = PAGE_H - 175;
-  page.drawText(sanitize(ORG.name.replace("Ihsanku", "IhsanKu")), {
-    x: MARGIN + 12,
-    y,
-    size: 14,
+  rightText(page, sanitize(donation.reference), RIGHT, PAGE_H - 64, {
+    size: 17,
     font: bold,
-    color: BLACK,
+    color: INK,
   });
-  for (const text of [ISSUER_SITE, ISSUER_EMAIL, ISSUER_PHONE]) {
-    y -= 16;
-    page.drawText(text, { x: MARGIN + 12, y, size: 10, font, color: BLACK });
-  }
 
-  // LUNAS badge, outlined in red.
-  const badge = "LUNAS";
-  const badgeW = 86;
-  const badgeH = 46;
-  const badgeX = RIGHT - badgeW;
-  const badgeY = PAGE_H - 175 - badgeH + 14;
-  page.drawRectangle({
-    x: badgeX,
-    y: badgeY,
-    width: badgeW,
-    height: badgeH,
-    borderColor: RED,
-    borderWidth: 1.5,
+  // ---- Summary card: amount, status, when and how ------------------------
+  let y = PAGE_H - 112;
+  const cardH = 84;
+  roundedRect(page, MARGIN, y, CONTENT_W, cardH, 10, { fill: BRAND_SOFT });
+  page.drawText("Jumlah dibayar", {
+    x: MARGIN + 22,
+    y: y - 28,
+    size: 9.5,
+    font,
+    color: MUTED,
+  });
+  page.drawText(`RM ${money(donation.amount_sen)}`, {
+    x: MARGIN + 22,
+    y: y - 62,
+    size: 27,
+    font: bold,
+    color: BRAND,
+  });
+
+  const pill = "LUNAS";
+  const pillW = bold.widthOfTextAtSize(pill, 10) + 26;
+  roundedRect(page, RIGHT - 22 - pillW, y - 16, pillW, 22, 11, { fill: PAID });
+  page.drawText(pill, {
+    x: RIGHT - 22 - pillW + 13,
+    y: y - 31,
+    size: 10,
+    font: bold,
     color: WHITE,
   });
-  page.drawText(badge, {
-    x: badgeX + (badgeW - bold.widthOfTextAtSize(badge, 14)) / 2,
-    y: badgeY + (badgeH - 14) / 2 + 3,
-    size: 14,
+  const via = donation.payment_method === "manual" ? "Pindahan bank" : "CHIP (FPX / kad)";
+  rightText(page, `${receiptDate(paidAt)}, ${receiptTime(paidAt)}`, RIGHT - 22, y - 52, {
+    size: 9.5,
     font: bold,
-    color: RED,
+    color: INK,
   });
+  rightText(page, via, RIGHT - 22, y - 67, { size: 9, font, color: MUTED });
 
-  // ---- Payer -------------------------------------------------------------
-  y -= 38;
-  page.drawText("KEPADA :", { x: MARGIN + 12, y, size: 10, font: bold, color: BLACK });
-  const payer: [string, string][] = [
-    ["Nama", sanitize(donation.payer_name)],
-    ["Emel", sanitize(donation.payer_email)],
-    ["No. Telefon", donation.payer_phone ? sanitize(donation.payer_phone) : "-"],
-  ];
-  if (donation.negeri) payer.push(["Negeri", sanitize(donation.negeri)]);
-  for (const [label, value] of payer) {
-    y -= 17;
-    page.drawText(label, { x: MARGIN + 12, y, size: 10, font: bold, color: BLACK });
-    page.drawText(":", { x: MARGIN + 92, y, size: 10, font: bold, color: BLACK });
-    page.drawText(value, { x: MARGIN + 102, y, size: 10, font, color: BLACK });
-  }
+  // ---- Payer and issuer cards --------------------------------------------
+  y -= cardH + 18;
+  const gap = 14;
+  const colW = (CONTENT_W - gap) / 2;
+  const infoH = 104;
+  roundedRect(page, MARGIN, y, colW, infoH, 8, { stroke: HAIRLINE });
+  roundedRect(page, MARGIN + colW + gap, y, colW, infoH, 8, { stroke: HAIRLINE });
 
-  // ---- Table -------------------------------------------------------------
-  y -= 36;
-  const rows = rowsFor(donation);
+  const payerLines = [
+    sanitize(donation.payer_email),
+    donation.payer_phone ? sanitize(donation.payer_phone) : "",
+    donation.negeri ? sanitize(donation.negeri) : "",
+  ].filter(Boolean);
+  infoCard(page, fonts, MARGIN + 16, y, "DIBAYAR OLEH", sanitize(donation.payer_name), payerLines);
+  infoCard(
+    page,
+    fonts,
+    MARGIN + colW + gap + 16,
+    y,
+    "DIKELUARKAN OLEH",
+    sanitize(ORG.name.replace("Ihsanku", "IhsanKu")),
+    [ISSUER_SITE, ISSUER_EMAIL, ISSUER_PHONE, `ROS ${ORG.rosNumber}`]
+  );
+
+  // ---- Items table -------------------------------------------------------
+  y -= infoH + 28;
+  page.drawText("Butiran pembayaran", { x: MARGIN, y, size: 11, font: bold, color: INK });
+  y -= 12;
 
   const drawHeader = (pg: PDFPage, top: number): number => {
-    pg.drawRectangle({
-      x: MARGIN,
-      y: top - 30,
-      width: TABLE_W,
-      height: 30,
-      color: BLACK,
-    });
-    const h = { size: 10, font: bold, color: WHITE };
-    pg.drawText("Produk", { x: MARGIN + 10, y: top - 19, ...h });
-    centeredText(pg, "Harga (RM)", COL_PRICE, COL_QTY, top - 19, h);
-    centeredText(pg, "Kuantiti", COL_QTY, COL_SUB, top - 19, h);
-    rightText(pg, "Subjumlah (RM)", RIGHT - 10, top - 19, h);
-    return top - 30;
+    roundedRect(pg, MARGIN, top, CONTENT_W, 26, 6, { fill: BRAND_SOFT });
+    const h = { size: 8.5, font: bold, color: BRAND };
+    pg.drawText("PERKARA", { x: MARGIN + 12, y: top - 17, ...h });
+    rightText(pg, "KADAR (RM)", COL_RATE, top - 17, h);
+    rightText(pg, "KUANTITI", COL_QTY, top - 17, h);
+    rightText(pg, "JUMLAH (RM)", COL_TOTAL, top - 17, h);
+    return top - 26;
   };
 
   y = drawHeader(page, y);
-
+  const rows = rowsFor(donation);
   for (const row of rows) {
     if (y - ROW_H < FOOTER_TOP) {
       // Continue the table on a fresh page (a long lewat qada' list).
-      page = pdf.addPage([PAGE_W, PAGE_H]);
-      y = drawHeader(page, PAGE_H - 56);
+      page = newPage();
+      y = drawHeader(page, PAGE_H - 44);
     }
     y = drawRow(page, fonts, y, row);
   }
 
-  if (y - ROW_H * 4 < FOOTER_TOP) {
-    page = pdf.addPage([PAGE_W, PAGE_H]);
-    y = PAGE_H - 56;
+  // Room for the total bar and notes; otherwise they start a new page.
+  if (y - 120 < FOOTER_TOP) {
+    page = newPage();
+    y = PAGE_H - 44;
   }
 
-  // Jumlah (units) row.
-  const totalQty = rows.reduce((n, r) => n + r.qty, 0);
-  y = totalRow(page, fonts, y, "Jumlah", String(totalQty), money(donation.amount_sen));
-
-  // Spacer row, then the grand total.
-  box(page, MARGIN, y - 30, TABLE_W, 30);
-  y -= 30;
-  box(page, MARGIN, y - ROW_H, TABLE_W, ROW_H);
-  box(page, COL_SUB, y - ROW_H, RIGHT - COL_SUB, ROW_H);
-  rightText(page, "JUMLAH KESELURUHAN (RM)", COL_SUB - 10, y - 17, {
-    size: 10,
+  // ---- Total bar ---------------------------------------------------------
+  y -= 18;
+  const barW = 250;
+  roundedRect(page, RIGHT - barW, y, barW, 34, 8, { fill: BRAND });
+  page.drawText("JUMLAH DIBAYAR", {
+    x: RIGHT - barW + 16,
+    y: y - 21,
+    size: 9,
     font: bold,
-    color: BLACK,
+    color: WHITE,
   });
-  rightText(page, money(donation.amount_sen), RIGHT - 10, y - 17, {
-    size: 10,
+  rightText(page, `RM ${money(donation.amount_sen)}`, RIGHT - 16, y - 22, {
+    size: 14,
     font: bold,
-    color: BLACK,
+    color: WHITE,
   });
-  y -= ROW_H;
+  y -= 34;
 
-  const via =
-    donation.payment_method === "manual" ? "pindahan bank" : "CHIP (FPX/kad)";
-  page.drawText("*", { x: MARGIN, y: y - 14, size: 14, font: bold, color: RED });
-  page.drawText(
-    sanitize(
-      `Dibayar melalui ${via} pada ${receiptTime(paidAt)}, ${receiptDate(paidAt)}`
-    ),
-    { x: MARGIN + 8, y: y - 14, size: 10, font, color: BLACK }
-  );
   if (donation.qada_breakdown && donation.qada_breakdown.length > 0) {
     page.drawText(
-      sanitize(
-        "Kuantiti = bilangan hari x gandaan (Ramadan yang telah bermula sejak tahun puasa ditinggalkan)."
-      ),
-      { x: MARGIN + 8, y: y - 30, size: 8.5, font, color: GREY }
+      "Kuantiti = bilangan hari x gandaan, iaitu bilangan Ramadan yang telah bermula sejak tahun puasa ditinggalkan.",
+      { x: MARGIN, y: y - 22, size: 8, font, color: MUTED }
     );
+    y -= 14;
   }
+  page.drawText(
+    "Semoga Allah SWT menerima amalan anda dan memberi ganjaran berlipat ganda. Aamiin.",
+    { x: MARGIN, y: y - 28, size: 9, font: bold, color: INK }
+  );
 
   // ---- Footer (last page) ------------------------------------------------
   page.drawLine({
-    start: { x: MARGIN, y: 72 },
-    end: { x: RIGHT, y: 72 },
+    start: { x: MARGIN, y: 70 },
+    end: { x: RIGHT, y: 70 },
     thickness: 0.8,
-    color: GREY,
-    dashArray: [2, 2],
+    color: HAIRLINE,
   });
-  page.drawText("- Resit ini dijana dengan komputer dan tidak memerlukan tandatangan.", {
+  page.drawText("Resit ini dijana dengan komputer dan tidak memerlukan tandatangan.", {
     x: MARGIN,
-    y: 60,
+    y: 55,
     size: 8,
     font,
-    color: GREY,
+    color: MUTED,
   });
   page.drawText(
-    `- Jika anda mempunyai sebarang pertanyaan, anda boleh menghubungi kami melalui ${ISSUER_EMAIL} atau ${ISSUER_PHONE}`,
-    { x: MARGIN, y: 48, size: 8, font, color: GREY }
+    `Pertanyaan: ${ISSUER_EMAIL} atau ${ISSUER_PHONE}`,
+    { x: MARGIN, y: 43, size: 8, font, color: MUTED }
   );
-  const gen = `Dijana oleh bayarfidyahonline.com © ${new Date().getFullYear()}`;
-  page.drawText(gen, {
-    x: (PAGE_W - bold.widthOfTextAtSize(gen, 8.5)) / 2,
-    y: 28,
-    size: 8.5,
-    font: bold,
-    color: BLACK,
+  rightText(page, "bayarfidyahonline.com", RIGHT, 55, { size: 8.5, font: bold, color: BRAND });
+  rightText(page, `\u00A9 ${new Date().getFullYear()}`, RIGHT, 43, {
+    size: 8,
+    font,
+    color: MUTED,
   });
 
   return pdf.save();
-}
-
-function metaLine(
-  page: PDFPage,
-  fonts: Fonts,
-  y: number,
-  label: string,
-  value: string
-) {
-  // Labels end at a fixed column so the values line up beneath each other.
-  page.drawText(label, {
-    x: RIGHT - 130 - fonts.bold.widthOfTextAtSize(label, 10),
-    y,
-    size: 10,
-    font: fonts.bold,
-    color: BLACK,
-  });
-  page.drawText(value, {
-    x: RIGHT - fonts.font.widthOfTextAtSize(value, 10),
-    y,
-    size: 10,
-    font: fonts.font,
-    color: BLACK,
-  });
 }
 
 function rightText(
@@ -381,83 +354,79 @@ function rightText(
   });
 }
 
-function centeredText(
+/** A rounded rectangle whose top-left corner is (x, top). */
+function roundedRect(
   page: PDFPage,
-  text: string,
-  left: number,
-  right: number,
-  y: number,
-  style: { size: number; font: PDFFont; color: ReturnType<typeof rgb> }
+  x: number,
+  top: number,
+  w: number,
+  h: number,
+  r: number,
+  style: { fill?: ReturnType<typeof rgb>; stroke?: ReturnType<typeof rgb> }
 ) {
-  page.drawText(text, {
-    x: left + (right - left - style.font.widthOfTextAtSize(text, style.size)) / 2,
-    y,
-    ...style,
-  });
-}
-
-function box(page: PDFPage, x: number, y: number, w: number, h: number) {
-  page.drawRectangle({
+  const path =
+    `M ${r} 0 H ${w - r} A ${r} ${r} 0 0 1 ${w} ${r} V ${h - r} ` +
+    `A ${r} ${r} 0 0 1 ${w - r} ${h} H ${r} A ${r} ${r} 0 0 1 0 ${h - r} ` +
+    `V ${r} A ${r} ${r} 0 0 1 ${r} 0 Z`;
+  page.drawSvgPath(path, {
     x,
-    y,
-    width: w,
-    height: h,
-    borderColor: BORDER,
-    borderWidth: 0.8,
+    y: top,
+    color: style.fill,
+    borderColor: style.stroke,
+    borderWidth: style.stroke ? 1 : 0,
   });
 }
 
-/** One product row; truncates the label to fit its column. */
-function drawRow(page: PDFPage, fonts: Fonts, y: number, row: TableRow): number {
-  const top = y;
-  box(page, MARGIN, top - ROW_H, COL_PRICE - MARGIN, ROW_H);
-  box(page, COL_PRICE, top - ROW_H, COL_QTY - COL_PRICE, ROW_H);
-  box(page, COL_QTY, top - ROW_H, COL_SUB - COL_QTY, ROW_H);
-  box(page, COL_SUB, top - ROW_H, RIGHT - COL_SUB, ROW_H);
+function infoCard(
+  page: PDFPage,
+  fonts: Fonts,
+  x: number,
+  top: number,
+  label: string,
+  title: string,
+  lines: string[]
+) {
+  page.drawText(label, { x, y: top - 20, size: 7.5, font: fonts.bold, color: BRAND });
+  page.drawText(title.length > 34 ? `${title.slice(0, 33)}...` : title, {
+    x,
+    y: top - 38,
+    size: 11,
+    font: fonts.bold,
+    color: INK,
+  });
+  let ly = top - 54;
+  for (const line of lines) {
+    page.drawText(line.length > 44 ? `${line.slice(0, 43)}...` : line, {
+      x,
+      y: ly,
+      size: 8.5,
+      font: fonts.font,
+      color: MUTED,
+    });
+    ly -= 12;
+  }
+}
 
+/** One product row, separated by a hairline; the label is truncated to fit. */
+function drawRow(page: PDFPage, fonts: Fonts, y: number, row: TableRow): number {
   let label = row.label;
-  const maxW = COL_PRICE - MARGIN - 20;
-  while (label.length > 4 && fonts.font.widthOfTextAtSize(label, 10) > maxW) {
+  const maxW = COL_RATE - 70 - (MARGIN + 12);
+  while (label.length > 4 && fonts.font.widthOfTextAtSize(label, 9.5) > maxW) {
     label = label.slice(0, -1);
   }
   if (label !== row.label) label = `${label.trimEnd()}...`;
 
-  const style = { size: 10, font: fonts.font, color: BLACK };
-  page.drawText(label, { x: MARGIN + 10, y: top - 17, ...style });
-  const priceText = money(row.priceSen);
-  page.drawText(priceText, {
-    x: COL_PRICE + (COL_QTY - COL_PRICE - fonts.font.widthOfTextAtSize(priceText, 10)) / 2,
-    y: top - 17,
-    ...style,
+  const style = { size: 9.5, font: fonts.font, color: INK };
+  const base = y - 17;
+  page.drawText(label, { x: MARGIN + 12, y: base, ...style });
+  rightText(page, money(row.priceSen), COL_RATE, base, { ...style, color: MUTED });
+  rightText(page, String(row.qty), COL_QTY, base, { ...style, color: MUTED });
+  rightText(page, money(row.subtotalSen), COL_TOTAL, base, { ...style, font: fonts.bold });
+  page.drawLine({
+    start: { x: MARGIN, y: y - ROW_H },
+    end: { x: RIGHT, y: y - ROW_H },
+    thickness: 0.6,
+    color: HAIRLINE,
   });
-  const qtyText = String(row.qty);
-  page.drawText(qtyText, {
-    x: COL_QTY + (COL_SUB - COL_QTY - fonts.font.widthOfTextAtSize(qtyText, 10)) / 2,
-    y: top - 17,
-    ...style,
-  });
-  rightText(page, money(row.subtotalSen), RIGHT - 10, top - 17, style);
-  return top - ROW_H;
-}
-
-function totalRow(
-  page: PDFPage,
-  fonts: Fonts,
-  y: number,
-  label: string,
-  qty: string,
-  subtotal: string
-): number {
-  box(page, MARGIN, y - ROW_H, COL_QTY - MARGIN, ROW_H);
-  box(page, COL_QTY, y - ROW_H, COL_SUB - COL_QTY, ROW_H);
-  box(page, COL_SUB, y - ROW_H, RIGHT - COL_SUB, ROW_H);
-  const style = { size: 10, font: fonts.bold, color: BLACK };
-  rightText(page, label, COL_QTY - 12, y - 17, style);
-  page.drawText(qty, {
-    x: COL_QTY + (COL_SUB - COL_QTY - fonts.bold.widthOfTextAtSize(qty, 10)) / 2,
-    y: y - 17,
-    ...style,
-  });
-  rightText(page, subtotal, RIGHT - 10, y - 17, style);
   return y - ROW_H;
 }
