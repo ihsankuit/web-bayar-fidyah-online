@@ -3,7 +3,16 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Check, Copy, Download, Loader2, Minus, Plus, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  Download,
+  Loader2,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -93,6 +102,7 @@ export function FidyahForm({
   const [rangeFrom, setRangeFrom] = useState<number | null>(null);
   const [rangeTo, setRangeTo] = useState<number | null>(null);
   const [rangeDays, setRangeDays] = useState(30);
+  const [showRange, setShowRange] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -143,6 +153,7 @@ export function FidyahForm({
         days: rangeDays,
       }))
     );
+    setShowRange(false);
   }
 
   function updateQadaRow(id: number, patch: Partial<QadaRowState>) {
@@ -327,15 +338,30 @@ export function FidyahForm({
 
           {isQada && (
             <div className="space-y-4">
-              <div className="space-y-3 rounded-lg border border-dashed p-4">
-                <div>
-                  <p className="text-sm font-medium">Tertunggak banyak tahun?</p>
-                  <p className="text-xs text-muted-foreground">
-                    Isi julat tahun dan purata hari setahun, kemudian ubah
-                    mana-mana tahun jika perlu. Sehingga {MAX_QADA_ROWS} tahun.
-                  </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+              <div className="rounded-lg border border-dashed">
+                <button
+                  type="button"
+                  onClick={() => setShowRange((v) => !v)}
+                  aria-expanded={showRange}
+                  className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                >
+                  <span>
+                    <span className="block text-sm font-medium">
+                      Tertunggak banyak tahun?
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      Isi julat tahun sekaligus, sehingga {MAX_QADA_ROWS} tahun.
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 transition-transform ${
+                      showRange ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {showRange && (
+              <div className="space-y-3 border-t p-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_auto]">
                   <div className="space-y-2">
                     <Label htmlFor="range-from">Dari tahun</Label>
                     <Select
@@ -343,7 +369,7 @@ export function FidyahForm({
                       onValueChange={(v) => setRangeFrom(Number(v))}
                     >
                       <SelectTrigger id="range-from">
-                        <SelectValue placeholder="Tahun paling lama" />
+                        <SelectValue placeholder="Pilih tahun" />
                       </SelectTrigger>
                       <SelectContent>
                         {yearOptions.map((o) => (
@@ -361,7 +387,7 @@ export function FidyahForm({
                       onValueChange={(v) => setRangeTo(Number(v))}
                     >
                       <SelectTrigger id="range-to">
-                        <SelectValue placeholder="Tahun terkini" />
+                        <SelectValue placeholder="Pilih tahun" />
                       </SelectTrigger>
                       <SelectContent>
                         {yearOptions.map((o) => (
@@ -372,7 +398,7 @@ export function FidyahForm({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="col-span-2 space-y-2 sm:col-span-1">
                     <Label>Hari setahun</Label>
                     <Stepper
                       value={rangeDays}
@@ -383,9 +409,16 @@ export function FidyahForm({
                     />
                   </div>
                 </div>
-                <Button type="button" variant="outline" onClick={generateRange}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={generateRange}
+                >
                   Jana senarai tahun
                 </Button>
+              </div>
+                )}
               </div>
 
               {qadaRows.map((row, i) => {
@@ -436,6 +469,7 @@ export function FidyahForm({
                         type="button"
                         variant="outline"
                         size="icon"
+                        className="h-11 w-11 sm:h-10 sm:w-10"
                         aria-label={`Buang ${computed.label}`}
                         onClick={() => removeQadaRow(row.id)}
                         disabled={qadaRows.length === 1}
@@ -908,6 +942,7 @@ function Stepper({
         type="button"
         variant="outline"
         size="icon"
+        className="h-11 w-11 shrink-0 sm:h-10 sm:w-10"
         aria-label={`Kurangkan ${label}`}
         onClick={() => onChange(clamp(value - 1))}
       >
@@ -920,12 +955,13 @@ function Stepper({
         value={value}
         aria-label={label}
         onChange={(e) => onChange(clamp(Number(e.target.value) || min))}
-        className="text-center"
+        className="h-11 text-center sm:h-10"
       />
       <Button
         type="button"
         variant="outline"
         size="icon"
+        className="h-11 w-11 shrink-0 sm:h-10 sm:w-10"
         aria-label={`Tambah ${label}`}
         disabled={max !== undefined && value >= max}
         onClick={() => onChange(clamp(value + 1))}
