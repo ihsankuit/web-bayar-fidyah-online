@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  summariseUpsell,
+  upsellAmount,
   buildRangeSeries,
   resolveRange,
   sumPaid,
@@ -121,5 +123,45 @@ describe("sumPaid / buildRangeSeries", () => {
     expect(donationWhen(d({ paid_at: "2026-11-01T00:00:00Z" })).toISOString()).toBe(
       "2026-11-01T00:00:00.000Z"
     );
+  });
+});
+
+describe("upsell revenue", () => {
+  const r = resolveRange({ range: "30d" }, NOW);
+  const up = (over: Partial<Donation>) =>
+    d({ amount_sen: 5000, upsell_accepted: true, upsell_amount_sen: 1000, upsell_title: "Wakaf", ...over });
+
+  it("counts only the upsell part, only on paid donations that took it", () => {
+    const rows = [
+      up({}),
+      up({ upsell_title: "Sedekah", upsell_amount_sen: 3000 }),
+      up({ status: "pending" }), // not paid
+      d({ amount_sen: 4000 }), // paid, no upsell
+      d({ amount_sen: 4000, upsell_accepted: false, upsell_amount_sen: 500 }), // declined: leftover amount ignored
+    ];
+    const s = summariseUpsell(rows, r.from, r.to);
+    expect(s.totalSen).toBe(4000);
+    expect(s.count).toBe(2);
+    expect(s.paidCount).toBe(4);
+    expect(s.takeRate).toBe(50);
+    expect(s.shareOfRevenue).toBe(Math.round((4000 / 18000) * 1000) / 10);
+    expect(s.byTitle.map((t) => t.title)).toEqual(["Sedekah", "Wakaf"]);
+    expect(s.byTitle[0].percent).toBe(100);
+  });
+
+  it("handles no payments and no upsells without dividing by zero", () => {
+    const s = summariseUpsell([], r.from, r.to);
+    expect(s).toMatchObject({ totalSen: 0, takeRate: 0, shareOfRevenue: 0, byTitle: [] });
+  });
+
+  it("series sums to the summary and ignores non-takers", () => {
+    const rows = [up({}), up({ amount_sen: 6000, upsell_amount_sen: 2000 }), d({})];
+    const total = buildRangeSeries(rows, r, upsellAmount).reduce((a, p) => a + p.total, 0);
+    expect(total).toBe(summariseUpsell(rows, r.from, r.to).totalSen);
+  });
+
+  it("an untitled upsell is still listed", () => {
+    const s = summariseUpsell([up({ upsell_title: null })], r.from, r.to);
+    expect(s.byTitle[0].title).toBe("Kempen Tambahan");
   });
 });

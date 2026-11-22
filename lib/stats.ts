@@ -297,7 +297,12 @@ const shortDay = new Intl.DateTimeFormat("ms-MY", { day: "numeric", month: "shor
  * one per month for a long one. Empty buckets are kept so the axis is
  * continuous and a quiet day reads as quiet, not missing.
  */
-export function buildRangeSeries(donations: Donation[], range: DateRange): PaymentPoint[] {
+export function buildRangeSeries(
+  donations: Donation[],
+  range: DateRange,
+  /** Amount to add for a paid donation, or null/0 to leave it out. Default: the whole payment. */
+  pick: (d: Donation) => number | null = (d) => d.amount_sen
+): PaymentPoint[] {
   const buckets = new Map<string, PaymentPoint>();
   const order: string[] = [];
   const keyOf = (instant: Date) => {
@@ -345,11 +350,68 @@ export function buildRangeSeries(donations: Donation[], range: DateRange): Payme
     if (d.status !== "paid") continue;
     const when = donationWhen(d);
     if (!inWindow(when, range.from, range.to)) continue;
+    const amount = pick(d);
+    if (!amount) continue;
     const bucket = buckets.get(keyOf(when));
     if (bucket) {
-      bucket.total += d.amount_sen;
+      bucket.total += amount;
       bucket.count += 1;
     }
   }
   return order.map((k) => buckets.get(k)!);
+}
+
+/** What an upsell was, in sen: its own amount, only on a paid donation that took it. */
+export const upsellAmount = (d: Donation): number | null =>
+  d.upsell_accepted && d.upsell_amount_sen > 0 ? d.upsell_amount_sen : null;
+
+export interface UpsellSummary {
+  totalSen: number;
+  count: number;
+  /** Paid donations in the window, whether or not they took the upsell. */
+  paidCount: number;
+  /** Share of paid donations that took it, 0-100, one decimal. */
+  takeRate: number;
+  /** Share of everything collected that the upsell accounts for, 0-100. */
+  shareOfRevenue: number;
+  byTitle: { title: string; totalSen: number; count: number; percent: number }[];
+}
+
+export function summariseUpsell(donations: Donation[], from: Date, to: Date): UpsellSummary {
+  let totalSen = 0;
+  let count = 0;
+  let paidCount = 0;
+  let collected = 0;
+  const titles = new Map<string, { totalSen: number; count: number }>();
+
+  for (const d of donations) {
+    if (d.status !== "paid" || !inWindow(donationWhen(d), from, to)) continue;
+    paidCount += 1;
+    collected += d.amount_sen;
+    const amount = upsellAmount(d);
+    if (!amount) continue;
+    totalSen += amount;
+    count += 1;
+    const title = d.upsell_title?.trim() || "Kempen Tambahan";
+    const t = titles.get(title) ?? { totalSen: 0, count: 0 };
+    t.totalSen += amount;
+    t.count += 1;
+    titles.set(title, t);
+  }
+
+  const sorted = [...titles.entries()].sort((a, b) => b[1].totalSen - a[1].totalSen);
+  const max = sorted[0]?.[1].totalSen ?? 0;
+  const pct = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 1000) / 10 : 0);
+  return {
+    totalSen,
+    count,
+    paidCount,
+    takeRate: pct(count, paidCount),
+    shareOfRevenue: pct(totalSen, collected),
+    byTitle: sorted.map(([title, v]) => ({
+      title,
+      ...v,
+      percent: max > 0 ? (v.totalSen / max) * 100 : 0,
+    })),
+  };
 }

@@ -40,6 +40,8 @@ import {
   momChange,
   resolveRange,
   sumPaid,
+  summariseUpsell,
+  upsellAmount,
   type BreakdownItem,
 } from "@/lib/stats";
 
@@ -86,6 +88,8 @@ export default async function DashboardPage({
   const totalPaidSen = current.totalSen;
   const uniquePayers = current.payers;
   const series = buildRangeSeries(allRows, range);
+  const upsell = summariseUpsell(allRows, range.from, range.to);
+  const upsellSeries = buildRangeSeries(allRows, range, upsellAmount);
   const change = range.previous
     ? momChange(current.totalSen, sumPaid(allRows, range.previous.from, range.previous.to).totalSen)
     : null;
@@ -234,6 +238,60 @@ export default async function DashboardPage({
         </CardHeader>
         <CardContent>
           <PaymentsChart data={series} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hasil Upsell</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Kempen tambahan yang dipilih ketika membayar fidyah, mengikut{" "}
+            {range.granularity === "day" ? "hari" : "bulan"} ({range.label}).
+            Jumlah ini sudah termasuk dalam Jumlah Terkumpul di atas.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Hasil upsell</p>
+              <p className="mt-1 text-2xl font-bold">
+                <AnimatedNumber value={upsell.totalSen} kind="myr" />
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {upsell.shareOfRevenue}% daripada jumlah terkumpul
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Kadar ambil</p>
+              <p className="mt-1 text-2xl font-bold">{upsell.takeRate}%</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {upsell.count} daripada {upsell.paidCount} pembayaran berjaya
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Purata upsell</p>
+              <p className="mt-1 text-2xl font-bold">
+                {formatMYR(upsell.count > 0 ? Math.round(upsell.totalSen / upsell.count) : 0)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">setiap pembayar yang ambil</p>
+            </div>
+          </div>
+          <PaymentsChart
+            data={upsellSeries}
+            unit="upsell"
+            color="var(--chart-2, var(--primary))"
+            emptyText="Tiada upsell dalam tempoh ini."
+          />
+          {upsell.byTitle.length > 1 && (
+            <BreakdownList
+              items={upsell.byTitle.map((t) => ({
+                label: t.title,
+                totalSen: t.totalSen,
+                count: t.count,
+                percent: t.percent,
+              }))}
+            />
+          )}
         </CardContent>
       </Card>
 

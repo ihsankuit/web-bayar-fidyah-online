@@ -30,10 +30,12 @@ function ChartTooltip({
   active,
   payload,
   label,
+  unit,
 }: {
   active?: boolean;
   payload?: { payload: PaymentPoint }[];
   label?: string;
+  unit: string;
 }) {
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
@@ -42,19 +44,29 @@ function ChartTooltip({
       <p className="font-medium text-popover-foreground">{label}</p>
       <p className="text-primary">{formatMYR(point.total)}</p>
       <p className="text-xs text-muted-foreground">
-        {point.count} pembayaran
+        {point.count} {unit}
       </p>
     </div>
   );
 }
 
-export function PaymentsChart({ data }: { data: PaymentPoint[] }) {
+export function PaymentsChart({
+  data,
+  unit = "pembayaran",
+  emptyText = "Belum ada pembayaran berjaya untuk dipaparkan.",
+  color = "var(--primary)",
+}: {
+  data: PaymentPoint[];
+  unit?: string;
+  emptyText?: string;
+  color?: string;
+}) {
   const hasData = data.some((d) => d.total > 0);
 
   if (!hasData) {
     return (
       <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-        Belum ada pembayaran berjaya untuk dipaparkan.
+        {emptyText}
       </div>
     );
   }
@@ -87,11 +99,11 @@ export function PaymentsChart({ data }: { data: PaymentPoint[] }) {
         />
         <Tooltip
           cursor={{ fill: "var(--accent)", opacity: 0.4 }}
-          content={<ChartTooltip />}
+          content={<ChartTooltip unit={unit} />}
         />
         <Bar
           dataKey="total"
-          fill="var(--primary)"
+          fill={color}
           radius={[4, 4, 0, 0]}
           maxBarSize={56}
         />
