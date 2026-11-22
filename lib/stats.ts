@@ -135,28 +135,35 @@ function mytMonthStart(d: Date, offset = 0): Date {
 }
 
 export type RangeKey =
+  | "semua"
+  | "hari-ini"
+  | "semalam"
   | "7d"
   | "30d"
-  | "90d"
-  | "6m"
   | "bulan-ini"
   | "bulan-lepas"
+  | "3b"
   | "tahun-ini"
-  | "semua"
-  | "custom";
+  | "12b"
+  | "custom"
+  // Older links: still understood, no longer offered.
+  | "90d"
+  | "6m";
 
-export const RANGE_PRESETS: { key: Exclude<RangeKey, "custom">; label: string }[] = [
-  { key: "7d", label: "7 hari" },
-  { key: "30d", label: "30 hari" },
-  { key: "90d", label: "90 hari" },
-  { key: "6m", label: "6 bulan" },
+export const RANGE_PRESETS: { key: Exclude<RangeKey, "custom" | "90d" | "6m">; label: string }[] = [
+  { key: "semua", label: "Semua tarikh" },
+  { key: "hari-ini", label: "Hari ini" },
+  { key: "semalam", label: "Semalam" },
+  { key: "7d", label: "7 hari lepas" },
+  { key: "30d", label: "30 hari lepas" },
   { key: "bulan-ini", label: "Bulan ini" },
   { key: "bulan-lepas", label: "Bulan lepas" },
+  { key: "3b", label: "3 bulan lepas" },
   { key: "tahun-ini", label: "Tahun ini" },
-  { key: "semua", label: "Semua" },
+  { key: "12b", label: "12 bulan lepas" },
 ];
 
-export const DEFAULT_RANGE: RangeKey = "6m";
+export const DEFAULT_RANGE: RangeKey = "semua";
 
 export interface DateRange {
   key: RangeKey;
@@ -216,39 +223,77 @@ export function resolveRange(
 ): DateRange {
   const today = mytDayStart(now);
   const tomorrow = new Date(today.getTime() + DAY_MS);
-  let key = (input.range as RangeKey) ?? DEFAULT_RANGE;
+  const key = (input.range ?? DEFAULT_RANGE) as RangeKey;
   let from: Date;
   let to: Date = tomorrow;
 
   const lastNDays = (n: number) => new Date(tomorrow.getTime() - n * DAY_MS);
+  // The same calendar day n months back (clamped: 31 May - 3 months -> 28/29 Feb).
+  const monthsBack = (n: number) => {
+    const s = new Date(today.getTime() + MYT_MS);
+    const y = s.getUTCFullYear();
+    const m = s.getUTCMonth() - n;
+    const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    const day = Math.min(s.getUTCDate(), last);
+    return new Date(Date.UTC(y, m, day) - MYT_MS);
+  };
+  // A fallback for anything unrecognised: never an error, just the default view.
+  const fallback = () =>
+    key === DEFAULT_RANGE ? null : resolveRange({ range: DEFAULT_RANGE }, now, earliest);
 
-  if (key === "custom") {
-    const a = parseMytDay(input.from);
-    const b = parseMytDay(input.to);
-    if (a && b) {
+  switch (key) {
+    case "custom": {
+      const a = parseMytDay(input.from);
+      const b = parseMytDay(input.to);
+      if (!a || !b) return fallback()!;
       // Typed backwards? Mean what they plainly meant.
       const [lo, hi] = a <= b ? [a, b] : [b, a];
       from = lo;
       to = new Date(hi.getTime() + DAY_MS); // the end day is included
-    } else {
-      key = DEFAULT_RANGE;
-      from = mytMonthStart(now, -5);
+      break;
     }
-  } else if (key === "7d") from = lastNDays(7);
-  else if (key === "30d") from = lastNDays(30);
-  else if (key === "90d") from = lastNDays(90);
-  else if (key === "bulan-ini") from = mytMonthStart(now);
-  else if (key === "bulan-lepas") {
-    from = mytMonthStart(now, -1);
-    to = mytMonthStart(now);
-  } else if (key === "tahun-ini") {
-    const s = new Date(now.getTime() + MYT_MS);
-    from = new Date(Date.UTC(s.getUTCFullYear(), 0, 1) - MYT_MS);
-  } else if (key === "semua") {
-    from = earliest ? mytMonthStart(earliest) : mytMonthStart(now, -11);
-  } else {
-    key = "6m";
-    from = mytMonthStart(now, -5);
+    case "hari-ini":
+      from = today;
+      break;
+    case "semalam":
+      from = new Date(today.getTime() - DAY_MS);
+      to = today;
+      break;
+    case "7d":
+      from = lastNDays(7);
+      break;
+    case "30d":
+      from = lastNDays(30);
+      break;
+    case "90d":
+      from = lastNDays(90);
+      break;
+    case "bulan-ini":
+      from = mytMonthStart(now);
+      break;
+    case "bulan-lepas":
+      from = mytMonthStart(now, -1);
+      to = mytMonthStart(now);
+      break;
+    case "3b":
+      from = monthsBack(3);
+      break;
+    case "12b":
+      from = monthsBack(12);
+      break;
+    case "6m":
+      from = mytMonthStart(now, -5);
+      break;
+    case "tahun-ini": {
+      const s = new Date(now.getTime() + MYT_MS);
+      from = new Date(Date.UTC(s.getUTCFullYear(), 0, 1) - MYT_MS);
+      break;
+    }
+    case "semua":
+      from = earliest ? mytMonthStart(earliest) : mytMonthStart(now, -11);
+      break;
+    default:
+      return fallback()!;
   }
 
   const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / DAY_MS));

@@ -65,7 +65,7 @@ describe("resolveRange", () => {
       {},
     ]) {
       const r = resolveRange(input, NOW);
-      expect(r.key).toBe("6m");
+      expect(r.key).toBe("semua");
       expect(r.days).toBeGreaterThan(0);
     }
   });
@@ -88,6 +88,33 @@ describe("resolveRange", () => {
     const s = buildRangeSeries([], r);
     expect(s.map((p) => p.count)).toEqual([0, 0, 0, 0]);
     expect(s[0].label).toMatch(/25$/);
+  });
+});
+
+describe("resolveRange - presets", () => {
+  it("hari-ini is one Malaysian day, vs the day before", () => {
+    const r = resolveRange({ range: "hari-ini" }, NOW);
+    expect(r.days).toBe(1);
+    expect(r.from.toISOString()).toBe("2026-11-21T16:00:00.000Z");
+    expect(r.previous?.from.toISOString()).toBe("2026-11-20T16:00:00.000Z");
+  });
+
+  it("semalam is the whole of yesterday and excludes today", () => {
+    const r = resolveRange({ range: "semalam" }, NOW);
+    expect(r.days).toBe(1);
+    expect(r.to.toISOString()).toBe("2026-11-21T16:00:00.000Z");
+  });
+
+  it("3b and 12b go back the same calendar day, clamping short months", () => {
+    expect(resolveRange({ range: "3b" }, NOW).from.toISOString()).toBe("2026-08-21T16:00:00.000Z");
+    expect(resolveRange({ range: "12b" }, NOW).from.toISOString()).toBe("2025-11-21T16:00:00.000Z");
+    const may31 = new Date("2026-05-31T02:00:00Z");
+    expect(resolveRange({ range: "3b" }, may31).from.toISOString()).toBe("2026-02-27T16:00:00.000Z");
+  });
+
+  it("old 90d and 6m links still resolve", () => {
+    expect(resolveRange({ range: "90d" }, NOW).key).toBe("90d");
+    expect(resolveRange({ range: "6m" }, NOW).key).toBe("6m");
   });
 });
 

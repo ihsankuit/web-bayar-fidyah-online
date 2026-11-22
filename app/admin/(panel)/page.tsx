@@ -27,6 +27,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Donation } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
+import { DateRangePicker } from "@/components/admin/date-range-picker";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PaymentsChart } from "@/components/admin/payments-chart";
@@ -132,62 +133,22 @@ export default async function DashboardPage({
         </p>
       </div>
 
-      <Card>
-        <CardContent className="space-y-3 p-4">
-          <div className="flex flex-wrap gap-2">
-            {RANGE_PRESETS.map((p) => (
-              <Link
-                key={p.key}
-                href={`/admin?range=${p.key}`}
-                className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                  range.key === p.key
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                }`}
-              >
-                {p.label}
-              </Link>
-            ))}
-          </div>
-          <form method="get" action="/admin" className="flex flex-wrap items-end gap-2">
-            <input type="hidden" name="range" value="custom" />
-            <label className="text-xs text-muted-foreground">
-              Dari
-              <input
-                type="date"
-                name="from"
-                required
-                defaultValue={mytIsoDay(range.from)}
-                className="mt-1 block rounded-md border bg-background px-2 py-1 text-sm text-foreground"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              Hingga
-              <input
-                type="date"
-                name="to"
-                required
-                defaultValue={mytIsoDay(new Date(range.to.getTime() - 1))}
-                className="mt-1 block rounded-md border bg-background px-2 py-1 text-sm text-foreground"
-              />
-            </label>
-            <button
-              type="submit"
-              className={`rounded-md border px-3 py-1.5 text-sm ${
-                range.key === "custom"
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              Guna tarikh
-            </button>
-          </form>
-          <p className="text-xs text-muted-foreground">
-            Menunjukkan: <span className="font-medium text-foreground">{range.label}</span>{" "}
-            ({range.days} hari, waktu Malaysia)
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-wrap items-center gap-3">
+        <DateRangePicker
+          presets={RANGE_PRESETS}
+          activeKey={range.key}
+          from={mytIsoDay(range.from)}
+          to={mytIsoDay(new Date(range.to.getTime() - 1))}
+          summary={
+            RANGE_PRESETS.find((p) => p.key === range.key)?.label ??
+            (range.key === "custom" ? "Julat sendiri" : "Tarikh")
+          }
+        />
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{range.label}</span> ({range.days}{" "}
+          hari, waktu Malaysia)
+        </p>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => {
