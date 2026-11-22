@@ -42,6 +42,7 @@ import { getRecentSocialProof } from "@/lib/social-proof";
 import { getFeaturedGuides } from "@/lib/guides";
 import { parseYouTubeId, youtubeEmbedUrl } from "@/lib/youtube";
 import { formatMYR } from "@/lib/utils";
+import { ScrollReveal } from "@/components/site/scroll-reveal";
 import { SocialProofNotification } from "@/components/site/social-proof-notification";
 import { SITE_URL } from "@/lib/site-url";
 import { ORG, ORG_SAME_AS } from "@/lib/organization";
@@ -367,7 +368,7 @@ export default async function HomePage() {
         )}
 
         {/* Hukum Fidyah */}
-        <section id="hukum" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
+        <section id="hukum" data-reveal className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               {content.hukum_title}
@@ -441,7 +442,7 @@ export default async function HomePage() {
         )}
 
         {/* Categories */}
-        <section id="kategori" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
+        <section id="kategori" data-reveal className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-6xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -494,7 +495,7 @@ export default async function HomePage() {
         </section>
 
         {/* Qada' vs Fidyah reference table */}
-        <section id="qada-fidyah" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
+        <section id="qada-fidyah" data-reveal className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-5xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -533,7 +534,7 @@ export default async function HomePage() {
         </section>
 
         {/* Cara Kira Fidyah */}
-        <section id="cara-kira" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
+        <section id="cara-kira" data-reveal className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-4xl px-4">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -686,7 +687,7 @@ export default async function HomePage() {
         )}
 
         {/* Liputan Negeri */}
-        <section id="negeri" className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
+        <section id="negeri" data-reveal className="scroll-mt-20 bg-muted/30 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-4xl px-4 text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Bayar Fidyah Online di Semua Negeri di Malaysia
@@ -710,7 +711,7 @@ export default async function HomePage() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
+        <section id="faq" data-reveal className="scroll-mt-20 py-12 sm:py-16 lg:py-24">
           <div className="mx-auto max-w-3xl px-4">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -806,6 +807,7 @@ export default async function HomePage() {
           </div>
         </section>
       </main>
+      <ScrollReveal />
       <Footer />
     </div>
   );

@@ -130,3 +130,16 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Scroll reveal — see components/site/scroll-reveal.tsx. Inert unless the
+   component has run, and off for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-reveal-ready] [data-reveal]:not(.is-in) {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  html[data-reveal-ready] [data-reveal] {
+    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
