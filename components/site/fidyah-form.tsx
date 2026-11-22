@@ -54,6 +54,7 @@ import {
   QADA_REVIEW_THRESHOLD_SEN,
 } from "@/lib/ramadan";
 import { formatMYR } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { getStoredUtm, getStoredClickIds } from "@/lib/utm";
 import type { PaymentMethod, UpsellSettings } from "@/lib/database.types";
 
@@ -568,7 +569,7 @@ export function FidyahForm({
             <div className="mt-1 flex items-end justify-between">
               <span className="text-sm text-muted-foreground">Perlu dibayar</span>
               <span className="text-3xl font-bold text-primary">
-                {formatMYR(totalSen)}
+                <AnimatedNumber value={totalSen} kind="myr" durationMs={450} />
               </span>
             </div>
           </div>

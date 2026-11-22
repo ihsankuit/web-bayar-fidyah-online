@@ -27,6 +27,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Donation } from "@/lib/database.types";
 import { formatMYR, formatDate } from "@/lib/utils";
 import { getCategory } from "@/lib/fidyah";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PaymentsChart } from "@/components/admin/payments-chart";
 import {
@@ -104,17 +105,18 @@ export default async function DashboardPage({
   const stats = [
     {
       label: "Jumlah Terkumpul",
-      value: formatMYR(totalPaidSen),
+      value: totalPaidSen,
+      kind: "myr" as const,
       icon: TrendingUp,
       badge: change,
     },
-    { label: "Pembayar", value: String(uniquePayers), icon: Users },
+    { label: "Pembayar", value: uniquePayers, icon: Users },
     {
       label: "Menunggu Bayaran",
-      value: String(pendingCount),
+      value: pendingCount,
       icon: Clock,
     },
-    { label: "Artikel Blog", value: String(postCount ?? 0), icon: FileText },
+    { label: "Artikel Blog", value: postCount ?? 0, icon: FileText },
   ];
 
   return (
@@ -191,7 +193,13 @@ export default async function DashboardPage({
               <CardContent className="flex items-center justify-between p-5">
                 <div>
                   <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <p className="mt-1 text-2xl font-bold">{s.value}</p>
+                  <p className="mt-1 text-2xl font-bold">
+                    <AnimatedNumber
+                      value={s.value}
+                      kind={"kind" in s ? s.kind : "int"}
+                      fromZero
+                    />
+                  </p>
                   {"badge" in s && s.badge !== null && s.badge !== undefined && (
                     <p
                       className={`mt-1 flex items-center gap-0.5 text-xs font-medium ${
