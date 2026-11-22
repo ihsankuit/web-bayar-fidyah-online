@@ -64,7 +64,8 @@ Exceeding the limit returns `429 { "error": "Rate limit exceeded" }`.
 | 429 | Rate limit exceeded |
 | 500 | Server error |
 
-Error responses are always `{ "error": "<message>" }`.
+Error responses are always `{ "error": "<message>" }`. The manual-payment
+endpoints add a machine-readable `"code"`.
 
 ---
 
@@ -196,6 +197,169 @@ reconcile with `total_collected`. Totals are computed across every paid row
 
 ---
 
+### `POST /donations/manual`
+
+Record a payment that was **already made** by DuitNow QR or bank transfer — for
+example one the WhatsApp chatbot handled outside the site. Until now such a
+payment left no record, receipt or report.
+
+The record **always starts as `review` ("Perlu Semak")**. This endpoint cannot
+mark anything `paid`: staff match it against the bank statement in
+**Admin → Sumbangan** and confirm it there. That confirmation is what sends the
+receipt, fires the `donation.paid` webhook and the Purchase analytics event —
+exactly once, as for an online payment. Creating a record here creates no
+gateway link, sends no receipt, and fires only `donation.created`.
+
+> Run `supabase/add-manual-payments.sql` once before first use. Until then this
+> endpoint answers `503 MIGRATION_REQUIRED`.
+
+**Body** (JSON):
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `name` | string | **Required**, max 120 |
+| `email` | string | **Required**, valid email |
+| `phone`, `negeri` | string | Optional |
+| `message` | string | Optional note, max 500 — e.g. `"Bagi pihak arwah NAMA"` |
+| `category` | string | **Required**: `uzur_tua`, `sakit_kronik`, `hamil_menyusu`, `lewat_qada`, `meninggal_dunia`, `lain` |
+| `days` | integer | **Required** for every category except `lewat_qada` (1–365) |
+| `qada` | array | **Required** for `lewat_qada`: `[{"hijri_year": 1446, "days": 7}]`, 1–30 days per year. Not allowed on other categories |
+| `amount_sen` | integer | **Required.** What the sender believes was paid. Never trusted: the server recomputes with the same logic as `POST /quote` and answers `409 AMOUNT_MISMATCH` with the real amount if it differs |
+| `method` | `"qr"` \| `"bank_transfer"` | **Required** |
+| `paid_at` | ISO 8601 | Optional. When the sender paid. Not in the future, not older than a year. Used as the paid time on the receipt once staff confirm |
+| `utm_source` | string | Optional, default `chatbot-wa` |
+| `idempotency_key` | string | **Required.** 8–200 printable characters, no spaces, unique per payment |
+
+Sending a `status` field is rejected (`400`): the caller has no say in it.
+
+**Idempotency.** Repeating a request with the same `idempotency_key` returns the
+existing record with **HTTP 200** (and `"idempotent_replay": true`) instead of
+creating a duplicate (**201**). Concurrent requests with the same key are safe.
+
+```bash
+curl -X POST "https://bayarfidyahonline.com/api/v1/donations/manual" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Ahmad bin Ali",
+    "email": "ahmad@example.com",
+    "phone": "60123456789",
+    "negeri": "Selangor",
+    "message": "Bagi pihak arwah Ali bin Abu",
+    "category": "meninggal_dunia",
+    "days": 10,
+    "amount_sen": 4000,
+    "method": "qr",
+    "paid_at": "2026-11-22T10:15:00+08:00",
+    "idempotency_key": "wa-60123456789-1732245300"
+  }'
+```
+
+For `lewat_qada`, send the years instead of `days`:
+
+```bash
+curl -X POST "https://bayarfidyahonline.com/api/v1/donations/manual" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Siti Aminah",
+    "email": "siti@example.com",
+    "category": "lewat_qada",
+    "qada": [{"hijri_year": 1445, "days": 7}, {"hijri_year": 1446, "days": 5}],
+    "amount_sen": 5600,
+    "method": "bank_transfer",
+    "idempotency_key": "wa-siti-20261122-001"
+  }'
+```
+
+(Use `POST /quote` first to get the exact `amount_sen` for the current date.)
+
+**Response `201`** (`200` on a replay):
+
+```json
+{
+  "data": {
+    "reference": "FID-K3J9X2AB",
+    "status": "review",
+    "status_label": "Perlu Semak",
+    "amount": 40.00,
+    "amount_sen": 4000,
+    "currency": "MYR",
+    "method": "qr",
+    "created_at": "2026-11-22T02:31:09.000Z",
+    "requires_staff_review": false
+  }
+}
+```
+
+`requires_staff_review` is `true` at RM5,000 and over. Every record here is
+checked by staff regardless; the flag marks the large ones.
+
+**Errors**
+
+| Status | `code` | Meaning |
+| --- | --- | --- |
+| 400 | `VALIDATION_FAILED` | Body failed validation (`issues` lists each field) |
+| 400 | `INVALID_ORDER` | Unknown category, bad `qada` years/days, or below RM1.00 |
+| 409 | `AMOUNT_MISMATCH` | `amount_sen` differs from the server's figure; the body carries `amount_sen` (the real amount) and `expected_amount_sen` (what you sent) |
+| 429 | `RATE_LIMITED` | More than 60 requests a minute per API key |
+| 503 | `MIGRATION_REQUIRED` | `supabase/add-manual-payments.sql` has not been run |
+
+---
+
+### `POST /donations/{reference}/proof`
+
+Attach proof of payment to a record created by `POST /donations/manual`. Send
+**either**:
+
+- `multipart/form-data` with a `file` field, **or**
+- JSON `{"proof_url": "https://api.murpati.com/..."}` — the server downloads it.
+
+```bash
+# Upload a file
+curl -X POST "https://bayarfidyahonline.com/api/v1/donations/FID-K3J9X2AB/proof" \
+  -H "Authorization: Bearer $API_KEY" \
+  -F "file=@resit.jpg"
+
+# Or let the server fetch it
+curl -X POST "https://bayarfidyahonline.com/api/v1/donations/FID-K3J9X2AB/proof" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"proof_url": "https://api.murpati.com/media/abc123.jpg"}'
+```
+
+**Response `200`:** `{ "data": { "reference": "FID-K3J9X2AB", "proof_attached": true } }`
+
+Rules:
+
+- Only a record created by `POST /donations/manual` that is **still `review`** can
+  take a proof. An online (CHIP) record, or one staff have already confirmed,
+  is refused with `409`.
+- JPG, PNG, WEBP or PDF, **5MB at most**. The type is read from the file's own
+  bytes; the declared Content-Type and the file name are ignored.
+- A new proof **replaces** any earlier one.
+- `proof_url` must be **HTTPS** on an allowed host (`api.murpati.com`). IP
+  addresses, `localhost` and internal names are refused, redirects are not
+  followed, and the download is cut off after **15 seconds**.
+- A multipart body is also subject to the host's own request-size limit (about
+  4.5MB on Vercel). For anything larger, use `proof_url`.
+
+**Errors**
+
+| Status | `code` | Meaning |
+| --- | --- | --- |
+| 400 | `VALIDATION_FAILED` / `EMPTY_FILE` | No `file` / empty file / bad JSON body |
+| 400 | `PROOF_URL_NOT_ALLOWED` | `proof_url` is not HTTPS, is an IP, or is not on the allowed host list |
+| 404 | `NOT_FOUND` | No such reference |
+| 409 | `NOT_MANUAL_PAYMENT` | The record is an online payment |
+| 409 | `NOT_AWAITING_REVIEW` | The record is no longer `review` (already confirmed) |
+| 413 | `FILE_TOO_LARGE` | Over 5MB |
+| 415 | `UNSUPPORTED_FILE_TYPE` | Not JPG / PNG / WEBP / PDF |
+| 429 | `RATE_LIMITED` | More than 30 requests a minute per API key |
+| 502 / 504 | `PROOF_URL_FETCH_FAILED` / `PROOF_URL_TIMEOUT` | Could not download `proof_url` |
+
+---
+
 ### `GET /blog`
 
 List blog posts (any status — this endpoint is authenticated, unlike the
@@ -302,7 +466,7 @@ Configure a webhook URL at **Dashboard → Integrasi → Webhook Keluar
 
 | Event | Fires when |
 | --- | --- |
-| `donation.created` | A donation record is created (before payment) |
+| `donation.created` | A donation record is created (before payment; for a `POST /donations/manual` record the payment is already made and `status` is `review`) |
 | `donation.paid` | A payment is confirmed (CHIP webhook or manual admin approval) |
 | `donation.abandoned` | A pending payment is auto-expired (CHIP after 24h, manual after 7d with no proof) — useful for abandoned-cart follow-ups |
 
@@ -398,6 +562,7 @@ function verify(rawBody, signatureHeader, secret) {
 | `pending` | Created, awaiting payment |
 | `paid` | Payment confirmed |
 | `failed` | Payment failed/expired |
+| `review` | **Perlu Semak.** A QR / bank-transfer payment recorded over the API: already paid, waiting for staff to confirm. Filter with `GET /donations?status=review`; it is not included in `?status=pending` |
 
 ### Payment method (`payment_method`)
 
@@ -405,6 +570,8 @@ function verify(rawBody, signatureHeader, secret) {
 | --- | --- |
 | `chip` | FPX/card/QR via CHIP gateway |
 | `manual` | Manual bank transfer with uploaded proof |
+| `qr` | DuitNow QR, recorded over the API (`POST /donations/manual`) |
+| `bank_transfer` | Bank transfer, recorded over the API (`POST /donations/manual`) |
 
 ### Category (`category`)
 
@@ -456,3 +623,7 @@ listed here only so you don't mistake them for public integration points:
   `by_utm_source`, and a `utm_source` filter on `GET /donations`) plus Google
   Ads click ids (`gclid`/`gbraid`/`wbraid`) for offline conversion import;
   webhook payloads carry the same fields.
+- **Manual payments** — `POST /donations/manual` and
+  `POST /donations/{reference}/proof`; new status value `review`
+  (`?status=review`), new `payment_method` values `qr` and `bank_transfer`, and
+  `payment_method`, `proof_attached` and `claimed_paid_at` on donation objects.

@@ -6,7 +6,13 @@
  */
 
 export type DonationStatus = "pending" | "paid" | "failed";
-export type PaymentMethod = "chip" | "manual";
+/**
+ * chip: online via the gateway. manual: the payer chose bank transfer on the
+ * site. qr / bank_transfer: a payment already made outside the site (DuitNow
+ * QR or a transfer, typically handled by the WhatsApp chatbot) and recorded
+ * over the REST API for staff to confirm.
+ */
+export type PaymentMethod = "chip" | "manual" | "qr" | "bank_transfer";
 export type PostStatus = "draft" | "published";
 
 export interface Donation {
@@ -60,6 +66,16 @@ export interface Donation {
    * by a migration, so a row read before it runs simply lacks the key.
    */
   qada_breakdown?: QadaBreakdownRow[] | null;
+  /**
+   * The caller's key for a REST-created manual payment, so a retried request
+   * returns the same record. Optional: the column is added by a migration.
+   */
+  idempotency_key?: string | null;
+  /**
+   * When the sender says they paid (REST-created manual payments). Not
+   * `paid_at`, which means "confirmed" and is only set by staff.
+   */
+  claimed_paid_at?: string | null;
 }
 
 /** One missed Ramadan within a lewat qada' donation. */

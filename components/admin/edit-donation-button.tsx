@@ -1,15 +1,22 @@
 "use client";
 
 import { formatQadaBreakdown } from "@/lib/ramadan";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Loader2, Pencil, Trash2, Upload } from "lucide-react";
+import { ExternalLink, Loader2, Pencil, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 import { updateDonation } from "@/app/admin/(panel)/sumbangan/actions";
 import type { Donation } from "@/lib/database.types";
 import { FIDYAH_CATEGORIES, NEGERI } from "@/lib/fidyah";
+import {
+  isApiRecorded,
+  needsReview,
+  paymentMethodLabel,
+  sourceLabel,
+} from "@/lib/payment-methods";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,6 +42,92 @@ function SaveButton() {
 }
 
 /**
+ * The attached proof, shown in place so staff can match it against the bank
+ * statement without leaving the dialog. The bucket is private: the image is
+ * loaded through a short-lived signed URL, fetched when the dialog opens and
+ * again after an upload or removal (`version` changes).
+ */
+function ProofPreview({
+  donationId,
+  hasProof,
+  version,
+}: {
+  donationId: string;
+  hasProof: boolean;
+  version: number;
+}) {
+  // The outcome is stored against the request that produced it. Nothing is set
+  // synchronously inside the effect: a stale result (an older version, or a
+  // proof that has since been removed) simply no longer matches `key`.
+  const key = `${donationId}:${version}`;
+  const [result, setResult] = useState<{
+    key: string;
+    url?: string;
+    failed?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!hasProof) return;
+    let cancelled = false;
+    fetch(`/admin/sumbangan/proof/${donationId}`)
+      .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (cancelled) return;
+        setResult(ok && d.url ? { key, url: d.url as string } : { key, failed: true });
+      })
+      .catch(() => {
+        if (!cancelled) setResult({ key, failed: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [donationId, hasProof, version, key]);
+
+  if (!hasProof) return null;
+  const current = result?.key === key ? result : null;
+  const url = current?.url ?? null;
+
+  if (current?.failed) {
+    return (
+      <p className="text-xs text-destructive">Gagal memuatkan pratonton bukti.</p>
+    );
+  }
+  if (!url) {
+    return (
+      <div className="flex h-24 items-center justify-center rounded-md border border-dashed">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // The signed URL has no extension, so the type is read from the file name
+  // the server chose (always .jpg / .png / .webp / .pdf for API uploads).
+  const isPdf = /\.pdf(\?|$)/i.test(url);
+  return (
+    <div className="space-y-2">
+      {isPdf ? (
+        <p className="text-xs text-muted-foreground">Bukti ialah fail PDF.</p>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={url}
+          alt="Bukti pembayaran"
+          className="max-h-56 w-auto rounded-md border bg-background object-contain"
+        />
+      )}
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
+      >
+        <ExternalLink className="h-3 w-3" /> Buka bukti dalam tab baharu
+      </a>
+    </div>
+  );
+}
+
+/**
  * Edit a donation and, where needed, confirm it by hand.
  *
  * The case this is built for: a payer whose CHIP attempt failed, who paid
@@ -51,6 +144,8 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [proofPath, setProofPath] = useState(donation.proof_of_payment_path);
+  // Bumped after an upload / removal so the preview reloads.
+  const [proofVersion, setProofVersion] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function saveAction(formData: FormData) {
@@ -83,6 +178,7 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
       if (!res.ok) throw new Error(data.error ?? "Muat naik gagal.");
 
       setProofPath("ada");
+      setProofVersion((v) => v + 1);
       if (fileRef.current) fileRef.current.value = "";
       toast.success("Bukti pembayaran dimuat naik.");
       router.refresh();
@@ -103,6 +199,7 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
       if (!res.ok) throw new Error(data.error ?? "Gagal membuang bukti.");
 
       setProofPath(null);
+      setProofVersion((v) => v + 1);
       toast.success("Bukti pembayaran dibuang.");
       router.refresh();
     } catch (err) {
@@ -129,6 +226,38 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
           <DialogHeader>
             <DialogTitle>Sunting Sumbangan — {donation.reference}</DialogTitle>
           </DialogHeader>
+
+          {donation.payment_method !== "chip" && (
+            <div className="rounded-lg border border-border p-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium">
+                  {paymentMethodLabel(donation.payment_method)}
+                </span>
+                {sourceLabel(donation.utm_source) && (
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                    {sourceLabel(donation.utm_source)}
+                  </span>
+                )}
+                {needsReview(donation) && (
+                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                    Perlu Semak
+                  </span>
+                )}
+              </div>
+              {isApiRecorded(donation.payment_method) && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Dicatat melalui API untuk bayaran yang sudah dibuat di luar
+                  laman.
+                  {donation.claimed_paid_at
+                    ? ` Pengirim menyatakan bayaran pada ${formatDate(
+                        donation.claimed_paid_at
+                      )}; tarikh ini digunakan pada resit apabila disahkan.`
+                    : ""}{" "}
+                  Padankan dengan penyata bank sebelum mengesahkan.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Proof of payment. Its own section because it uploads on its own,
               before the form below is saved. */}
@@ -182,6 +311,15 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
               naik di sini. JPG, PNG, WEBP atau PDF, maksimum 5MB. Memuat naik
               yang baharu akan menggantikan yang lama.
             </p>
+            {/* Only when the dialog is open: it is mounted either way, and the
+                preview must not fetch a signed URL for every row in the list. */}
+            {open && (
+              <ProofPreview
+                donationId={donation.id}
+                hasProof={Boolean(proofPath)}
+                version={proofVersion}
+              />
+            )}
           </div>
 
           <form action={saveAction} className="space-y-4">

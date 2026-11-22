@@ -13,7 +13,7 @@ create table if not exists public.donations (
   reference      text not null unique,
   chip_purchase_id text,
   payment_method text not null default 'chip'
-                   check (payment_method in ('chip', 'manual')),
+                   check (payment_method in ('chip', 'manual', 'qr', 'bank_transfer')),
   proof_of_payment_path text,
   payer_name     text not null,
   payer_email    text not null,
@@ -85,11 +85,12 @@ alter table public.donations add column if not exists proof_of_payment_path text
 
 update public.donations
   set payment_method = 'chip'
-  where payment_method is null or payment_method not in ('chip', 'manual');
+  where payment_method is null
+     or payment_method not in ('chip', 'manual', 'qr', 'bank_transfer');
 
 alter table public.donations drop constraint if exists donations_payment_method_check;
 alter table public.donations add constraint donations_payment_method_check
-  check (payment_method in ('chip', 'manual'));
+  check (payment_method in ('chip', 'manual', 'qr', 'bank_transfer'));
 alter table public.donations alter column payment_method set default 'chip';
 
 -- ---------------------------------------------------------------------
@@ -137,6 +138,25 @@ alter table public.donations add column if not exists landing_url  text;
 --  or the /status page). Run this block if upgrading an existing database.
 -- ---------------------------------------------------------------------
 alter table public.donations add column if not exists conversion_sent_at timestamptz;
+
+-- ---------------------------------------------------------------------
+--  Manual payments created over the REST API (DuitNow QR / bank transfer
+--  handled by the WhatsApp chatbot). The payer has already paid; staff
+--  match it against the bank statement and confirm it in Admin.
+--   - payment_method 'qr' | 'bank_transfer' (constraint widened above)
+--   - idempotency_key: the caller's key; unique, so a retried request
+--     returns the existing record instead of creating a duplicate
+--   - claimed_paid_at: when the sender says they paid. Kept apart from
+--     paid_at on purpose: paid_at means "confirmed", and is set only when
+--     staff confirm. Used as the paid time on confirmation.
+--  Run this block if upgrading an existing database
+--  (or run supabase/add-manual-payments.sql on its own).
+-- ---------------------------------------------------------------------
+alter table public.donations add column if not exists idempotency_key text;
+alter table public.donations add column if not exists claimed_paid_at timestamptz;
+create unique index if not exists donations_idempotency_key_uidx
+  on public.donations (idempotency_key)
+  where idempotency_key is not null;
 
 -- ---------------------------------------------------------------------
 --  Upsell campaign accepted at checkout (combined into the same payment

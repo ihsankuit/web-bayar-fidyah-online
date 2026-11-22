@@ -18,7 +18,7 @@ import type { Donation, DonationStatus } from "@/lib/database.types";
 /**
  * GET /api/v1/donations
  * List donations for automations (e.g. n8n). Auth: API key.
- * Query params: status, utm_source, from, to (ISO, on created_at), offset,
+ * Query params: status (pending|paid|failed|review), utm_source, from, to (ISO, on created_at), offset,
  * limit. `limit` is optional and uncapped — omit it to return every matching
  * row (paged through internally).
  */
@@ -29,7 +29,10 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const status = url.searchParams.get("status") as DonationStatus | null;
+  const status = url.searchParams.get("status") as
+    | DonationStatus
+    | "review"
+    | null;
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
   const utmSource = url.searchParams.get("utm_source");
@@ -50,8 +53,18 @@ export async function GET(request: Request) {
         .from("donations")
         .select("*", { count: "exact" })
         .order("created_at", { ascending: false });
-      if (status && ["pending", "paid", "failed"].includes(status)) {
+      if (status === "review") {
+        // Recorded over the API as already paid, waiting for staff to confirm.
+        q = q
+          .eq("status", "pending")
+          .in("payment_method", ["qr", "bank_transfer"]);
+      } else if (status && ["pending", "paid", "failed"].includes(status)) {
         q = q.eq("status", status);
+        // `pending` means "awaiting payment". A QR / transfer recorded over
+        // the API is past that — it is reported as `review` — so keep it out.
+        if (status === "pending") {
+          q = q.not("payment_method", "in", "(qr,bank_transfer)");
+        }
       }
       if (from) q = q.gte("created_at", from);
       if (to) q = q.lte("created_at", to);

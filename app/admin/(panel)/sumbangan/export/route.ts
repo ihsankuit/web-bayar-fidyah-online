@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { paymentMethodLabel } from "@/lib/payment-methods";
 import { formatQadaBreakdown } from "@/lib/ramadan";
 import { createClient } from "@/lib/supabase/server";
 import { getCategory } from "@/lib/fidyah";
@@ -50,7 +51,8 @@ function toRow(d: Donation): string {
     d.qada_breakdown?.length ? formatQadaBreakdown(d.qada_breakdown) : "",
     (d.rate_sen / 100).toFixed(2),
     (d.amount_sen / 100).toFixed(2),
-    d.payment_method === "manual" ? "Pindahan Manual" : "CHIP",
+    // Keep the original "CHIP" text: spreadsheets already filter on it.
+    d.payment_method === "chip" ? "CHIP" : paymentMethodLabel(d.payment_method),
     d.status,
     formatDate(d.created_at),
     d.paid_at ? formatDate(d.paid_at) : "",

@@ -78,7 +78,37 @@ export default async function IntegrasiPage() {
               </code>{" "}
               — jumlah terkumpul &amp; pecahan
             </li>
+            <li>
+              <code className="rounded bg-muted px-1.5 py-0.5">
+                POST /api/v1/donations/manual
+              </code>{" "}
+              — catat bayaran QR / pindahan bank yang sudah dibuat (chatbot).
+              Sentiasa bermula sebagai <strong>Perlu Semak</strong>; hanya
+              staf boleh mengesahkan di Sumbangan. Jumlah dikira semula oleh
+              pelayan (ralat <code>AMOUNT_MISMATCH</code> jika tak sepadan).
+              Ulang <code>idempotency_key</code> yang sama akan memulangkan
+              rekod sedia ada, bukan pendua.
+            </li>
+            <li>
+              <code className="rounded bg-muted px-1.5 py-0.5">
+                POST /api/v1/donations/&#123;reference&#125;/proof
+              </code>{" "}
+              — lampirkan bukti pada rekod manual: <code>multipart</code> medan{" "}
+              <code>file</code>, atau JSON <code>proof_url</code> (HTTPS,
+              hos <code>api.murpati.com</code> sahaja). JPG/PNG/WEBP/PDF, maks
+              5MB.
+            </li>
           </ul>
+          <p className="text-xs text-muted-foreground">
+            Contoh penuh (curl), kod ralat dan format respons ada dalam{" "}
+            <a
+              href="/docs/api-reference.md"
+              className="underline underline-offset-2"
+            >
+              /docs/api-reference.md
+            </a>
+            .
+          </p>
         </CardContent>
       </Card>
     </div>

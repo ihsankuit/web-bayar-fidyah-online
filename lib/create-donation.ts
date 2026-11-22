@@ -121,7 +121,7 @@ export interface PriceInput {
   expectedFidyahSen?: number;
 }
 
-type PricedOrder =
+export type PricedOrder =
   | {
       ok: true;
       calc: FidyahCalculationResult;
@@ -138,7 +138,7 @@ type PricedOrder =
  * Work out what an order costs. The one place that does, for creating a
  * donation and for quoting one, so a quote can never differ from the charge.
  */
-function priceOrder(input: PriceInput, rateSen: number, now: Date): PricedOrder {
+export function priceOrder(input: PriceInput, rateSen: number, now: Date): PricedOrder {
   if (!getCategory(input.category)) {
     return { ok: false, status: 400, error: "Kategori tidak sah." };
   }
@@ -232,7 +232,7 @@ export async function quoteDonation(input: PriceInput): Promise<QuoteResult> {
   };
 }
 
-function makeReference(): string {
+export function makeReference(): string {
   const stamp = Date.now().toString(36).toUpperCase().slice(-6);
   const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
   return `FID-${stamp}${rand}`;

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatQadaBreakdown } from "@/lib/ramadan";
+import { paymentMethodLabel } from "@/lib/payment-methods";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, MapPin, Phone } from "lucide-react";
 
@@ -159,7 +160,7 @@ export default async function PayerProfilePage({
                     {formatMYR(d.amount_sen)}
                   </TableCell>
                   <TableCell className="hidden text-sm sm:table-cell">
-                    {d.payment_method === "manual" ? "Pindahan Manual" : "CHIP"}
+                    {paymentMethodLabel(d.payment_method)}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={d.status} />

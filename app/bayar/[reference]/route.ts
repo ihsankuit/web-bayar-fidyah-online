@@ -59,9 +59,11 @@ export async function GET(
     return NextResponse.redirect(statusUrl);
   }
 
-  // Already settled, or a manual bank transfer (no CHIP checkout to send them
-  // to — the status page carries the bank details and proof upload).
-  if (donation.status === "paid" || donation.payment_method === "manual") {
+  // Already settled, or anything that was not paid through CHIP (a manual
+  // bank transfer, or a QR / transfer recorded over the API): there is no
+  // checkout to send them to, and creating one here would invite a second
+  // payment for money that has already been sent.
+  if (donation.status === "paid" || donation.payment_method !== "chip") {
     statusUrl.searchParams.set(
       "status",
       donation.status === "paid" ? "paid" : "pending"

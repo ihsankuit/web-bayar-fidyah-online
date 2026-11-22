@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { Donation } from "@/lib/database.types";
+import { receiptChannelLabel } from "@/lib/payment-methods";
 import { getCategory } from "@/lib/fidyah";
 import { ORG } from "@/lib/organization";
 import {
@@ -218,7 +219,7 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
     font: bold,
     color: WHITE,
   });
-  const via = donation.payment_method === "manual" ? "Pindahan bank" : "CHIP (FPX / kad)";
+  const via = receiptChannelLabel(donation.payment_method);
   rightText(page, `${receiptDate(paidAt)}, ${receiptTime(paidAt)}`, RIGHT - 22, y - 52, {
     size: 9.5,
     font: bold,

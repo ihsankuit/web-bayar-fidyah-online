@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import type { BlogPost, Donation } from "@/lib/database.types";
 import { getIntegrationSettings } from "@/lib/integrations";
+import { apiStatus } from "@/lib/payment-methods";
 
 /**
  * Bearer/API-key auth for the public REST API (`/api/v1/*`). The key is managed
@@ -51,11 +52,25 @@ export function apiKeyFingerprint(request: Request): string {
   return crypto.createHash("sha256").update(provided).digest("hex").slice(0, 16);
 }
 
+/**
+ * Who to name in the activity log for an API-key request. There is no user
+ * session, so the key's fingerprint stands in: enough to tell one key from
+ * another, never enough to recover it.
+ */
+export function apiActor(request: Request): string {
+  return `api:key-${apiKeyFingerprint(request).slice(0, 8)}`;
+}
+
 /** Shape a donation row for API responses (Ringgit amount, no internal noise). */
 export function serializeDonation(d: Donation) {
   return {
     reference: d.reference,
-    status: d.status,
+    // `review` for a QR / bank-transfer payment recorded over the API that is
+    // waiting for staff; every other row keeps its stored status.
+    status: apiStatus(d),
+    payment_method: d.payment_method,
+    proof_attached: Boolean(d.proof_of_payment_path),
+    claimed_paid_at: d.claimed_paid_at ?? null,
     payer_name: d.payer_name,
     payer_email: d.payer_email,
     payer_phone: d.payer_phone,

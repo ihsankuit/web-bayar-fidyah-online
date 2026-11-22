@@ -6,8 +6,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  confirmDonationPaid,
   deleteDonation,
-  markDonationPaid,
   settleDonationByReference,
 } from "@/lib/donations";
 import { getPurchase } from "@/lib/chip";
@@ -71,11 +71,16 @@ export async function confirmManualPayment(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) return;
 
-  const donation = await markDonationPaid(id);
-  if (donation) {
+  // Logged only when THIS click is what confirmed it: if two staff press the
+  // button together, one confirms and the other finds it already done.
+  const { donation, confirmed } = await confirmDonationPaid(id);
+  if (donation && confirmed) {
     await logActivity("donation.confirm_manual_paid", {
       reference: donation.reference,
       amount_sen: donation.amount_sen,
+      method: donation.payment_method,
+      source: donation.utm_source ?? "-",
+      proof: donation.proof_of_payment_path ? "ada" : "tiada",
     });
   }
   revalidateAll();
@@ -366,9 +371,21 @@ export async function updateDonation(
     changes[FIELD_LABELS.status] = `${donation.status} → ${input.status}`;
 
     if (input.status === "paid") {
-      const settled = await markDonationPaid(id);
+      const { donation: settled, confirmed } = await confirmDonationPaid(id);
       if (!settled) return { error: "Gagal mengesahkan pembayaran." };
-      statusNote = " Resit dihantar kepada pembayar.";
+      statusNote = confirmed
+        ? " Resit dihantar kepada pembayar."
+        : " Sudah disahkan oleh orang lain; tiada resit dihantar semula.";
+      if (confirmed && donation.payment_method !== "chip") {
+        await logActivity("donation.confirm_manual_paid", {
+          reference: donation.reference,
+          amount_sen: settled.amount_sen,
+          method: donation.payment_method,
+          source: donation.utm_source ?? "-",
+          proof: donation.proof_of_payment_path ? "ada" : "tiada",
+          via: "sunting",
+        });
+      }
     } else {
       // Reversing a confirmation. Nothing is sent, and paid_at is cleared so
       // the record doesn't claim a payment time for a payment that is no

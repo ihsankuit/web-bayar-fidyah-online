@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import type { Donation } from "@/lib/database.types";
 import { getIntegrationSettings } from "@/lib/integrations";
+import { apiStatus } from "@/lib/payment-methods";
 
 /**
  * Outbound webhooks — POST events to an external automation endpoint (e.g. an
@@ -61,6 +62,9 @@ export async function sendWebhook(
 export function donationEventData(donation: Donation) {
   return {
     ...donation,
+    // Same status the REST API reports: `review` for a QR / bank-transfer
+    // payment waiting for staff, the stored status for everything else.
+    status: apiStatus(donation),
     amount: donation.amount_sen / 100,
     currency: "MYR",
   };

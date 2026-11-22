@@ -30,6 +30,13 @@ import { FollowUpButton } from "@/components/admin/follow-up-button";
 import { EditDonationButton } from "@/components/admin/edit-donation-button";
 import { getFollowUpSettings } from "@/lib/followup";
 import {
+  isApiRecorded,
+  isOffline,
+  needsReview,
+  paymentMethodLabel,
+  sourceLabel,
+} from "@/lib/payment-methods";
+import {
   confirmManualPayment,
   recheckChipStatus,
   resendReceipt,
@@ -71,20 +78,36 @@ export default async function SumbanganPage({
     .select("amount_sen")
     .eq("status", "paid");
 
+  const searchConds = term
+    ? [
+        `payer_name.ilike.%${term}%`,
+        `payer_email.ilike.%${term}%`,
+        `reference.ilike.%${term}%`,
+      ]
+    : [];
+
   if (status === "review") {
-    // Manual transfers with proof uploaded, awaiting admin confirmation.
-    listQuery = listQuery
-      .eq("status", "pending")
-      .eq("payment_method", "manual")
-      .not("proof_of_payment_path", "is", null);
-  } else if (status !== "all") {
-    listQuery = listQuery.eq("status", status as DonationStatus);
+    // Waiting for staff to check against a bank statement: a payment recorded
+    // over the API as already paid (QR / bank transfer), or a payer's own
+    // manual transfer once they have uploaded proof.
+    listQuery = listQuery.eq("status", "pending");
+    const reviewConds = [
+      "payment_method.in.(qr,bank_transfer)",
+      "and(payment_method.eq.manual,proof_of_payment_path.not.is.null)",
+    ];
+    // Two separate .or() calls would not be a reliable AND, so a search over
+    // the review list is spelled out as one OR of (review AND match) pairs.
+    const combined = searchConds.length
+      ? reviewConds.flatMap((r) => searchConds.map((m) => `and(${r},${m})`))
+      : reviewConds;
+    listQuery = listQuery.or(combined.join(","));
+  } else {
+    if (status !== "all") {
+      listQuery = listQuery.eq("status", status as DonationStatus);
+    }
+    if (searchConds.length) listQuery = listQuery.or(searchConds.join(","));
   }
-  if (term) {
-    const orFilter = `payer_name.ilike.%${term}%,payer_email.ilike.%${term}%,reference.ilike.%${term}%`;
-    listQuery = listQuery.or(orFilter);
-    sumQuery = sumQuery.or(orFilter);
-  }
+  if (searchConds.length) sumQuery = sumQuery.or(searchConds.join(","));
 
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
@@ -242,15 +265,20 @@ export default async function SumbanganPage({
                       )}
                     </TableCell>
                     <TableCell className="hidden text-sm lg:table-cell">
-                      {d.payment_method === "manual" ? "Pindahan Manual" : "CHIP"}
+                      {paymentMethodLabel(d.payment_method)}
                     </TableCell>
                     <TableCell className="hidden text-sm lg:table-cell">
                       {d.utm_source ? (
                         <div>
                           <div className="font-medium">
-                            {d.utm_source}
+                            {sourceLabel(d.utm_source) ?? d.utm_source}
                             {d.utm_medium ? ` / ${d.utm_medium}` : ""}
                           </div>
+                          {sourceLabel(d.utm_source) && (
+                            <div className="text-xs text-muted-foreground">
+                              {d.utm_source}
+                            </div>
+                          )}
                           {(d.utm_campaign || d.utm_content || d.utm_term) && (
                             <div className="text-xs text-muted-foreground">
                               {[d.utm_campaign, d.utm_content, d.utm_term]
@@ -264,7 +292,14 @@ export default async function SumbanganPage({
                       )}
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={d.status} />
+                      <StatusBadge status={d.status} review={needsReview(d)} />
+                      {isApiRecorded(d.payment_method) &&
+                        d.status === "pending" &&
+                        !d.proof_of_payment_path && (
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Belum ada bukti
+                          </div>
+                        )}
                     </TableCell>
                     <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                       {formatDate(d.created_at)}
@@ -272,7 +307,7 @@ export default async function SumbanganPage({
                     <TableCell>
                       <div className="flex items-center justify-end gap-2">
                         <EditDonationButton donation={d} />
-                        {d.status !== "paid" && (
+                        {d.status !== "paid" && !isApiRecorded(d.payment_method) && (
                           <FollowUpButton
                             donation={d}
                             templates={followUpTemplates}
@@ -297,7 +332,7 @@ export default async function SumbanganPage({
                             path={d.proof_of_payment_path}
                           />
                         )}
-                        {d.payment_method === "manual" && d.status !== "paid" && (
+                        {isOffline(d.payment_method) && d.status !== "paid" && (
                           <form action={confirmManualPayment}>
                             <input type="hidden" name="id" value={d.id} />
                             <Button type="submit" size="sm" variant="outline">

@@ -44,6 +44,11 @@ export async function GET(request: Request) {
     .lt("created_at", chipCutoff)
     .select("*");
 
+  // Deliberately `manual` only. A QR / bank-transfer payment recorded over the
+  // API (payment_method 'qr' | 'bank_transfer') is NOT expired here: the money
+  // has already been sent, the record is waiting for staff to match it against
+  // a bank statement, and failing it after a week would drop a real payment.
+  // Do not widen this to "everything that is not chip".
   const { data: expiredManual } = await supabase
     .from("donations")
     .update({ status: "failed" })
