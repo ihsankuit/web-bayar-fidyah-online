@@ -30,16 +30,31 @@ import { getCategory } from "@/lib/fidyah";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PaymentsChart } from "@/components/admin/payments-chart";
 import {
-  buildMonthlySeries,
+  RANGE_PRESETS,
   buildBreakdown,
+  buildRangeSeries,
   buildSourceBreakdown,
+  donationWhen,
+  inWindow,
   momChange,
+  resolveRange,
+  sumPaid,
   type BreakdownItem,
 } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+/** Malaysian calendar date (YYYY-MM-DD) of an instant, for the date inputs. */
+function mytIsoDay(d: Date): string {
+  return new Date(d.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string; from?: string; to?: string }>;
+}) {
+  const query = await searchParams;
   const supabase = await createClient();
 
   const [{ data: donations }, { count: postCount }] = await Promise.all([
@@ -50,15 +65,29 @@ export default async function DashboardPage() {
     supabase.from("blog_posts").select("*", { count: "exact", head: true }),
   ]);
 
-  const rows = (donations as Donation[]) ?? [];
-  const paid = rows.filter((d) => d.status === "paid");
-  const pending = rows.filter((d) => d.status === "pending");
-  const totalPaidSen = paid.reduce((sum, d) => sum + d.amount_sen, 0);
-  const uniquePayers = new Set(paid.map((d) => d.payer_email)).size;
-  const monthlySeries = buildMonthlySeries(rows, 6);
-  const thisMonth = monthlySeries[monthlySeries.length - 1]?.total ?? 0;
-  const lastMonth = monthlySeries[monthlySeries.length - 2]?.total ?? 0;
-  const mom = momChange(thisMonth, lastMonth);
+  const allRows = (donations as Donation[]) ?? [];
+  const now = new Date();
+
+  const earliestPaid = allRows
+    .filter((d) => d.status === "paid")
+    .reduce<Date | null>((min, d) => {
+      const when = donationWhen(d);
+      return !min || when < min ? when : min;
+    }, null);
+  const range = resolveRange(query, now, earliestPaid);
+
+  // Everything below describes the chosen window. Paid money is placed by when
+  // it was paid; anything unpaid by when it was made.
+  const rows = allRows.filter((d) => inWindow(donationWhen(d), range.from, range.to));
+  // The queue is a live backlog, not a period figure: always every pending one.
+  const pendingCount = allRows.filter((d) => d.status === "pending").length;
+  const current = sumPaid(allRows, range.from, range.to);
+  const totalPaidSen = current.totalSen;
+  const uniquePayers = current.payers;
+  const series = buildRangeSeries(allRows, range);
+  const change = range.previous
+    ? momChange(current.totalSen, sumPaid(allRows, range.previous.from, range.previous.to).totalSen)
+    : null;
 
   const categoryBreakdown = buildBreakdown(
     rows,
@@ -77,12 +106,12 @@ export default async function DashboardPage() {
       label: "Jumlah Terkumpul",
       value: formatMYR(totalPaidSen),
       icon: TrendingUp,
-      badge: mom,
+      badge: change,
     },
     { label: "Pembayar", value: String(uniquePayers), icon: Users },
     {
       label: "Menunggu Bayaran",
-      value: String(pending.length),
+      value: String(pendingCount),
       icon: Clock,
     },
     { label: "Artikel Blog", value: String(postCount ?? 0), icon: FileText },
@@ -96,6 +125,63 @@ export default async function DashboardPage() {
           Ringkasan sumbangan dan aktiviti platform.
         </p>
       </div>
+
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          <div className="flex flex-wrap gap-2">
+            {RANGE_PRESETS.map((p) => (
+              <Link
+                key={p.key}
+                href={`/admin?range=${p.key}`}
+                className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                  range.key === p.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
+                }`}
+              >
+                {p.label}
+              </Link>
+            ))}
+          </div>
+          <form method="get" action="/admin" className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="range" value="custom" />
+            <label className="text-xs text-muted-foreground">
+              Dari
+              <input
+                type="date"
+                name="from"
+                required
+                defaultValue={mytIsoDay(range.from)}
+                className="mt-1 block rounded-md border bg-background px-2 py-1 text-sm text-foreground"
+              />
+            </label>
+            <label className="text-xs text-muted-foreground">
+              Hingga
+              <input
+                type="date"
+                name="to"
+                required
+                defaultValue={mytIsoDay(new Date(range.to.getTime() - 1))}
+                className="mt-1 block rounded-md border bg-background px-2 py-1 text-sm text-foreground"
+              />
+            </label>
+            <button
+              type="submit"
+              className={`rounded-md border px-3 py-1.5 text-sm ${
+                range.key === "custom"
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`}
+            >
+              Guna tarikh
+            </button>
+          </form>
+          <p className="text-xs text-muted-foreground">
+            Menunjukkan: <span className="font-medium text-foreground">{range.label}</span>{" "}
+            ({range.days} hari, waktu Malaysia)
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => {
@@ -117,7 +203,7 @@ export default async function DashboardPage() {
                       ) : (
                         <ArrowDownRight className="h-3.5 w-3.5" />
                       )}
-                      {Math.abs(s.badge)}% berbanding bulan lepas
+                      {Math.abs(s.badge)}% berbanding tempoh sebelumnya
                     </p>
                   )}
                 </div>
@@ -134,11 +220,12 @@ export default async function DashboardPage() {
         <CardHeader>
           <CardTitle>Jumlah Pembayaran</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Jumlah fidyah berjaya dikumpul mengikut bulan (6 bulan terakhir).
+            Jumlah fidyah berjaya dikumpul mengikut{" "}
+            {range.granularity === "day" ? "hari" : "bulan"} ({range.label}).
           </p>
         </CardHeader>
         <CardContent>
-          <PaymentsChart data={monthlySeries} />
+          <PaymentsChart data={series} />
         </CardContent>
       </Card>
 
@@ -201,7 +288,7 @@ export default async function DashboardPage() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle>Sumbangan Terkini</CardTitle>
+          <CardTitle>Sumbangan Terkini (dalam tempoh)</CardTitle>
           <Link
             href="/admin/sumbangan"
             className="inline-flex items-center gap-1 text-sm font-medium text-primary"
@@ -212,7 +299,7 @@ export default async function DashboardPage() {
         <CardContent>
           {rows.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Belum ada sumbangan direkodkan.
+              Tiada sumbangan dalam tempoh ini.
             </p>
           ) : (
             <Table>
