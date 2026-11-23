@@ -276,8 +276,20 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
     y = drawRow(page, fonts, y, row);
   }
 
-  // Room for the total bar and notes; otherwise they start a new page.
-  if (y - 120 < FOOTER_TOP) {
+  // The payer's own note. The working that older lewat qada' payments carry
+  // at the top of their message is left out: the table already shows it.
+  const noteText = (donation.message ?? "")
+    .split("\n")
+    .filter((l) => !l.startsWith("Lewat qada'"))
+    .join("\n")
+    .trim();
+  const noteLines = noteText
+    ? wrapText(sanitize(noteText), font, 10, CONTENT_W - 32).slice(0, 10)
+    : [];
+  const noteH = noteLines.length ? 38 + noteLines.length * 13 : 0;
+
+  // Room for the total bar, note and prayer; otherwise they start a new page.
+  if (y - 120 - noteH < FOOTER_TOP) {
     page = newPage();
     y = PAGE_H - 44;
   }
@@ -310,6 +322,17 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
     );
     y -= 14;
   }
+  if (noteLines.length > 0) {
+    y -= 22;
+    roundedRect(page, MARGIN, y, CONTENT_W, noteH - 6, 8, { stroke: HAIRLINE });
+    page.drawText("CATATAN", { x: MARGIN + 16, y: y - 20, size: 7.5, font: bold, color: BRAND });
+    let ny = y - 36;
+    for (const line of noteLines) {
+      page.drawText(line, { x: MARGIN + 16, y: ny, size: 10, font, color: INK });
+      ny -= 13;
+    }
+    y -= noteH - 6;
+  }
   page.drawText(
     "Semoga Allah SWT menerima amalan anda dan memberi ganjaran berlipat ganda. Aamiin.",
     { x: MARGIN, y: y - 28, size: 9, font: bold, color: INK }
@@ -341,6 +364,37 @@ export async function buildReceiptPdf(donation: Donation): Promise<Uint8Array> {
   });
 
   return pdf.save();
+}
+
+/** Breaks text into lines no wider than maxW, keeping the payer's own line breaks. */
+function wrapText(text: string, font: PDFFont, size: number, maxW: number): string[] {
+  const lines: string[] = [];
+  for (const paragraph of text.split("\n")) {
+    let current = "";
+    for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+      let w = word;
+      // A single word longer than the line (a long URL) is cut to fit.
+      while (font.widthOfTextAtSize(w, size) > maxW) {
+        let cut = w.length - 1;
+        while (cut > 1 && font.widthOfTextAtSize(w.slice(0, cut), size) > maxW) cut--;
+        if (current) {
+          lines.push(current);
+          current = "";
+        }
+        lines.push(w.slice(0, cut));
+        w = w.slice(cut);
+      }
+      const next = current ? `${current} ${w}` : w;
+      if (current && font.widthOfTextAtSize(next, size) > maxW) {
+        lines.push(current);
+        current = w;
+      } else {
+        current = next;
+      }
+    }
+    lines.push(current);
+  }
+  return lines;
 }
 
 function rightText(

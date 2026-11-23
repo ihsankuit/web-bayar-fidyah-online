@@ -69,6 +69,7 @@ export async function sendReceiptEmail(donation: Donation): Promise<void> {
             : ""
         }
         ${row("Jumlah dibayar", `<strong>${formatMYR(donation.amount_sen)}</strong>`)}
+        ${emailNote(donation.message)}
         ${row("Tarikh", donation.paid_at ? formatDate(donation.paid_at) : formatDate(donation.created_at))}
       </table>
       <p style="margin: 20px 0;">
@@ -162,6 +163,18 @@ function row(label: string, value: string): string {
     <td style="padding: 8px 0; color: #5a6478; border-bottom: 1px solid #eef1f6;">${label}</td>
     <td style="padding: 8px 0; text-align: right; border-bottom: 1px solid #eef1f6;">${value}</td>
   </tr>`;
+}
+
+/** The payer's own note as a table row; blank when there is none. */
+function emailNote(message: string | null): string {
+  const text = (message ?? "")
+    .split("\n")
+    .filter((l) => !l.startsWith("Lewat qada'"))
+    .join("\n")
+    .trim();
+  return text
+    ? row("Catatan", `<span style="white-space: pre-wrap;">${escapeHtml(text)}</span>`)
+    : "";
 }
 
 function escapeHtml(input: string): string {
