@@ -4,6 +4,9 @@ import { buildReceiptPdf } from "@/lib/receipt-pdf";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import type { Donation } from "@/lib/database.types";
 
+// Always built per request from the live record, never prerendered or reused.
+export const dynamic = "force-dynamic";
+
 /**
  * GET /resit/[reference] — downloads the PDF receipt for a settled payment.
  *
