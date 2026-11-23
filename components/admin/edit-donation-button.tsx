@@ -288,8 +288,9 @@ export function EditDonationButton({ donation }: { donation: Donation }) {
             {donation.qada_breakdown && donation.qada_breakdown.length > 0 && (
               <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
                 Pecahan lewat qada&apos;: {formatQadaBreakdown(donation.qada_breakdown)}.
-                Mengubah hari, gandaan atau jumlah di sini tidak mengubah
-                pecahan tahun ini.
+                Jika anda mengubah kategori, hari, gandaan atau jumlah, pecahan
+                tahun ini dipadam dan resit akan guna satu baris yang sepadan
+                dengan angka baharu.
               </p>
             )}
 

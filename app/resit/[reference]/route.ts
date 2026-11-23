@@ -60,8 +60,10 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="resit-${donation.reference}.pdf"`,
-        // Receipts are per-payer and immutable once paid — never shared cache.
-        "Cache-Control": "private, max-age=3600",
+        // Generated from the live record, which an admin can still correct
+        // after payment (name, email, amount...). Never cached, so the next
+        // download always shows the corrected receipt.
+        "Cache-Control": "private, no-store",
       },
     });
   } catch (err) {
