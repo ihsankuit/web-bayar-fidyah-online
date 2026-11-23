@@ -1,9 +1,21 @@
 import { ImageResponse } from "next/og";
 
+import {
+  RECEIPT_LOGO_ASPECT,
+  RECEIPT_LOGO_PNG_BASE64,
+} from "@/lib/receipt-logo";
+
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+/**
+ * The share image shown when the site is linked in WhatsApp, Facebook, X and
+ * so on. Brand blue with the Ihsanku logo, to match the site itself.
+ */
 export default async function OpengraphImage() {
+  const logoH = 84;
+  const logoW = Math.round(logoH * RECEIPT_LOGO_ASPECT);
+
   return new ImageResponse(
     (
       <div
@@ -12,48 +24,92 @@ export default async function OpengraphImage() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #0f172a 0%, #115e59 100%)",
-          color: "#ffffff",
+          background: "linear-gradient(135deg, #f4f8ff 0%, #dbe8ff 100%)",
           fontFamily: "sans-serif",
-          padding: "80px",
-          textAlign: "center",
+          position: "relative",
         }}
       >
         <div
           style={{
             display: "flex",
-            fontSize: 28,
-            fontWeight: 600,
-            letterSpacing: 2,
-            color: "#5eead4",
-            textTransform: "uppercase",
-            marginBottom: 24,
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: 1200,
+            height: 14,
+            background: "#2563eb",
           }}
-        >
-          Bayar Fidyah Online
-        </div>
+        />
         <div
           style={{
             display: "flex",
-            fontSize: 64,
-            fontWeight: 800,
-            lineHeight: 1.15,
-            maxWidth: 900,
+            position: "absolute",
+            right: -140,
+            bottom: -180,
+            width: 520,
+            height: 520,
+            borderRadius: 260,
+            background: "rgba(37, 99, 235, 0.10)",
           }}
-        >
-          Tunaikan Fidyah Puasa Anda di Malaysia
-        </div>
+        />
         <div
           style={{
             display: "flex",
-            fontSize: 30,
-            color: "#cbd5e1",
-            marginTop: 32,
+            position: "absolute",
+            right: 90,
+            bottom: 60,
+            width: 150,
+            height: 150,
+            borderRadius: 75,
+            background: "rgba(37, 99, 235, 0.14)",
           }}
-        >
-          Kiraan automatik &middot; Bayaran selamat &middot; Resit ke emel
+        />
+
+        <div style={{ display: "flex", flexDirection: "column", padding: "52px 80px" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`data:image/png;base64,${RECEIPT_LOGO_PNG_BASE64}`}
+            width={logoW}
+            height={logoH}
+            alt=""
+          />
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: 44,
+              fontSize: 70,
+              fontWeight: 700,
+              lineHeight: 1.12,
+              color: "#0f1b33",
+              maxWidth: 1040,
+            }}
+          >
+            Tunaikan Fidyah Anda dengan Mudah &amp; Selamat
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: 28,
+              fontSize: 30,
+              color: "#475569",
+            }}
+          >
+            Kiraan automatik · FPX &amp; kad · Resit terus ke emel
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: 36,
+              fontSize: 30,
+              fontWeight: 700,
+              color: "#2563eb",
+            }}
+          >
+            bayarfidyahonline.com
+          </div>
         </div>
       </div>
     ),

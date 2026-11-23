@@ -33,4 +33,7 @@ export function openGraphFor(path: string): NonNullable<Metadata["openGraph"]> {
  * no `openGraph` block at all; once a page declares one, it has to name the
  * image itself or share previews fall back to a blank card.
  */
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/opengraph-image`;
+// The version suffix is a cache-buster: link previews keep an image for weeks
+// per URL, so a redesigned image needs a new URL to be picked up. Bump it
+// whenever app/opengraph-image.tsx changes.
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/opengraph-image?v=2`;
