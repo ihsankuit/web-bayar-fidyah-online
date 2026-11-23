@@ -1,5 +1,6 @@
 "use server";
 
+import { formatQadaBreakdown } from "@/lib/ramadan";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -352,10 +353,28 @@ export async function updateDonation(
     }
   }
 
+  // A lewat qada' payment keeps a per-year breakdown. If the admin changes
+  // anything that figure depends on, that breakdown no longer adds up to the
+  // record, so it is dropped and the receipt falls back to one line that
+  // matches the corrected figures. The old working goes to the activity log.
+  const update: Record<string, unknown> = { ...fields };
+  const breakdown = donation.qada_breakdown;
+  if (
+    breakdown &&
+    breakdown.length > 0 &&
+    (donation.category !== fields.category ||
+      donation.days !== fields.days ||
+      donation.multiplier !== fields.multiplier ||
+      donation.amount_sen !== fields.amount_sen)
+  ) {
+    update.qada_breakdown = null;
+    changes["Pecahan qada'"] = `${formatQadaBreakdown(breakdown)} → dikosongkan`;
+  }
+
   if (Object.keys(changes).length > 0) {
     const { error } = await supabase
       .from("donations")
-      .update(fields)
+      .update(update)
       .eq("id", id);
     if (error) {
       console.error("[sumbangan/updateDonation] update failed:", error);

@@ -130,15 +130,21 @@ function rowsFor(donation: Donation): TableRow[] {
     }
   } else {
     const qty = donation.days * Math.max(1, donation.multiplier);
+    const subtotalSen = donation.amount_sen - upsellSen;
     rows.push({
       label: sanitize(
         donation.multiplier > 1
           ? `Fidyah ${category}, ${donation.days} hari x ${donation.multiplier}`
           : `Fidyah ${category}, ${donation.days} hari`
       ),
-      priceSen: donation.rate_sen,
+      // If an admin corrected the amount, show the rate that makes the row
+      // add up rather than a rate that contradicts the total.
+      priceSen:
+        qty > 0 && qty * donation.rate_sen !== subtotalSen
+          ? Math.round(subtotalSen / qty)
+          : donation.rate_sen,
       qty,
-      subtotalSen: donation.amount_sen - upsellSen,
+      subtotalSen,
     });
   }
 
