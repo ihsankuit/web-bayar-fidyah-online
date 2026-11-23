@@ -366,14 +366,24 @@ export async function updateDonation(
     changes["Pecahan qada'"] = `${formatQadaBreakdown(breakdown)} → dikosongkan`;
   }
 
+  // Writes go through the service-role client. `donations` has an admin
+  // SELECT policy but no UPDATE policy, so an update through the admin's own
+  // session matches zero rows and returns no error: the edit would report
+  // success and change nothing. The caller was already authenticated above.
+  const admin = createAdminClient();
+
   if (Object.keys(changes).length > 0) {
-    const { error } = await supabase
+    const { data: written, error } = await admin
       .from("donations")
       .update(update)
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
     if (error) {
       console.error("[sumbangan/updateDonation] update failed:", error);
       return { error: `Gagal menyimpan perubahan: ${error.message}` };
+    }
+    if (!written || written.length === 0) {
+      return { error: "Perubahan tidak disimpan: rekod tidak dikemaskini." };
     }
   }
 
@@ -392,11 +402,15 @@ export async function updateDonation(
       // Reversing a confirmation. Nothing is sent, and paid_at is cleared so
       // the record doesn't claim a payment time for a payment that is no
       // longer confirmed.
-      const { error } = await supabase
+      const { data: reverted, error } = await admin
         .from("donations")
         .update({ status: input.status, paid_at: null })
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
       if (error) return { error: `Gagal menukar status: ${error.message}` };
+      if (!reverted || reverted.length === 0) {
+        return { error: "Status tidak ditukar: rekod tidak dikemaskini." };
+      }
       statusNote =
         donation.status === "paid"
           ? " Pengesahan pembayaran ditarik balik."
