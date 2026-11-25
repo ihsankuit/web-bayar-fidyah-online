@@ -66,7 +66,6 @@ export default async function OpengraphImage() {
         />
 
         <div style={{ display: "flex", flexDirection: "column", padding: "52px 80px" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`data:image/png;base64,${RECEIPT_LOGO_PNG_BASE64}`}
             width={logoW}
