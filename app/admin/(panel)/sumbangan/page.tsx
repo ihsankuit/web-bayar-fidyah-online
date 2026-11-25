@@ -179,6 +179,53 @@ export default async function SumbanganPage({
               <Download className="h-4 w-4" /> Eksport CSV
             </a>
           </Button>
+          <details className="basis-full">
+            <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm hover:bg-accent">
+              <Download className="h-4 w-4" /> Eksport Google Ads
+            </summary>
+            <form
+              action="/admin/sumbangan/export-ads"
+              method="get"
+              className="mt-2 w-full max-w-sm space-y-3 rounded-lg border bg-card p-4"
+            >
+              <p className="text-xs text-muted-foreground">
+                Fail penukaran luar talian untuk bayaran yang tidak dikesan
+                pelayar. Muat naik di Google Ads &gt; Goals &gt; Conversions &gt;
+                Uploads. Baris yang sama tidak dikira dua kali.
+              </p>
+              <div className="space-y-1">
+                <label htmlFor="ads-name" className="text-xs font-medium">
+                  Nama penukaran (sama seperti dalam Google Ads)
+                </label>
+                <Input id="ads-name" name="name" required placeholder="Contoh: Fidyah Dibayar" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label htmlFor="ads-from" className="text-xs font-medium">Dari</label>
+                  <Input id="ads-from" name="from" type="date" />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="ads-to" className="text-xs font-medium">Hingga</label>
+                  <Input id="ads-to" name="to" type="date" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="ads-type" className="text-xs font-medium">Jenis ID klik</label>
+                <select
+                  id="ads-type"
+                  name="type"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="gclid">GCLID (biasa)</option>
+                  <option value="gbraid">GBRAID (iOS, app)</option>
+                  <option value="wbraid">WBRAID (iOS, web)</option>
+                </select>
+              </div>
+              <Button type="submit" size="sm" className="w-full">
+                Muat turun CSV
+              </Button>
+            </form>
+          </details>
         </div>
       </div>
 
