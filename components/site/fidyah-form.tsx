@@ -129,8 +129,23 @@ export function FidyahForm({
     [qadaRows, rateSen, now, basicOnly]
   );
   const upcomingRamadan = useMemo(() => nextRamadan(now), [now]);
+  // The server's own figure, kept when it disagreed with this browser's. A
+  // browser can work out Ramadan's start slightly differently (older engines
+  // lack the Umm al-Qura calendar), and recalculating here would never match,
+  // so the payer would be refused on every attempt. It applies only to the
+  // exact set of years it was given for.
+  const orderKey = useMemo(
+    () => JSON.stringify([qadaRows.map((r) => [r.hijriYear, r.days]), basicOnly]),
+    [qadaRows, basicOnly]
+  );
+  const [serverOverride, setServerOverride] = useState<{
+    key: string;
+    amountSen: number;
+  } | null>(null);
+  const overrideActive = serverOverride?.key === orderKey;
+  const qadaTotalSen = overrideActive ? serverOverride.amountSen : qada.totalSen;
   // The one figure everything below charges, whichever mode is showing.
-  const totalSen = isQada ? qada.totalSen : result.totalSen;
+  const totalSen = isQada ? qadaTotalSen : result.totalSen;
   // A big lewat qada' total is not charged online: it goes by bank transfer
   // and staff check the proof.
   const requiresReview = isQada && totalSen >= QADA_REVIEW_THRESHOLD_SEN;
@@ -179,7 +194,7 @@ export function FidyahForm({
     e.preventDefault();
     if (!name.trim()) return toast.error("Sila masukkan nama anda.");
     if (!email.trim()) return toast.error("Sila masukkan alamat emel anda.");
-    if (isQada && qada.totalSen === 0)
+    if (isQada && qadaTotalSen === 0)
       return toast.error(
         "Tiada fidyah kelewatan bagi tahun yang dipilih lagi. Qada' puasa anda sebelum Ramadan berikutnya."
       );
@@ -225,7 +240,7 @@ export function FidyahForm({
                   days: r.days,
                 })),
                 qadaBasicOnly: basicOnly,
-                expectedFidyahSen: qada.totalSen,
+                expectedFidyahSen: qadaTotalSen,
               }
             : {}),
           message,
@@ -244,6 +259,9 @@ export function FidyahForm({
           // A Ramadan began while the form was open. Recalculate on the
           // server's clock so the screen shows what we would charge.
           if (data.serverTime) setNow(new Date(data.serverTime));
+          if (typeof data.amountSen === "number") {
+            setServerOverride({ key: orderKey, amountSen: data.amountSen });
+          }
           toast.error(data.error);
           setSubmitting(false);
           return;
@@ -550,7 +568,13 @@ export function FidyahForm({
                   <span>Jumlah hari dikenakan</span>
                   <span>{qada.chargeableDays} hari</span>
                 </div>
-                {qada.totalSen === 0 && (
+                {overrideActive && qada.totalSen !== qadaTotalSen && (
+                  <p className="pt-1 text-xs">
+                    Jumlah dikemas kini oleh sistem mengikut tarikh semasa.
+                    Tekan Bayar untuk teruskan dengan jumlah ini.
+                  </p>
+                )}
+                {qadaTotalSen === 0 && (
                   <p className="pt-1 text-xs">
                     Tiada fidyah kelewatan lagi bagi tahun yang dipilih. Qada&apos;
                     puasa anda sebelum Ramadan {upcomingRamadan.hijriYear}H bermula.
