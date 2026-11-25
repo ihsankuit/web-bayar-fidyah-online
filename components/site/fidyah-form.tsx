@@ -578,6 +578,8 @@ export function FidyahForm({
               <Label htmlFor="name">Nama penuh</Label>
               <Input
                 id="name"
+                name="name"
+                autoComplete="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nama seperti dalam kad pengenalan"
@@ -588,7 +590,10 @@ export function FidyahForm({
               <Label htmlFor="email">Emel</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@contoh.com"
@@ -599,6 +604,10 @@ export function FidyahForm({
               <Label htmlFor="phone">No. telefon (pilihan)</Label>
               <Input
                 id="phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="0123456789"
