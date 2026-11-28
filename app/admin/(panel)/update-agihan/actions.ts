@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
+import { prepareImage, UnsupportedImageError } from "@/lib/image-upload";
 
 const BUCKET = "media";
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB
@@ -38,16 +39,27 @@ async function uploadImages(
     if (file.size > MAX_IMAGE_BYTES)
       return { urls, paths, error: `Imej "${file.name}" melebihi had 10MB.` };
 
-    const ext = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
+    // Shrunk and normalised to JPEG first: a raw phone photo can be too heavy
+    // for the image optimiser, which leaves a broken image on the page.
+    let prepared;
+    try {
+      prepared = await prepareImage(file);
+    } catch (err) {
+      if (err instanceof UnsupportedImageError) {
+        return { urls, paths, error: err.message };
+      }
+      throw err;
+    }
+
     const base = slugify(file.name.replace(/\.[^.]+$/, "")) || "agihan";
     const path = `agihan/${Date.now()}-${Math.random()
       .toString(36)
-      .slice(2, 8)}-${base}.${ext}`;
+      .slice(2, 8)}-${base}.${prepared.ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, {
-        contentType: file.type || "image/jpeg",
+      .upload(path, prepared.data, {
+        contentType: prepared.contentType,
         upsert: false,
       });
     if (uploadError) return { urls, paths, error: uploadError.message };
