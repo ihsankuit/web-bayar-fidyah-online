@@ -229,9 +229,9 @@ describe("validateQadaRows", () => {
   });
   it("rejects nothing, too many rows, and duplicates", () => {
     expect(ok([])).toBe(false);
-    const forty = Array.from({ length: 40 }, (_, i) => ({ hijriYear: 1447 - i, days: 1 }));
-    expect(ok(forty)).toBe(true);
-    const many = [...forty, { hijriYear: 1406, days: 1 }];
+    const sixty = Array.from({ length: 60 }, (_, i) => ({ hijriYear: 1447 - i, days: 1 }));
+    expect(ok(sixty)).toBe(true);
+    const many = [...sixty, { hijriYear: 1386, days: 1 }];
     expect(ok(many)).toBe(false);
     expect(
       ok([
@@ -242,8 +242,8 @@ describe("validateQadaRows", () => {
   });
   it("rejects a Ramadan that has not begun, or one too far back", () => {
     expect(ok([{ hijriYear: 1448, days: 1 }])).toBe(false);
-    expect(ok([{ hijriYear: 1447 - 39, days: 1 }])).toBe(true);
-    expect(ok([{ hijriYear: 1447 - 40, days: 1 }])).toBe(false);
+    expect(ok([{ hijriYear: 1447 - 59, days: 1 }])).toBe(true);
+    expect(ok([{ hijriYear: 1447 - 60, days: 1 }])).toBe(false);
   });
   it("rejects days outside 1-30 and non-integers", () => {
     expect(ok([{ hijriYear: 1446, days: 0 }])).toBe(false);
@@ -289,8 +289,8 @@ describe("qadaYearsInfo", () => {
     expect(info.years[0]).toMatchObject({ hijri_year: 1447, multiplier: 0 });
     expect(info.years[1]).toMatchObject({ hijri_year: 1446, multiplier: 1 });
     expect(info.next_ramadan.hijri_year).toBe(1448);
-    expect(info.max_years).toBe(40);
-    expect(info.years).toHaveLength(40);
+    expect(info.max_years).toBe(60);
+    expect(info.years).toHaveLength(60);
   });
 });
 
@@ -335,5 +335,20 @@ describe("basic-only qada' (cannot afford the multiplier)", () => {
     if (!r.ok) throw new Error(r.error);
     expect(r.totalSen).toBe(5 * RATE);
     expect(formatQadaBreakdown(r.breakdown)).toBe("2023 (1444H) 5 hari x1 (sebenar x3)");
+  });
+});
+
+describe("a payer owing since 1982", () => {
+  it("can choose from 1402H, whose Ramadan began on 23 June 1982", () => {
+    expect(ramadanStart(1402)).toEqual({ year: 1982, month: 6, day: 23 });
+    const rows = Array.from({ length: 45 }, (_, i) => ({ hijriYear: 1446 - i, days: 30 }));
+    const full = resolveQadaOrder(rows, RATE, NOV_2026);
+    const basic = resolveQadaOrder(rows, RATE, NOV_2026, { basicOnly: true });
+    if (!full.ok || !basic.ok) throw new Error("expected ok");
+    // Multipliers 1..45: 30 days x 1035 x RM4.
+    expect(full.totalSen).toBe(30 * 1035 * RATE);
+    // Basic: 45 years x 30 days x RM4, still over the online limit.
+    expect(basic.totalSen).toBe(45 * 30 * RATE);
+    expect(basic.totalSen).toBeGreaterThanOrEqual(QADA_REVIEW_THRESHOLD_SEN);
   });
 });

@@ -101,8 +101,8 @@ Ramadan has not begun yet counts ×0). Do not compute it yourself.
 }
 ```
 
-Rules: 1–40 rows, no duplicate years, only years whose Ramadan has begun
-(and at most 40 back). If every chosen year is still within its qada'
+Rules: 1–60 rows, no duplicate years, only years whose Ramadan has begun
+(and at most 60 back). If every chosen year is still within its qada'
 window the total is RM0 and the call fails with `400`. The response includes
 `breakdown` (per-year `days`, `multiplier`, `subtotal_sen`) and the same
 breakdown is stored on the donation (`qada_breakdown`) and printed on the

@@ -44,9 +44,9 @@ export const MAX_RAMADAN_DAYS = 30;
 /** The category whose fidyah is owed per Ramadan that passed unmade. */
 export const QADA_CATEGORY_ID = "lewat_qada";
 /** How many Ramadans back a payer can say they missed. */
-export const QADA_YEAR_SPAN = 40;
+export const QADA_YEAR_SPAN = 60;
 /** One row per missed year, so as many as can be offered. */
-export const MAX_QADA_ROWS = 40;
+export const MAX_QADA_ROWS = 60;
 /**
  * A lewat qada' total at or above this (RM5,000, in sen) is not charged
  * online: the payer is sent to bank transfer, where staff check the proof,
